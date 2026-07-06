@@ -29,12 +29,10 @@ console.log(SUPABASE_URL && SUPABASE_KEY ? "🚀 Running in SUPABASE MODE" : (is
  * API Request Wrapper
  */
 async function apiRequest(params) {
-  if (typeof localStorage !== 'undefined') {
-    const sUser = localStorage.getItem("admin_username");
-    const sPass = localStorage.getItem("admin_password");
-    if (sUser && !params.adminUsername) params.adminUsername = sUser.trim().toLowerCase();
-    if (sPass && !params.adminPassword) params.adminPassword = sPass.trim().toLowerCase();
-  }
+  const sUser = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem("admin_username") : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem("admin_username") : null);
+  const sPass = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem("admin_password") : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem("admin_password") : null);
+  if (sUser && !params.adminUsername) params.adminUsername = sUser.trim().toLowerCase();
+  if (sPass && !params.adminPassword) params.adminPassword = sPass.trim().toLowerCase();
 
   // Intercept and route to Supabase handler if configured
   if (SUPABASE_URL && SUPABASE_KEY && window.supabase) {
