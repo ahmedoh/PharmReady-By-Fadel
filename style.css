@@ -2526,3 +2526,10 @@ th {
   background: var(--color-primary);
   color: #fff;
 }
+
+/* Disable all animations and transitions globally for speed and CPU relief */
+*, *::before, *::after {
+  animation: none !important;
+  transition: none !important;
+}
+

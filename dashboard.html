@@ -4923,11 +4923,45 @@
     function renderPlaylist() {
       const container = document.getElementById("playlist-container");
       container.innerHTML = "";
-
+      
       if (videosData.length === 0) {
         container.innerHTML = `<li style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px;">لا توجد محاضرات في هذا المستوى حالياً.</li>`;
         return;
       }
+      
+      // Group by Topic
+      const grouped = {};
+      videosData.forEach(v => {
+        const topic = v.Topic || v.topic || "عام";
+        if (!grouped[topic]) grouped[topic] = [];
+        grouped[topic].push(v);
+      });
+      
+      for (const [topic, vids] of Object.entries(grouped)) {
+        // Create topic header
+        const topicHeader = document.createElement("li");
+        topicHeader.style.cssText = "background: var(--bg-secondary); padding: 10px; margin: 10px 0 5px; font-weight: bold; border-radius: 5px; color: var(--color-primary);";
+        topicHeader.innerHTML = `<i class="fa-solid fa-book-open"></i> ${topic}`;
+        container.appendChild(topicHeader);
+        
+        vids.forEach(v => {
+          const li = document.createElement("li");
+          li.className = "video-item";
+          const isWatched = watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id);
+          const icon = isWatched ? `<i class="fa-solid fa-circle-check" style="color: var(--color-success);"></i>` : `<i class="fa-solid fa-hourglass-half" style="color: var(--color-gold);"></i>`;
+          li.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px;">
+              <i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i>
+              <span class="video-item-title">${v.Title}</span>
+            </div>
+            ${icon}
+          `;
+          li.onclick = () => selectVideo(v.VideoId || v.id, v.Title);
+          if (currentVideoId === (v.VideoId || v.id)) li.className += " active";
+          container.appendChild(li);
+        });
+      }
+    }
 
     function renderCertificates() {
       const section = document.getElementById("certificates-section");
