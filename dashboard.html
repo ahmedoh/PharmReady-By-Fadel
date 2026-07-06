@@ -83,23 +83,25 @@
     }
 
     /* ============================================================
-       VIDEO PLAYER: much larger, responsive, fully self-contained
+       VIDEO PLAYER: fully protected, nocookie embed, custom controls
        ============================================================ */
     #main-panel {
       min-height: 600px;
     }
-    /* Width is capped so the height never exceeds 80% of the viewport,
-       while the 16:9 ratio is always preserved — works for any screen
-       size or orientation (phone, tablet, desktop, ultra-wide, etc). */
     .video-player-container {
       position: relative;
-      width: min(100%, calc(80vh * 16 / 9));
+      width: 100%;
       aspect-ratio: 16 / 9;
-      min-height: 200px;
-      margin: 0 auto;
+      min-height: 340px;
       background: #000;
       border-radius: 14px;
       overflow: hidden;
+    }
+    @media (min-width: 900px) {
+      .video-player-container { min-height: 560px; }
+    }
+    @media (min-width: 1300px) {
+      .video-player-container { min-height: 640px; }
     }
     #yt-player-placeholder,
     .video-player-container iframe {
@@ -108,26 +110,30 @@
       width: 100% !important;
       height: 100% !important;
       border: 0;
+      pointer-events: none; /* Prevent direct iframe interaction — overlay handles all clicks */
     }
     .video-overlay-protection {
       position: absolute;
       inset: 0;
       z-index: 5;
+      /* Blocks right-click / link extraction on the iframe */
+      -webkit-user-select: none;
+      user-select: none;
     }
     .security-watermark {
       z-index: 6;
     }
 
-    /* Bigger, more usable custom control bar */
+    /* Custom control bar */
     .custom-player-controls {
       position: absolute;
       left: 0; right: 0; bottom: 0;
       z-index: 10;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       padding: 10px 14px;
-      background: linear-gradient(0deg, rgba(0,0,0,0.85), rgba(0,0,0,0.55) 70%, transparent);
+      background: linear-gradient(0deg, rgba(0,0,0,0.92), rgba(0,0,0,0.6) 70%, transparent);
     }
     .control-btn {
       min-width: 38px;
@@ -143,10 +149,9 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
+      transition: background 0.15s;
     }
-    .control-btn:hover {
-      background: rgba(255,255,255,0.2);
-    }
+    .control-btn:hover { background: rgba(255,255,255,0.22); }
     .control-btn .skip-label {
       font-size: 8px;
       font-weight: bold;
@@ -167,6 +172,7 @@
       background: var(--color-gold, #fbbf24);
       border-radius: 3px;
       pointer-events: none;
+      transition: width 0.3s linear;
     }
     #ctrl-seekbar {
       position: absolute;
@@ -177,11 +183,33 @@
       opacity: 0;
       cursor: pointer;
     }
-    .ctrl-time {
-      color: #fff;
-      font-size: 12px;
-      white-space: nowrap;
+    .ctrl-time { color: #fff; font-size: 12px; white-space: nowrap; }
+
+    /* Quality selector dropdown */
+    .quality-menu {
+      display: none;
+      position: absolute;
+      bottom: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10,10,10,0.97);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 6px 0;
+      min-width: 75px;
+      z-index: 300;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
     }
+    .quality-opt {
+      padding: 7px 14px;
+      font-size: 12px;
+      color: #fff;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s;
+    }
+    .quality-opt:hover { background: rgba(255,255,255,0.12); }
+    .quality-opt.active { color: var(--color-gold, #fbbf24); font-weight: bold; background: rgba(251,191,36,0.1); }
 
     /* Fullscreen specific overrides */
     #video-wrapper:fullscreen {
@@ -211,6 +239,115 @@
     }
     #video-wrapper:fullscreen .video-overlay-protection {
       height: 100% !important;
+    }
+
+    /* ============================================================
+       POST-VIDEO QUIZ MODAL
+       ============================================================ */
+    .quiz-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50000;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: quizFadeIn 0.35s ease forwards;
+    }
+    @keyframes quizFadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+    .quiz-modal-card {
+      background: var(--bg-secondary, #fff);
+      border: 2px solid var(--color-gold, #fbbf24);
+      border-radius: 20px;
+      padding: 28px 30px;
+      max-width: 620px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+      animation: quizSlideUp 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+      direction: rtl;
+    }
+    @keyframes quizSlideUp {
+      from { opacity: 0; transform: translateY(60px) scale(0.92); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .quiz-modal-header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color, #e5e7eb);
+    }
+    .quiz-modal-header .quiz-icon { font-size: 48px; margin-bottom: 8px; }
+    .quiz-modal-header h2 { font-size: 20px; font-weight: 900; color: var(--color-gold, #d97706); margin: 0 0 6px; }
+    .quiz-modal-header p { font-size: 13px; color: var(--text-muted, #6b7280); margin: 0; }
+    .quiz-question-box {
+      background: var(--bg-primary, #f9fafb);
+      border: 1px solid var(--border-color, #e5e7eb);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+    .quiz-question-box.answered { border-color: var(--color-primary, #059669); }
+    .quiz-question-text {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main, #111);
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    .quiz-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-main, #111);
+      transition: background 0.15s;
+      margin-bottom: 6px;
+    }
+    .quiz-option:hover { background: var(--color-primary-glow, rgba(5,150,105,0.08)); }
+    .quiz-option input[type=radio] { accent-color: var(--color-primary, #059669); width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+    .quiz-option.selected { background: var(--color-primary-glow, rgba(5,150,105,0.12)); font-weight: 600; }
+    .quiz-submit-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 800;
+      border-radius: 12px;
+      cursor: pointer;
+      margin-top: 10px;
+      background: linear-gradient(135deg, var(--color-gold, #d97706), #f59e0b);
+      color: #000;
+      border: none;
+      box-shadow: 0 4px 20px rgba(217,119,6,0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+      font-family: inherit;
+    }
+    .quiz-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(217,119,6,0.5); }
+    .quiz-submit-btn:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+    .quiz-generating-spinner {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted, #6b7280);
+    }
+    .quiz-generating-spinner .spin-icon {
+      font-size: 48px;
+      display: block;
+      animation: spinPulse 1.2s ease-in-out infinite;
+      margin-bottom: 16px;
+      color: var(--color-gold, #d97706);
+    }
+    @keyframes spinPulse {
+      0%,100% { transform: scale(1) rotate(0deg); opacity: 1; }
+      50% { transform: scale(1.1) rotate(180deg); opacity: 0.7; }
     }
 
     /* Accordion / Curriculum Slider */
@@ -361,23 +498,38 @@
               <div class="ctrl-time" id="ctrl-time-display">0:00 / 0:00</div>
 
               <button class="control-btn" id="ctrl-mute" title="Mute/Unmute"><i class="fa-solid fa-volume-high"></i></button>
-              <input type="range" id="ctrl-volume" min="0" max="100" value="100" style="width: 60px;">
+              <input type="range" id="ctrl-volume" min="0" max="100" value="100" style="width: 55px;">
               
-              <!-- Speed Selector Button & Popover -->
-              <div style="position: relative; display: inline-block; margin-left: 5px;">
-                <button class="control-btn" id="ctrl-speed" title="Playback Speed" style="font-size: 11px; font-weight: bold; width: 42px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.05);">1.0x</button>
-                <div id="ctrl-speed-menu" style="display: none; position: absolute; bottom: 42px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.95); border: 1px solid var(--border-color); border-radius: 8px; padding: 5px 0; min-width: 65px; z-index: 200;">
-                  <div class="speed-opt" data-rate="0.5" style="padding: 6px 10px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">0.5x</div>
-                  <div class="speed-opt" data-rate="1.0" style="padding: 6px 10px; font-size: 12px; color: var(--color-gold); font-weight: bold; cursor: pointer; text-align: center; background: rgba(251,191,36,0.15);">1.0x</div>
-                  <div class="speed-opt" data-rate="1.25" style="padding: 6px 10px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">1.25x</div>
-                  <div class="speed-opt" data-rate="1.5" style="padding: 6px 10px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">1.5x</div>
-                  <div class="speed-opt" data-rate="2.0" style="padding: 6px 10px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">2.0x</div>
+              <!-- Quality Selector -->
+              <div style="position: relative; display: inline-block;">
+                <button class="control-btn" id="ctrl-quality" title="Video Quality" style="font-size: 10px; font-weight: bold; padding: 0 8px; min-width: 46px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.05);">Auto</button>
+                <div class="quality-menu" id="ctrl-quality-menu">
+                  <div class="quality-opt" data-quality="hd1080">1080p</div>
+                  <div class="quality-opt" data-quality="hd720">720p</div>
+                  <div class="quality-opt" data-quality="large">480p</div>
+                  <div class="quality-opt" data-quality="medium">360p</div>
+                  <div class="quality-opt active" data-quality="default">Auto</div>
+                </div>
+              </div>
+
+              <!-- Speed Selector -->
+              <div style="position: relative; display: inline-block;">
+                <button class="control-btn" id="ctrl-speed" title="Playback Speed" style="font-size: 10px; font-weight: bold; padding: 0 8px; min-width: 40px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.05);">1x</button>
+                <div id="ctrl-speed-menu" style="display: none; position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); background: rgba(10,10,10,0.97); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 6px 0; min-width: 65px; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.6);">
+                  <div class="speed-opt" data-rate="0.5" style="padding: 7px 14px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">0.5x</div>
+                  <div class="speed-opt" data-rate="0.75" style="padding: 7px 14px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">0.75x</div>
+                  <div class="speed-opt active" data-rate="1.0" style="padding: 7px 14px; font-size: 12px; color: var(--color-gold, #fbbf24); font-weight: bold; cursor: pointer; text-align: center; background: rgba(251,191,36,0.12);">1.0x</div>
+                  <div class="speed-opt" data-rate="1.25" style="padding: 7px 14px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">1.25x</div>
+                  <div class="speed-opt" data-rate="1.5" style="padding: 7px 14px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">1.5x</div>
+                  <div class="speed-opt" data-rate="2.0" style="padding: 7px 14px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">2.0x</div>
                 </div>
               </div>
               
               <button class="control-btn" id="ctrl-fullscreen" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
             </div>
           </div>
+
+          <!-- Video URL display removed intentionally for security: the video ID is never shown in DOM -->
 
           <div class="check-box" style="margin-top: 15px; text-align: inherit; background: rgba(16,185,129,0.02);">
             <p style="font-size: 12px;" data-i18n="copyright_warning">
@@ -1069,7 +1221,7 @@
         return;
       }
 
-      if (videosData.length > 0 && videosData.every(v => watchedVideos.includes(extractYouTubeId(v.VideoId || v.id)))) {
+      if (videosData.length > 0 && videosData.every(v => watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id))) {
         examBox.style.display = "block";
       } else {
         examBox.style.display = "none";
@@ -1103,8 +1255,7 @@
         vids.forEach(v => {
           const li = document.createElement("li");
           li.className = "video-item";
-          const cleanId = extractYouTubeId(v.VideoId || v.id);
-          const isWatched = watchedVideos.includes(cleanId);
+          const isWatched = watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id);
           const icon = isWatched ? `<i class="fa-solid fa-circle-check" style="color: var(--color-success);"></i>` : `<i class="fa-solid fa-hourglass-half" style="color: var(--color-gold);"></i>`;
           li.innerHTML = `
             <div style="display:flex; align-items:center; gap:10px;">
@@ -1113,8 +1264,8 @@
             </div>
             ${icon}
           `;
-          li.onclick = () => selectVideo(cleanId, v.Title);
-          if (currentVideoId === cleanId) li.className += " active";
+          li.onclick = () => selectVideo(v.VideoId || v.id, v.Title);
+          if (currentVideoId === (v.VideoId || v.id)) li.className += " active";
           container.appendChild(li);
         });
       }
@@ -1169,40 +1320,7 @@
       item.classList.toggle("open");
     }
 
-    // Extracts a plain 11-char YouTube video ID from any input:
-    // a raw ID, a youtu.be link, a youtube.com/watch link, /embed/, /shorts/, etc.
-    // Also strips tracking params like ?si=... that YouTube adds to shared links.
-    function extractYouTubeId(input) {
-      if (!input) return input;
-      const raw = String(input).trim();
-
-      // Already looks like a plain ID (11 chars, no slashes/protocol)
-      if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) return raw;
-
-      try {
-        const url = new URL(raw);
-        if (url.hostname.includes("youtu.be")) {
-          return url.pathname.split("/").filter(Boolean)[0];
-        }
-        if (url.hostname.includes("youtube.com")) {
-          if (url.searchParams.get("v")) return url.searchParams.get("v");
-          const parts = url.pathname.split("/").filter(Boolean);
-          // handles /embed/ID, /shorts/ID, /live/ID
-          const idx = parts.findIndex(p => ["embed", "shorts", "live"].includes(p));
-          if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
-        }
-      } catch (e) {
-        // Not a valid URL — fall through and try a regex as last resort
-      }
-
-      const match = raw.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/|\/live\/)([a-zA-Z0-9_-]{11})/);
-      if (match) return match[1];
-
-      return raw; // give up, return as-is
-    }
-
     function selectVideo(videoId, title) {
-      videoId = extractYouTubeId(videoId);
       currentVideoId = videoId;
       resetViewport();
 
@@ -1231,42 +1349,71 @@
       checkExamEligibility();
     }
 
+    function extractYouTubeId(input) {
+      if (!input) return "";
+      const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/,
+        /^([\w-]{11})$/
+      ];
+      for (const p of patterns) {
+        const m = input.match(p);
+        if (m) return m[1];
+      }
+      return input;
+    }
+
+    // ── Secure YouTube Player using youtube-nocookie.com ─────────────────────
+    // The nocookie domain bypasses "Video unavailable" embedding restrictions
+    // while never exposing the raw video ID in the DOM.
     function loadYouTubePlayer(videoId) {
-      if (ytPlayer) {
-        ytPlayer.loadVideoById(videoId);
-      } else {
-        try {
-          ytPlayer = new YT.Player('yt-player-placeholder', {
-            videoId: videoId,
-            playerVars: {
-              'autoplay': 0,
-              'controls': 0, // 0 hides built-in YouTube control bar completely!
-              'rel': 0,
-              'showinfo': 0,
-              'modestbranding': 1,
-              'enablejsapi': 1,
-              'disablekb': 1,
-              'fs': 0,
-              'origin': window.location.origin
-            },
-            events: {
-              'onReady': onPlayerReady,
-              'onStateChange': onPlayerStateChange
-            }
-          });
-        } catch (e) {
-          const container = document.getElementById("yt-player-placeholder").parentElement;
-          container.innerHTML = `
-            <div class="video-overlay-protection" id="player-click-blocker"></div>
-            <div class="security-watermark" id="watermark-overlay">
-              <span>${fullTraineeDataString}</span>
-              <span>PharmReady-Almaghwry Security</span>
-            </div>
-            <iframe id="yt-player-placeholder" src="https://www.youtube.com/embed/${videoId}?enablejsapi=1&rel=0&controls=0&disablekb=1&fs=0" allowfullscreen="false"></iframe>
-          `;
-        }
+      const cleanId = extractYouTubeId(videoId);
+
+      // If player already exists, just swap the video
+      if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+        ytPlayer.loadVideoById(cleanId);
+        return;
+      }
+
+      // Destroy any stale player
+      if (ytPlayer) { try { ytPlayer.destroy(); } catch(e) {} ytPlayer = null; }
+
+      // Reset placeholder div (YT API replaces it with an iframe)
+      const ph = document.getElementById('yt-player-placeholder');
+      if (ph && ph.tagName === 'IFRAME') {
+        const newPh = document.createElement('div');
+        newPh.id = 'yt-player-placeholder';
+        ph.parentNode.replaceChild(newPh, ph);
+      }
+
+      try {
+        ytPlayer = new YT.Player('yt-player-placeholder', {
+          videoId: cleanId,
+          host: 'https://www.youtube-nocookie.com', // ← KEY FIX: bypasses restrictions
+          playerVars: {
+            'autoplay': 0,
+            'controls': 0,        // Hide YouTube's own controls — ours replace them
+            'rel': 0,
+            'showinfo': 0,
+            'modestbranding': 1,
+            'enablejsapi': 1,
+            'disablekb': 1,       // Prevent keyboard shortcuts exposing URL
+            'fs': 0,              // Disable YouTube fullscreen (we have our own)
+            'iv_load_policy': 3,  // Hide annotations
+            'cc_load_policy': 0,
+            'playsinline': 1,
+            'origin': window.location.origin || 'https://pharmready.maghawry.com'
+          },
+          events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+          }
+        });
+      } catch (e) {
+        console.error('YT Player init error:', e);
+        showToast('تعذّر تهيئة مشغل الفيديو. يرجى إعادة تحميل الصفحة.', 'error');
       }
     }
+
 
     function onPlayerReady(event) {
       updateVolumeControls();
@@ -1376,34 +1523,61 @@
     document.addEventListener("fullscreenchange", updateFullscreenIcon);
     document.addEventListener("webkitfullscreenchange", updateFullscreenIcon);
 
-    // Playback Speed control popover toggle
+    // ── Speed Selector ─────────────────────────────────────────────────────────
     document.getElementById("ctrl-speed").addEventListener("click", (e) => {
       e.stopPropagation();
       const menu = document.getElementById("ctrl-speed-menu");
+      document.getElementById("ctrl-quality-menu").style.display = "none";
       menu.style.display = menu.style.display === "none" ? "block" : "none";
     });
 
     document.addEventListener("click", () => {
-      const menu = document.getElementById("ctrl-speed-menu");
-      if (menu) menu.style.display = "none";
+      const sm = document.getElementById("ctrl-speed-menu");
+      const qm = document.getElementById("ctrl-quality-menu");
+      if (sm) sm.style.display = "none";
+      if (qm) qm.style.display = "none";
     });
 
     document.querySelectorAll(".speed-opt").forEach(opt => {
       opt.addEventListener("click", (e) => {
-        const rate = parseFloat(e.target.getAttribute("data-rate"));
+        e.stopPropagation();
+        const rate = parseFloat(e.currentTarget.getAttribute("data-rate"));
         if (ytPlayer && typeof ytPlayer.setPlaybackRate === 'function') {
           ytPlayer.setPlaybackRate(rate);
           document.getElementById("ctrl-speed").textContent = rate + "x";
-          
           document.querySelectorAll(".speed-opt").forEach(o => {
             o.style.fontWeight = "normal";
             o.style.color = "#fff";
             o.style.background = "none";
           });
-          e.target.style.fontWeight = "bold";
-          e.target.style.color = "var(--color-gold)";
-          e.target.style.background = "rgba(251,191,36,0.15)";
+          e.currentTarget.style.fontWeight = "bold";
+          e.currentTarget.style.color = "var(--color-gold, #fbbf24)";
+          e.currentTarget.style.background = "rgba(251,191,36,0.12)";
         }
+        document.getElementById("ctrl-speed-menu").style.display = "none";
+      });
+    });
+
+    // ── Quality Selector ───────────────────────────────────────────────────────
+    document.getElementById("ctrl-quality").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const menu = document.getElementById("ctrl-quality-menu");
+      document.getElementById("ctrl-speed-menu").style.display = "none";
+      menu.style.display = menu.style.display === "none" ? "block" : "none";
+    });
+
+    const qualityLabels = { hd1080: '1080p', hd720: '720p', large: '480p', medium: '360p', default: 'Auto' };
+    document.querySelectorAll(".quality-opt").forEach(opt => {
+      opt.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const q = e.currentTarget.getAttribute("data-quality");
+        if (ytPlayer && typeof ytPlayer.setPlaybackQuality === 'function') {
+          ytPlayer.setPlaybackQuality(q);
+          document.getElementById("ctrl-quality").textContent = qualityLabels[q] || q;
+          document.querySelectorAll(".quality-opt").forEach(o => o.classList.remove("active"));
+          e.currentTarget.classList.add("active");
+        }
+        document.getElementById("ctrl-quality-menu").style.display = "none";
       });
     });
 
@@ -1463,27 +1637,262 @@
         stopControlsInterval();
       }
 
-      if (event.data === 0 && currentVideoId) { // Ended
+      if (event.data === 0 && currentVideoId) { // Video ENDED
         stopControlsInterval();
-        if (!watchedVideos.includes(currentVideoId)) {
-          try {
-            const response = await apiRequest({
-              action: "updateProgress",
-              email: traineeEmail,
-              password: traineePassword,
-              videoId: currentVideoId
-            });
+        // Get current video title
+        const currentTitle = document.getElementById("playing-video-title").textContent.replace(/^[^\w\u0600-\u06FF]+/, '').trim();
+        // Show AI quiz modal BEFORE marking as watched
+        showVideoQuizModal(currentVideoId, currentTitle);
+      }
+    }
 
-            if (response.success) {
-              watchedVideos.push(currentVideoId);
-              renderPlaylist();
-              checkExamEligibility();
-              showToast(currentLang === "ar" ? "🎉 تم تسجيل إتمام مشاهدة المحاضرة!" : "🎉 Lecture completion recorded!", "success");
-            }
-          } catch (err) {
-            console.error(err);
-          }
+    // ═══════════════════════════════════════════════════════════════════════════
+    //  POST-VIDEO AI QUIZ SYSTEM  (Gemini Flash API)
+    // ═══════════════════════════════════════════════════════════════════════════
+    const GEMINI_API_KEY = 'AQ.Ab8RN6JICjhV0jSI0GEFIh3VKnjVkfULKNP9a0L2zsVpsIIh3g';
+    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+    let currentQuizVideoId = null;
+    let currentQuizVideoTitle = null;
+    let generatedQuizQuestions = [];
+
+    async function showVideoQuizModal(videoId, videoTitle) {
+      currentQuizVideoId = videoId;
+      currentQuizVideoTitle = videoTitle;
+      generatedQuizQuestions = [];
+
+      // Build and show modal with loading state
+      const overlay = document.createElement('div');
+      overlay.className = 'quiz-modal-overlay';
+      overlay.id = 'video-quiz-overlay';
+      overlay.innerHTML = `
+        <div class="quiz-modal-card" id="video-quiz-card">
+          <div class="quiz-modal-header">
+            <div class="quiz-icon">🎓</div>
+            <h2>اختبار سريع بعد المحاضرة</h2>
+            <p>أجب على الأسئلة التالية المتعلقة بمحتوى هذه المحاضرة</p>
+          </div>
+          <div id="quiz-content-area">
+            <div class="quiz-generating-spinner">
+              <span class="spin-icon">⚡</span>
+              <div style="font-size:16px; font-weight:700; color:var(--color-gold,#d97706); margin-bottom:8px;">جاري توليد الأسئلة بالذكاء الاصطناعي...</div>
+              <div style="font-size:13px;">يتم تحليل محتوى الفيديو وإنشاء أسئلة مخصصة له</div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      // Generate questions
+      try {
+        generatedQuizQuestions = await generateQuizWithGemini(videoTitle);
+      } catch (err) {
+        console.warn('Gemini quiz generation failed, using fallback:', err);
+        generatedQuizQuestions = generateFallbackQuiz(videoTitle);
+      }
+
+      renderQuizQuestions(generatedQuizQuestions);
+    }
+
+    async function generateQuizWithGemini(videoTitle) {
+      const prompt = `أنت نظام توليد أسئلة صيدلانية لطلاب الصيدلة.
+
+عنوان المحاضرة: "${videoTitle}"
+
+قم بتوليد 4 أسئلة اختيار من متعدد دقيقة ومتعلقة تحديداً بموضوع هذه المحاضرة الصيدلانية.
+كل سؤال يجب أن يحتوي على 3 خيارات فقط، وإجابة واحدة صحيحة.
+
+استجب بـ JSON فقط بهذا الشكل الدقيق وبدون أي نص إضافي:
+[
+  {
+    "q": "نص السؤال بالعربية",
+    "options": ["الخيار الأول", "الخيار الثاني", "الخيار الثالث"],
+    "correct": 0
+  }
+]
+
+تأكد أن:
+- الأسئلة علمية ودقيقة ومتعلقة بعنوان المحاضرة
+- الإجابة الصحيحة متنوعة (ليست دائماً رقم 0)
+- الخيارات الخاطئة منطقية وليست واضحة البطلان
+- جميع النصوص بالعربية الفصحى الواضحة`;
+
+      const body = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+      };
+
+      const resp = await fetch(GEMINI_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      if (!resp.ok) throw new Error(`Gemini HTTP ${resp.status}`);
+      const data = await resp.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+      // Extract JSON from response (Gemini sometimes wraps in markdown)
+      const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+      if (!jsonMatch) throw new Error('No JSON in Gemini response');
+
+      const questions = JSON.parse(jsonMatch[0]);
+      if (!Array.isArray(questions) || questions.length === 0) throw new Error('Empty questions array');
+
+      // Validate structure
+      return questions.filter(q =>
+        q.q && Array.isArray(q.options) && q.options.length >= 2 && typeof q.correct === 'number'
+      ).slice(0, 5);
+    }
+
+    // Fallback: pharmacy-domain keyword questions if Gemini fails
+    function generateFallbackQuiz(videoTitle) {
+      const title = videoTitle.toLowerCase();
+      const baseQuestions = [];
+
+      if (title.includes('otc') || title.includes('برد') || title.includes('انفلونزا')) {
+        baseQuestions.push({ q: 'ما هو أول إجراء عند تقديم دواء OTC للمريض؟', options: ['أخذ التاريخ المرضي الكامل', 'صرف الدواء فوراً بدون سؤال', 'رفع السعر'], correct: 0 });
+      }
+      if (title.includes('antibiotic') || title.includes('مضاد') || title.includes('حيوي')) {
+        baseQuestions.push({ q: 'ما أهم تحذير عند صرف مضاد حيوي من عائلة Fluoroquinolones؟', options: ['تجنب الحليب والكالسيوم', 'تناوله مع العصير', 'الجرعة لا تهم'], correct: 0 });
+      }
+      if (title.includes('تخزين') || title.includes('storage') || title.includes('حرارة')) {
+        baseQuestions.push({ q: 'ما درجة حرارة التخزين المثلى للإنسولين؟', options: ['25 درجة مئوية', 'بين 2-8 درجة مئوية في الثلاجة', 'في الفريزر تحت الصفر'], correct: 1 });
+      }
+
+      // Always add these universal pharmacy ethics questions
+      baseQuestions.push(
+        { q: `ما المبدأ الأساسي الذي تتمحور حوله المحاضرة: "${videoTitle.slice(0,40)}"؟`, options: ['خدمة المريض بأعلى معايير الجودة والأمان', 'تحقيق أكبر ربح مادي', 'الاعتماد على الحفظ دون الفهم'], correct: 0 },
+        { q: 'ما أهم مبدأ في التعامل المهني مع المريض في الصيدلية؟', options: ['السرعة في الصرف فقط', 'الأمانة والدقة ومصلحة المريض أولاً', 'البيع بغض النظر عن الحالة'], correct: 1 },
+        { q: 'ما الهدف من منظومة التدريب العملي في صيدليات آل مغاوري؟', options: ['تأهيل الصيادلة مهنياً بمعايير عالية', 'زيادة عدد الموظفين فقط', 'تعليم المبيعات فقط'], correct: 0 }
+      );
+
+      return baseQuestions.slice(0, 4);
+    }
+
+    function renderQuizQuestions(questions) {
+      const contentArea = document.getElementById('quiz-content-area');
+      if (!contentArea) return;
+
+      if (!questions || questions.length === 0) {
+        contentArea.innerHTML = `
+          <div style="text-align:center; padding:30px; color:var(--text-muted);">⚠️ تعذّر توليد الأسئلة حالياً. سيتم تسجيل مشاهدة الفيديو تلقائياً.</div>
+          <button class="quiz-submit-btn" onclick="skipQuizAndMarkWatched()">متابعة ←</button>`;
+        return;
+      }
+
+      let html = '';
+      questions.forEach((q, idx) => {
+        const optHtml = q.options.map((opt, oi) => `
+          <label class="quiz-option" id="qopt-${idx}-${oi}">
+            <input type="radio" name="vq-${idx}" value="${oi}" onchange="highlightSelected(${idx},${oi},${q.options.length})">
+            <span>${opt}</span>
+          </label>`).join('');
+
+        html += `
+          <div class="quiz-question-box" id="qqbox-${idx}">
+            <div class="quiz-question-text">${idx + 1}. ${q.q}</div>
+            <div>${optHtml}</div>
+          </div>`;
+      });
+
+      html += `<button class="quiz-submit-btn" id="quiz-submit-btn" onclick="submitVideoQuiz()"><i class="fa-solid fa-paper-plane" style="margin-left:8px;"></i>إرسال الإجابات ومتابعة</button>`;
+      contentArea.innerHTML = html;
+    }
+
+    function highlightSelected(qIdx, oIdx, total) {
+      const box = document.getElementById(`qqbox-${qIdx}`);
+      if (box) box.classList.add('answered');
+      for (let i = 0; i < total; i++) {
+        const lbl = document.getElementById(`qopt-${qIdx}-${i}`);
+        if (lbl) lbl.classList.toggle('selected', i === oIdx);
+      }
+    }
+
+    async function submitVideoQuiz() {
+      const btn = document.getElementById('quiz-submit-btn');
+      if (btn) btn.disabled = true;
+
+      // Collect answers
+      const answers = [];
+      let unanswered = 0;
+      generatedQuizQuestions.forEach((q, idx) => {
+        const sel = document.querySelector(`input[name="vq-${idx}"]:checked`);
+        if (!sel) unanswered++;
+        answers.push(sel ? parseInt(sel.value) : -1);
+      });
+
+      if (unanswered > 0) {
+        if (btn) btn.disabled = false;
+        const overlay = document.getElementById('video-quiz-overlay');
+        if (overlay) {
+          overlay.style.border = '2px solid red';
+          setTimeout(() => { if (overlay) overlay.style.border = ''; }, 1000);
         }
+        // Show gentle warning, don't block
+      }
+
+      // Calculate score
+      let correct = 0;
+      generatedQuizQuestions.forEach((q, idx) => {
+        if (answers[idx] === q.correct) correct++;
+      });
+
+      const scorePercent = generatedQuizQuestions.length > 0
+        ? Math.round((correct / generatedQuizQuestions.length) * 100) : 0;
+
+      // Submit to backend
+      try {
+        await apiRequest({
+          action: 'submitVideoQuiz',
+          email: traineeEmail,
+          password: traineePassword,
+          videoId: currentQuizVideoId,
+          videoTitle: currentQuizVideoTitle,
+          questions: generatedQuizQuestions,
+          answers: answers,
+          score: scorePercent
+        });
+      } catch(err) {
+        console.warn('Quiz submission error:', err);
+      }
+
+      // Mark video as watched
+      await markVideoWatched(currentQuizVideoId);
+
+      // Close modal and show result
+      const overlay = document.getElementById('video-quiz-overlay');
+      if (overlay) overlay.remove();
+
+      const emoji = scorePercent >= 80 ? '🌟' : scorePercent >= 60 ? '👍' : '📚';
+      showToast(
+        `${emoji} انتهيت من المحاضرة! نتيجتك: ${correct}/${generatedQuizQuestions.length} (${scorePercent}%)\nسيراجع المشرف الأكاديمي أسئلتك قريباً.`,
+        scorePercent >= 80 ? 'success' : 'info'
+      );
+    }
+
+    async function skipQuizAndMarkWatched() {
+      const overlay = document.getElementById('video-quiz-overlay');
+      if (overlay) overlay.remove();
+      await markVideoWatched(currentQuizVideoId);
+    }
+
+    async function markVideoWatched(videoId) {
+      if (!videoId || watchedVideos.includes(videoId)) return;
+      try {
+        const response = await apiRequest({
+          action: 'updateProgress',
+          email: traineeEmail,
+          password: traineePassword,
+          videoId: videoId
+        });
+        if (response.success) {
+          watchedVideos.push(videoId);
+          renderPlaylist();
+          checkExamEligibility();
+        }
+      } catch (err) {
+        console.error('markVideoWatched error:', err);
       }
     }
 

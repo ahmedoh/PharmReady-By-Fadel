@@ -1736,10 +1736,10 @@ body[dir="rtl"] .btn-toggle-visibility {
   transition: opacity 0.3s;
 }
 
-/* NOTE: removed ".video-player-container:not(:hover) .custom-player-controls"
-   rule that force-hid the controls unless the mouse was hovering the video.
-   That rule broke the controls completely on touch devices (no hover event)
-   and conflicted with dashboard.html's own always-visible control bar. */
+.video-player-container:not(:hover) .custom-player-controls {
+  opacity: 0;
+  pointer-events: none;
+}
 
 .control-btn {
   background: none;

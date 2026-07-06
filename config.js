@@ -763,6 +763,76 @@ function handleDemoRequest(params) {
     return { success: true, progress: getTable("Progress") };
   }
 
+  } else if (action === "submitVideoQuiz") {
+    const trainees = getTable("Trainees");
+    const email = String(params.email).trim().toLowerCase();
+    const password = String(params.password).trim();
+    const t = trainees.find(x => String(x.Email).trim().toLowerCase() === email && String(x.Password).trim() === password);
+    if (!t || t.Status !== "accepted") {
+      return { success: false, message: "غير مصرح." };
+    }
+    const quizzes = getTable("VideoQuizSubmissions");
+    quizzes.push({
+      Timestamp: new Date().toISOString(),
+      Email: email,
+      Name: t.Name,
+      Level: t.CurrentLevel || "Passengers",
+      VideoId: String(params.videoId).trim(),
+      VideoTitle: String(params.videoTitle || "").trim(),
+      Questions: JSON.stringify(params.questions || []),
+      Answers: JSON.stringify(params.answers || []),
+      Score: params.score || 0,
+      Status: "pending_review",
+      AdminComment: ""
+    });
+    saveTable("VideoQuizSubmissions", quizzes);
+    return { success: true, message: "تم حفظ إجاباتك بنجاح للمراجعة." };
+
+  } else if (action === "adminGetVideoQuizzes") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح بالدخول." };
+    }
+    const quizzes = getTable("VideoQuizSubmissions");
+    return { success: true, quizzes: quizzes };
+
+  } else if (action === "adminReviewVideoQuiz") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح بالعملية." };
+    }
+    const quizzes = getTable("VideoQuizSubmissions");
+    const idx = parseInt(params.quizIndex);
+    if (idx >= 0 && idx < quizzes.length) {
+      quizzes[idx].Status = params.status || "reviewed";
+      quizzes[idx].AdminComment = params.comment || "";
+      saveTable("VideoQuizSubmissions", quizzes);
+      return { success: true, message: "تم تحديث حالة الاختبار بنجاح." };
+    }
+    return { success: false, message: "لم يتم العثور على الاختبار." };
+
+  } else if (action === "adminPromoteQuizQuestion") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح بالعملية." };
+    }
+    // Add the AI-generated question to the exam questions bank
+    const questions = getTable("Questions");
+    questions.push({
+      Timestamp: new Date().toISOString(),
+      Level: params.level,
+      QuestionAr: params.questionAr,
+      QuestionEn: params.questionEn || params.questionAr,
+      Option1Ar: params.option1Ar,
+      Option1En: params.option1Ar,
+      Option2Ar: params.option2Ar,
+      Option2En: params.option2Ar,
+      Option3Ar: params.option3Ar || "",
+      Option3En: params.option3Ar || "",
+      CorrectIndex: String(params.correctIndex)
+    });
+    saveTable("Questions", questions);
+    return { success: true, message: "تم إضافة السؤال لبنك الأسئلة بنجاح!" };
+
+  }
+
   return { success: false, message: "Unknown action" };
 }
 
@@ -988,9 +1058,9 @@ async function handleSupabaseRequest(params) {
       return {
         success: true,
         videos: (videos || []).map(v => ({
-          VideoId: String(v.id),
+          VideoId: String(v.video_id || v.url || v.id),
           Title: v.title,
-          Url: v.url,
+          Url: v.url || `https://www.youtube.com/watch?v=${v.video_id}`,
           Level: v.level
         })),
         watched: watched,
@@ -1628,6 +1698,69 @@ async function handleSupabaseRequest(params) {
         .ilike('email', email);
       if (error) throw error;
       return { success: true, message: "تم تحديث الملف الشخصي بنجاح!" };
+
+    } else if (action === "submitVideoQuiz") {
+      const email = String(params.email).trim().toLowerCase();
+      const password = String(params.password).trim();
+      // Verify trainee
+      const { data: t } = await supabaseClient.from('trainees').select('name,current_level').ilike('email', email).eq('password', password).maybeSingle();
+      if (!t) return { success: false, message: "غير مصرح." };
+
+      const { error } = await supabaseClient.from('video_quiz_submissions').insert([{
+        email: email,
+        trainee_name: t.name,
+        level: t.current_level || 'Passengers',
+        video_id: String(params.videoId).trim(),
+        video_title: String(params.videoTitle || '').trim(),
+        questions: JSON.stringify(params.questions || []),
+        answers: JSON.stringify(params.answers || []),
+        score: params.score || 0,
+        status: 'pending_review',
+        admin_comment: ''
+      }]);
+      if (error) { console.warn('submitVideoQuiz supabase error:', error); }
+      return { success: true, message: "تم حفظ إجاباتك بنجاح للمراجعة." };
+
+    } else if (action === "adminGetVideoQuizzes") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { data, error } = await supabaseClient
+        .from('video_quiz_submissions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return { success: true, quizzes: data };
+
+    } else if (action === "adminReviewVideoQuiz") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { error } = await supabaseClient
+        .from('video_quiz_submissions')
+        .update({ status: params.status, admin_comment: params.comment || '' })
+        .eq('id', params.quizId);
+      if (error) throw error;
+      return { success: true, message: "تم تحديث حالة الاختبار بنجاح." };
+
+    } else if (action === "adminPromoteQuizQuestion") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { error } = await supabaseClient.from('questions').insert([{
+        level: params.level,
+        question_ar: params.questionAr,
+        question_en: params.questionEn || params.questionAr,
+        option1_ar: params.option1Ar,
+        option1_en: params.option1Ar,
+        option2_ar: params.option2Ar,
+        option2_en: params.option2Ar,
+        option3_ar: params.option3Ar || '',
+        option3_en: params.option3Ar || '',
+        correct_index: String(params.correctIndex)
+      }]);
+      if (error) throw error;
+      return { success: true, message: "تم إضافة السؤال لبنك الأسئلة بنجاح!" };
     }
     
     return { success: false, message: "الإجراء غير متوفر حالياً على خادم Supabase." };

@@ -221,6 +221,9 @@
         <button class="admin-tab-btn" id="tab-btn-backup" onclick="switchAdminTab('backup')">
           <i class="fa-solid fa-database"></i> <span>النسخ الاحتياطي والاستعادة</span>
         </button>
+        <button class="admin-tab-btn" id="tab-btn-videoquizzes" onclick="switchAdminTab('videoquizzes')">
+          <i class="fa-solid fa-brain" style="color: var(--color-gold);"></i> <span>أسئلة الذكاء الاصطناعي</span>
+        </button>
       </nav>
 
       <div style="margin-top: auto; padding-top: 15px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
@@ -1025,7 +1028,6 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=2.1"></script>
-};
   <script>
     const adminUsername    = (sessionStorage.getItem("admin_username") || "").trim().toLowerCase();
     const adminPassword    = (sessionStorage.getItem("admin_password") || "").trim().toLowerCase();
@@ -1207,6 +1209,11 @@
       
       // Close mobile sidebar if open
       document.getElementById('admin-sidebar-menu').classList.remove('active');
+
+      // Lazy-load quiz submissions when tab is first opened
+      if (tabName === 'videoquizzes') {
+        loadVideoQuizzes();
+      }
     };
 
     // Database Loaders
@@ -1359,43 +1366,47 @@
     }
 
     function renderVideos() {
-  const tbody = document.getElementById("videos-table-body");
-  // ... existing code ...
-  tbody.innerHTML = "";
-  allVideos.forEach(v => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td><strong>${v.Title}</strong></td>
-      <td style="font-family: monospace;">${v.Url}</td>
-      <td>${v.Level}</td>
-      <td>${v.Index}</td>
-      <td style="display: flex; gap: 5px;">
-        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditVideoModal('${v.Id || v.Url}')"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteVideo('${v.Id || v.Url}')"><i class="fa-solid fa-trash"></i></button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
+      const tbody = document.getElementById("videos-table-body");
+      if (allVideos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد محاضرات مرفوعة.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = "";
+      allVideos.forEach(v => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${v.Title}</strong></td>
+          <td style="font-family: monospace;">${v.Url}</td>
+          <td>${v.Level}</td>
+          <td>${v.Index}</td>
+          <td>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteVideo('${v.Id || v.Url}')"><i class="fa-solid fa-trash"></i> حذف</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
     function renderQuestions() {
-  const tbody = document.getElementById("questions-table-body");
-  // ... existing code ...
-  tbody.innerHTML = "";
-  allQuestions.forEach((q, idx) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${q.QuestionAr || q.QuestionEn}</td>
-      <td>${q.Level}</td>
-      <td>الخيار ${parseInt(q.CorrectIndex) + 1}</td>
-      <td style="display: flex; gap: 5px;">
-        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditQuestionModal(${q.rowNum || idx})"><i class="fa-solid fa-pen"></i></button>
-        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteQuestion(${q.rowNum || idx})"><i class="fa-solid fa-trash"></i></button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
+      const tbody = document.getElementById("questions-table-body");
+      if (allQuestions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد أسئلة مضافة.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = "";
+      allQuestions.forEach((q, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${q.QuestionAr || q.QuestionEn}</td>
+          <td>${q.Level}</td>
+          <td>الخيار ${parseInt(q.CorrectIndex) + 1}</td>
+          <td>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteQuestion(${q.rowNum || idx})"><i class="fa-solid fa-trash"></i> حذف</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
 
     function renderPrices() {
       const tbody = document.getElementById("prices-table-body");
@@ -1916,7 +1927,7 @@
     window.deleteVideo = async function(id) {
       if (!confirm("هل تريد حذف هذا الفيديو؟")) return;
       try {
-        const response = await apiRequest({ action: "adminDeleteVideo", adminPassword, videoId: id });
+        const response = await apiRequest({ action: "adminDeleteVideo", adminPassword, id });
         if (response.success) {
           showToast("تم الحذف بنجاح.", "success");
           loadAdminDashboardData();
@@ -2300,7 +2311,197 @@
         });
       }
     });
+
+    // ═══════════════════════════════════════════════════════════════
+    //  VIDEO QUIZ REVIEW SYSTEM
+    // ═══════════════════════════════════════════════════════════════
+    let allVideoQuizzes = [];
+
+    async function loadVideoQuizzes() {
+      const container = document.getElementById('video-quizzes-list');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> جاري التحميل...</div>';
+      try {
+        const resp = await apiRequest({ action: 'adminGetVideoQuizzes', adminPassword });
+        if (resp.success) {
+          allVideoQuizzes = resp.quizzes || [];
+          renderVideoQuizzes();
+        } else {
+          container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--color-danger, #ef4444);">${resp.message}</div>`;
+        }
+      } catch(err) {
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">خطأ في الاتصال</div>';
+      }
+    }
+
+    function renderVideoQuizzes() {
+      const container = document.getElementById('video-quizzes-list');
+      if (!container) return;
+
+      if (allVideoQuizzes.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:60px 20px; color:var(--text-muted);">
+            <i class="fa-solid fa-inbox" style="font-size:40px; margin-bottom:16px; opacity:0.4;"></i>
+            <div style="font-size:16px; font-weight:600;">لا توجد اختبارات مقدمة حتى الآن</div>
+            <div style="font-size:13px; margin-top:8px;">ستظهر هنا أسئلة الذكاء الاصطناعي بعد أن ينتهي المتدربون من مشاهدة المحاضرات</div>
+          </div>`;
+        return;
+      }
+
+      const statusColors = {
+        'pending_review': '#d97706',
+        'reviewed': '#0284c7',
+        'approved': '#059669',
+        'rejected': '#dc2626'
+      };
+      const statusLabels = {
+        'pending_review': 'بانتظار المراجعة',
+        'reviewed': 'تمت المراجعة',
+        'approved': 'معتمد',
+        'rejected': 'مرفوض'
+      };
+
+      container.innerHTML = allVideoQuizzes.map((quiz, idx) => {
+        const questions = (() => { try { return JSON.parse(quiz.questions || quiz.Questions || '[]'); } catch(e) { return []; } })();
+        const answers   = (() => { try { return JSON.parse(quiz.answers   || quiz.Answers   || '[]'); } catch(e) { return []; } })();
+        const status  = quiz.status || quiz.Status || 'pending_review';
+        const name    = quiz.trainee_name || quiz.Name || 'متدرب';
+        const level   = quiz.level || quiz.Level || 'Passengers';
+        const title   = quiz.video_title || quiz.VideoTitle || 'فيديو غير محدد';
+        const score   = quiz.score || quiz.Score || 0;
+        const ts      = quiz.created_at || quiz.Timestamp || '';
+        const color   = statusColors[status] || '#6b7280';
+        const label   = statusLabels[status] || status;
+        const dateStr = ts ? new Date(ts).toLocaleDateString('ar-EG', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+
+        const questionsHtml = questions.map((q, qi) => {
+          const traineeAns = answers[qi] !== undefined ? answers[qi] : -1;
+          const isCorrect = traineeAns === q.correct;
+          const opts = (q.options || []).map((opt, oi) => {
+            let bg = '';
+            let icon = '';
+            if (oi === q.correct) { bg = 'background: rgba(5,150,105,0.12);'; icon = ' ✅'; }
+            if (oi === traineeAns && !isCorrect) { bg = 'background: rgba(220,38,38,0.1);'; icon = ' ❌'; }
+            if (oi === traineeAns && isCorrect)  { bg = 'background: rgba(5,150,105,0.2);'; }
+            return `<div style="padding: 5px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 3px; ${bg}">${oi + 1}. ${opt}${icon}</div>`;
+          }).join('');
+
+          const promoteBtn = `<button
+            onclick="promoteQuizQuestion(${idx}, ${qi}, '${level}')"
+            style="font-size: 11px; padding: 4px 10px; border-radius: 6px; background: var(--color-gold-glow, rgba(217,119,6,0.1)); border: 1px solid var(--color-gold, #d97706); color: var(--color-gold, #d97706); cursor: pointer; font-family: inherit; margin-top: 6px;"
+            title="إضافة هذا السؤال لبنك الأسئلة">
+            <i class="fa-solid fa-plus-circle"></i> إضافة لبنك الأسئلة
+          </button>`;
+
+          return `
+            <div style="border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; background: var(--bg-primary);">
+              <div style="font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">${qi + 1}. ${q.q}</div>
+              ${opts}
+              ${promoteBtn}
+            </div>`;
+        }).join('');
+
+        return `
+          <div style="border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; background: var(--bg-secondary); box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.06));">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border-color);">
+              <div>
+                <div style="font-size: 15px; font-weight: 800; color: var(--color-primary); margin-bottom: 4px;">
+                  <i class="fa-solid fa-user-graduate" style="margin-left: 6px;"></i>${name}
+                </div>
+                <div style="font-size: 12px; color: var(--text-muted);">
+                  <span>المستوى: <strong>${level}</strong></span> &nbsp;|
+                  <span> الفيديو: <strong>${title}</strong></span> &nbsp;|
+                  <span> النتيجة: <strong style="color: ${score >= 75 ? '#059669' : score >= 50 ? '#d97706' : '#dc2626'}">${score}%</strong></span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">${dateStr}</div>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+                <span style="padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; color: ${color}; background: ${color}22;">${label}</span>
+                <div style="display: flex; gap: 6px;">
+                  <button onclick="reviewVideoQuiz(${idx}, 'reviewed')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; background: rgba(2,132,199,0.1); border: 1px solid #0284c7; color: #0284c7; cursor: pointer; font-family: inherit;">✅ تمت المراجعة</button>
+                  <button onclick="reviewVideoQuiz(${idx}, 'rejected')" style="font-size: 11px; padding: 4px 10px; border-radius: 6px; background: rgba(220,38,38,0.08); border: 1px solid #dc2626; color: #dc2626; cursor: pointer; font-family: inherit;">❌ غير دقيقة</button>
+                </div>
+              </div>
+            </div>
+            <!-- Questions -->
+            <div id="quiz-questions-${idx}">${questionsHtml}</div>
+          </div>`;
+      }).join('');
+    }
+
+    async function reviewVideoQuiz(idx, newStatus) {
+      const quiz = allVideoQuizzes[idx];
+      if (!quiz) return;
+      const quizId = quiz.id;
+      const quizIndex = idx;
+      try {
+        const resp = await apiRequest({ action: 'adminReviewVideoQuiz', adminPassword, quizId, quizIndex, status: newStatus, comment: '' });
+        if (resp.success) {
+          allVideoQuizzes[idx].status = allVideoQuizzes[idx].Status = newStatus;
+          renderVideoQuizzes();
+          showToast('✅ تم تحديث حالة الاختبار.', 'success');
+        } else {
+          showToast(resp.message, 'error');
+        }
+      } catch(err) { console.error(err); }
+    }
+
+    async function promoteQuizQuestion(quizIdx, questionIdx, level) {
+      const quiz = allVideoQuizzes[quizIdx];
+      if (!quiz) return;
+      const questions = (() => { try { return JSON.parse(quiz.questions || quiz.Questions || '[]'); } catch(e) { return []; } })();
+      const q = questions[questionIdx];
+      if (!q) return;
+
+      if (!confirm(`هل تريد إضافة هذا السؤال لبنك أسئلة امتحان المستوى "${level}"?
+
+${q.q}`)) return;
+
+      const opts = q.options || [];
+      try {
+        const resp = await apiRequest({
+          action: 'adminPromoteQuizQuestion',
+          adminPassword,
+          level: level,
+          questionAr: q.q,
+          questionEn: q.q,
+          option1Ar: opts[0] || '',
+          option2Ar: opts[1] || '',
+          option3Ar: opts[2] || '',
+          correctIndex: String(q.correct)
+        });
+        if (resp.success) {
+          showToast('🌟 تم إضافة السؤال لبنك الأسئلة بنجاح!', 'success');
+        } else {
+          showToast(resp.message || 'خطأ في الإضافة', 'error');
+        }
+      } catch(err) { console.error(err); }
+    }
+
   </script>
+
+  <!-- Video Quiz Submissions Panel -->
+  <section class="card admin-section-content" id="sec-videoquizzes" style="padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+      <h3 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 10px;">
+        <i class="fa-solid fa-brain" style="color: var(--color-gold);"></i>
+        مراجعة أسئلة الذكاء الاصطناعي للفيديوهات
+      </h3>
+      <button class="btn btn-primary" onclick="loadVideoQuizzes()" style="gap: 6px;">
+        <i class="fa-solid fa-rotate"></i> تحديث
+      </button>
+    </div>
+    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">
+      هذه الأسئلة تم توليدها تلقائياً بواسطة الذكاء الاصطناعي (Gemini) بناءً على عنوان كل محاضرة. يمكنك مراجعتها وإضافة الجيد منها لبنك اسئلة الامتحان.
+    </p>
+    <div id="video-quizzes-list" style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="text-align: center; color: var(--text-muted); padding: 40px;">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 12px;"></i>
+        <div>جاري تحميل الاختبارات...</div>
+      </div>
+    </div>
+  </section>
 
   <!-- Report Review Modal -->
   <div class="modal-overlay" id="report-review-modal" style="z-index: 10000;">
