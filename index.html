@@ -13,15 +13,6 @@
   <link rel="stylesheet" href="style.css?v=2.0">
 </head>
 <body>
-  <!--==================== Preloader Start ====================-->
-  <div id="loading">
-    <div id="loading-center">
-      <div id="loading-center-absolute">
-        <span class="loader"></span>
-      </div>
-    </div>
-  </div>
-  <!--==================== Preloader End ====================-->
 
   <!-- Floating background design decorations (for empty spaces) -->
   <div class="bg-decorations-wrapper" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: none; z-index: -1;">
@@ -1174,17 +1165,6 @@
         }
       });
     };
-
-    // Hide Preloader on Load
-    window.addEventListener('load', function() {
-      const loader = document.getElementById('loading');
-      if (loader) {
-        loader.classList.add('hide');
-        setTimeout(() => {
-          loader.style.display = 'none';
-        }, 500);
-      }
-    });
   </script>
 </body>
 </html>

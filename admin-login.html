@@ -91,15 +91,6 @@
   </style>
 </head>
 <body>
-  <!--==================== Preloader Start ====================-->
-  <div id="loading">
-    <div id="loading-center">
-      <div id="loading-center-absolute">
-        <span class="loader"></span>
-      </div>
-    </div>
-  </div>
-  <!--==================== Preloader End ====================-->
 
   <!-- Top Utilities bar -->
   <div class="app-container" style="max-width: 1200px; padding: 20px 20px 0; display: flex; justify-content: flex-end; gap: 10px;">
@@ -344,17 +335,6 @@
     passInput.addEventListener("keyup", updateTracker);
     passInput.addEventListener("focus", updateTracker);
     window.addEventListener("resize", updateTracker);
-
-    // Hide Preloader on Load
-    window.addEventListener('load', function() {
-      const loader = document.getElementById('loading');
-      if (loader) {
-        loader.classList.add('hide');
-        setTimeout(() => {
-          loader.style.display = 'none';
-        }, 500);
-      }
-    });
   </script>
 </body>
 </html>
