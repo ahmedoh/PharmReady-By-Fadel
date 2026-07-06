@@ -30,8 +30,8 @@ console.log(SUPABASE_URL && SUPABASE_KEY ? "🚀 Running in SUPABASE MODE" : (is
  */
 async function apiRequest(params) {
   if (typeof localStorage !== 'undefined') {
-    const sUser = localStorage.getItem("admin_username");
-    const sPass = localStorage.getItem("admin_password");
+    const sUser = sessionStorage.getItem("admin_username");
+    const sPass = sessionStorage.getItem("admin_password");
     if (sUser && !params.adminUsername) params.adminUsername = sUser.trim().toLowerCase();
     if (sPass && !params.adminPassword) params.adminPassword = sPass.trim().toLowerCase();
   }
@@ -1418,7 +1418,96 @@ async function handleSupabaseRequest(params) {
       if (error) throw error;
       return { success: true, message: "تم حذف السؤال بنجاح." };
       
-    } else if (action === "getTraineeProgress") {
+    
+    } else if (action === "getTraineeVideos") {
+      const email = String(params.email).trim().toLowerCase();
+      const password = String(params.password).trim();
+      
+      // Verify user
+      const { data: trainee, error: traineeErr } = await supabaseClient
+        .from('trainees')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .eq('status', 'accepted')
+        .maybeSingle();
+        
+      if (traineeErr) throw traineeErr;
+      if (!trainee) return { success: false, message: "غير مصرح بالدخول." };
+      
+      const currentLevel = trainee.current_level || "Passengers";
+      
+      // Get videos
+      const { data: videos, error: videosErr } = await supabaseClient
+        .from('videos')
+        .select('*')
+        .eq('level', currentLevel);
+      if (videosErr) throw videosErr;
+      
+      // Get progress (videos watched)
+      const { data: progData, error: progErr } = await supabaseClient
+        .from('progress')
+        .select('*')
+        .eq('email', email);
+      if (progErr) throw progErr;
+      
+      const watched = progData.map(p => p.video_id);
+      
+      // Get promotions
+      const { data: promos, error: promosErr } = await supabaseClient
+        .from('promotions')
+        .select('*')
+        .eq('email', email);
+      if (promosErr) throw promosErr;
+      
+      const completedLevels = promos.filter(p => p.status === 'approved').map(p => p.from_level);
+      const pendingPromotion = promos.some(p => p.status === 'pending');
+      
+      // Get questions
+      const { data: questionsData, error: questErr } = await supabaseClient
+        .from('questions')
+        .select('*')
+        .eq('level', currentLevel);
+      if (questErr) throw questErr;
+      
+      const levelQuestions = questionsData.map(x => ({
+        q: x.question_ar,
+        q_en: x.question_en,
+        options: [x.option1_ar, x.option2_ar, x.option3_ar].filter(Boolean),
+        options_en: [x.option1_en, x.option2_en, x.option3_en].filter(Boolean),
+        correct: parseInt(x.correct_index) || 0
+      }));
+      
+      return {
+        success: true,
+        videos: videos.map(v => ({ id: v.id, VideoId: v.id, Title: v.title, Url: v.url, Level: v.level })),
+        watched: watched,
+        currentLevel: currentLevel,
+        completedLevels: completedLevels,
+        pendingPromotion: pendingPromotion,
+        questions: levelQuestions
+      };
+      
+    } else if (action === "updateProgress") {
+      const email = String(params.email).trim().toLowerCase();
+      const videoId = String(params.videoId).trim();
+      
+      // Check if it already exists
+      const { data: existing } = await supabaseClient
+        .from('progress')
+        .select('*')
+        .eq('email', email)
+        .eq('video_id', videoId)
+        .maybeSingle();
+        
+      if (!existing) {
+        const { error } = await supabaseClient
+          .from('progress')
+          .insert([{ email, video_id: videoId, timestamp: new Date().toISOString() }]);
+        if (error) throw error;
+      }
+      return { success: true, message: "تم تسجيل إتمام المشاهدة بنجاح." };
+} else if (action === "getTraineeProgress") {
       const email = String(params.email).trim().toLowerCase();
       const level = params.level;
       const { data, error } = await supabaseClient

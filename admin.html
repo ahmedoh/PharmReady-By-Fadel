@@ -1284,12 +1284,12 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script>
-    const adminUsername    = (localStorage.getItem("admin_username") || "").trim().toLowerCase();
-    const adminPassword    = (localStorage.getItem("admin_password") || "").trim().toLowerCase();
-    const adminLoggedIn    = localStorage.getItem("admin_logged_in");
-    const adminRoleSS      = (localStorage.getItem("admin_role") || "").trim();
-    const adminPermSS      = (localStorage.getItem("admin_permissions") || "").trim().toLowerCase();
-    const adminDisplayName = (localStorage.getItem("admin_display_name") || adminUsername).trim();
+    const adminUsername    = (sessionStorage.getItem("admin_username") || "").trim().toLowerCase();
+    const adminPassword    = (sessionStorage.getItem("admin_password") || "").trim().toLowerCase();
+    const adminLoggedIn    = sessionStorage.getItem("admin_logged_in");
+    const adminRoleSS      = (sessionStorage.getItem("admin_role") || "").trim();
+    const adminPermSS      = (sessionStorage.getItem("admin_permissions") || "").trim().toLowerCase();
+    const adminDisplayName = (sessionStorage.getItem("admin_display_name") || adminUsername).trim();
 
     if (!adminLoggedIn || !adminUsername) {
       window.location.href = "index.html";
@@ -2445,12 +2445,12 @@
     };
 
     window.adminLogout = function() {
-      localStorage.removeItem("admin_logged_in");
-    localStorage.removeItem("admin_username");
-    localStorage.removeItem("admin_password");
-    localStorage.removeItem("admin_role");
-    localStorage.removeItem("admin_permissions");
-    localStorage.removeItem("admin_display_name");
+      sessionStorage.removeItem("admin_logged_in");
+    sessionStorage.removeItem("admin_username");
+    sessionStorage.removeItem("admin_password");
+    sessionStorage.removeItem("admin_role");
+    sessionStorage.removeItem("admin_permissions");
+    sessionStorage.removeItem("admin_display_name");
       window.location.href = "index.html";
     };
 

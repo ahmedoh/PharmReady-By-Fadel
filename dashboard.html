@@ -1644,7 +1644,7 @@
     };
 
     // Authenticate
-    const traineeLoggedIn = localStorage.getItem("trainee_logged_in");
+    const traineeLoggedIn = sessionStorage.getItem("trainee_logged_in");
     const traineeEmail = localStorage.getItem("trainee_email");
     const traineePassword = localStorage.getItem("trainee_password");
     const traineeName = localStorage.getItem("trainee_name");
@@ -2332,7 +2332,7 @@
 
     // Logout
     function logout() {
-      localStorage.removeItem("trainee_logged_in");
+      sessionStorage.removeItem("trainee_logged_in");
       localStorage.removeItem("trainee_email");
       localStorage.removeItem("trainee_password");
       localStorage.removeItem("trainee_name");

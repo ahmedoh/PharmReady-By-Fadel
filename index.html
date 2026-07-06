@@ -946,9 +946,7 @@
       }
     };
 
-    if (localStorage.getItem("trainee_logged_in") === "true") {
-      window.location.href = "dashboard.html";
-    }
+    // Removed auto-redirect to prevent lagging and mistakes as requested
 
     let currentLang = localStorage.getItem("app_lang") || "ar";
     let currentTheme = localStorage.getItem("app_theme") || "sand"; // sand, green, dark
@@ -1210,12 +1208,12 @@
         });
         
         if (adminCheck.success && adminCheck.admin) {
-          localStorage.setItem("admin_logged_in", "true");
-          localStorage.setItem("admin_username", adminCheck.admin.username);
-          localStorage.setItem("admin_password", password);
-          localStorage.setItem("admin_role", adminCheck.admin.role);
-          localStorage.setItem("admin_permissions", adminCheck.admin.permissions);
-          localStorage.setItem("admin_display_name", adminCheck.admin.displayName || adminCheck.admin.username);
+          sessionStorage.setItem("admin_logged_in", "true");
+          sessionStorage.setItem("admin_username", adminCheck.admin.username);
+          sessionStorage.setItem("admin_password", password);
+          sessionStorage.setItem("admin_role", adminCheck.admin.role);
+          sessionStorage.setItem("admin_permissions", adminCheck.admin.permissions);
+          sessionStorage.setItem("admin_display_name", adminCheck.admin.displayName || adminCheck.admin.username);
 
           showToast(currentLang === "ar"
             ? `👑 مرحباً ${adminCheck.admin.displayName} — جاري التوجيه للوحة التحكم...`
@@ -1223,9 +1221,9 @@
           setTimeout(() => { window.location.href = "admin.html"; }, 1800);
           return;
         } else if (adminCheck.success) {
-          localStorage.setItem("admin_logged_in", "true");
-          localStorage.setItem("admin_username", cleanUsername);
-          localStorage.setItem("admin_password", password);
+          sessionStorage.setItem("admin_logged_in", "true");
+          sessionStorage.setItem("admin_username", cleanUsername);
+          sessionStorage.setItem("admin_password", password);
           showToast(`👑 مدير معروف: ${cleanUsername}`, "success");
           setTimeout(() => { window.location.href = "admin.html"; }, 1800);
           return;
@@ -1240,7 +1238,7 @@
 
         if (response.success) {
           // Save sessions
-          localStorage.setItem("trainee_logged_in", "true");
+          sessionStorage.setItem("trainee_logged_in", "true");
           localStorage.setItem("trainee_email", email);
           localStorage.setItem("trainee_password", password);
           localStorage.setItem("trainee_name", response.trainee.name);
@@ -1292,3 +1290,4 @@
     </script>
 </body>
 </html>
+
