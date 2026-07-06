@@ -29,11 +29,25 @@ console.log(SUPABASE_URL && SUPABASE_KEY ? "🚀 Running in SUPABASE MODE" : (is
  * API Request Wrapper
  */
 async function apiRequest(params) {
-  if (typeof localStorage !== 'undefined') {
-    const sUser = localStorage.getItem("admin_username");
-    const sPass = localStorage.getItem("admin_password");
-    if (sUser && !params.adminUsername) params.adminUsername = sUser.trim().toLowerCase();
-    if (sPass && !params.adminPassword) params.adminPassword = sPass.trim().toLowerCase();
+  let sUser = "";
+  let sPass = "";
+  if (typeof sessionStorage !== 'undefined') {
+    sUser = sessionStorage.getItem("admin_username") || sessionStorage.getItem("trainee_email");
+    sPass = sessionStorage.getItem("admin_password") || sessionStorage.getItem("trainee_password");
+  }
+  if (!sUser && typeof localStorage !== 'undefined') {
+    sUser = localStorage.getItem("admin_username") || localStorage.getItem("trainee_email");
+    sPass = localStorage.getItem("admin_password") || localStorage.getItem("trainee_password");
+  }
+  
+  if (sUser) {
+    if (params.action && String(params.action).startsWith("admin")) {
+      if (!params.adminUsername) params.adminUsername = sUser.trim().toLowerCase();
+      if (!params.adminPassword) params.adminPassword = sPass;
+    } else {
+      if (!params.email) params.email = sUser.trim().toLowerCase();
+      if (!params.password) params.password = sPass;
+    }
   }
 
   // Intercept and route to Supabase handler if configured
