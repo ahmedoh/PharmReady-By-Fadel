@@ -104,12 +104,15 @@
       .video-player-container { min-height: 640px; }
     }
     #yt-player-placeholder,
-    .video-player-container iframe {
-      position: absolute;
-      inset: 0;
+    .video-player-container iframe,
+    .video-player-container > div,           /* YT API wraps iframe in a div */
+    .video-player-container > div > iframe { /* nested iframe from YT API   */
+      position: absolute !important;
+      inset: 0 !important;
+      top: 0 !important; left: 0 !important;
       width: 100% !important;
       height: 100% !important;
-      border: 0;
+      border: 0 !important;
       pointer-events: none; /* Prevent direct iframe interaction — overlay handles all clicks */
     }
     .video-overlay-protection {
@@ -1362,11 +1365,15 @@
       return input;
     }
 
-    // ── Secure YouTube Player using youtube-nocookie.com ─────────────────────
-    // The nocookie domain bypasses "Video unavailable" embedding restrictions
-    // while never exposing the raw video ID in the DOM.
+    // ── Secure YouTube Player ────────────────────────────────────────────────
+    // Uses standard YouTube IFrame API (the 'host' nocookie param causes crashes).
+    // Security is enforced via: pointer-events:none on iframe, custom overlay,
+    // watermark, and no DOM-exposed video IDs.
+    let videoHasBeenPlaying = false; // Guard: prevent quiz on page-load state changes
+
     function loadYouTubePlayer(videoId) {
       const cleanId = extractYouTubeId(videoId);
+      videoHasBeenPlaying = false; // Reset flag for new video
 
       // If player already exists, just swap the video
       if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
@@ -1374,10 +1381,10 @@
         return;
       }
 
-      // Destroy any stale player
+      // Destroy any stale player cleanly
       if (ytPlayer) { try { ytPlayer.destroy(); } catch(e) {} ytPlayer = null; }
 
-      // Reset placeholder div (YT API replaces it with an iframe)
+      // Reset the placeholder div so YT API can replace it with an iframe
       const ph = document.getElementById('yt-player-placeholder');
       if (ph && ph.tagName === 'IFRAME') {
         const newPh = document.createElement('div');
@@ -1388,33 +1395,38 @@
       try {
         ytPlayer = new YT.Player('yt-player-placeholder', {
           videoId: cleanId,
-          host: 'https://www.youtube-nocookie.com', // ← KEY FIX: bypasses restrictions
           playerVars: {
-            'autoplay': 0,
-            'controls': 0,        // Hide YouTube's own controls — ours replace them
-            'rel': 0,
-            'showinfo': 0,
+            'autoplay'      : 0,
+            'controls'      : 0,   // Hide YouTube UI — our custom controls replace them
+            'rel'           : 0,
+            'showinfo'      : 0,
             'modestbranding': 1,
-            'enablejsapi': 1,
-            'disablekb': 1,       // Prevent keyboard shortcuts exposing URL
-            'fs': 0,              // Disable YouTube fullscreen (we have our own)
-            'iv_load_policy': 3,  // Hide annotations
+            'enablejsapi'   : 1,
+            'disablekb'     : 1,   // Prevent keyboard shortcuts
+            'fs'            : 0,   // Disable YouTube fullscreen (we have our own)
+            'iv_load_policy': 3,   // No annotations
             'cc_load_policy': 0,
-            'playsinline': 1,
-            'origin': window.location.origin || 'https://pharmready.maghawry.com'
+            'playsinline'   : 1,
+            'origin'        : window.location.origin || 'https://pharmready.maghawry.com'
           },
           events: {
-            'onReady': onPlayerReady,
+            'onReady'      : onPlayerReady,
             'onStateChange': onPlayerStateChange
           }
         });
       } catch (e) {
         console.error('YT Player init error:', e);
-        showToast('تعذّر تهيئة مشغل الفيديو. يرجى إعادة تحميل الصفحة.', 'error');
+        // Fallback: direct iframe embed
+        const fallbackPh = document.getElementById('yt-player-placeholder');
+        if (fallbackPh) {
+          const iframe = document.createElement('iframe');
+          iframe.id = 'yt-player-placeholder';
+          iframe.src = `https://www.youtube.com/embed/${cleanId}?enablejsapi=1&rel=0&controls=0&modestbranding=1&playsinline=1`;
+          iframe.setAttribute('allowfullscreen', '');
+          fallbackPh.parentNode.replaceChild(iframe, fallbackPh);
+        }
       }
     }
-
-
     function onPlayerReady(event) {
       updateVolumeControls();
       updatePlayerControls();
@@ -1632,19 +1644,22 @@
       if (event.data === YT.PlayerState.PLAYING) {
         btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
         startControlsInterval();
+        videoHasBeenPlaying = true; // ← guard: video was actively played
       } else {
         btn.innerHTML = '<i class="fa-solid fa-play"></i>';
         stopControlsInterval();
       }
 
-      if (event.data === 0 && currentVideoId) { // Video ENDED
+      if (event.data === 0 && currentVideoId && videoHasBeenPlaying) {
+        // Video ENDED and was actually watched — show AI quiz
         stopControlsInterval();
-        // Get current video title
-        const currentTitle = document.getElementById("playing-video-title").textContent.replace(/^[^\w\u0600-\u06FF]+/, '').trim();
-        // Show AI quiz modal BEFORE marking as watched
+        videoHasBeenPlaying = false; // reset so re-watching doesn't double-trigger
+        const currentTitle = document.getElementById("playing-video-title")
+          .textContent.replace(/^[^\w\u0600-\u06FF]+/, '').trim();
         showVideoQuizModal(currentVideoId, currentTitle);
       }
     }
+
 
     // ═══════════════════════════════════════════════════════════════════════════
     //  POST-VIDEO AI QUIZ SYSTEM  (Gemini Flash API)

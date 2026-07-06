@@ -662,6 +662,29 @@
         </div>
       </section>
 
+      <!-- Panel 11: AI Video Quiz Review -->
+      <section class="card admin-section-content" id="sec-videoquizzes" style="padding: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+          <h3 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-brain" style="color: var(--color-gold);"></i>
+            مراجعة أسئلة الذكاء الاصطناعي للفيديوهات
+          </h3>
+          <button class="btn btn-primary" onclick="loadVideoQuizzes()" style="gap: 6px;">
+            <i class="fa-solid fa-rotate"></i> تحديث
+          </button>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px; line-height: 1.7;">
+          هذه الأسئلة تم توليدها تلقائياً بواسطة Gemini AI بناءً على عنوان كل محاضرة.
+          يمكنك مراجعتها وإضافة الجيد منها لبنك أسئلة الامتحان.
+        </p>
+        <div id="video-quizzes-list" style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="text-align: center; color: var(--text-muted); padding: 40px;">
+            <i class="fa-solid fa-brain" style="font-size: 32px; margin-bottom: 12px; opacity: 0.3;"></i>
+            <div>اضغط على زر تحديث لتحميل البيانات</div>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -2322,15 +2345,15 @@
       if (!container) return;
       container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> جاري التحميل...</div>';
       try {
-        const resp = await apiRequest({ action: 'adminGetVideoQuizzes', adminPassword });
+        const resp = await apiRequest({ action: 'adminGetVideoQuizzes', adminUsername, adminPassword });
         if (resp.success) {
           allVideoQuizzes = resp.quizzes || [];
           renderVideoQuizzes();
         } else {
-          container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--color-danger, #ef4444);">${resp.message}</div>`;
+          container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--color-danger,#ef4444); font-size:13px;">${resp.message}</div>`;
         }
       } catch(err) {
-        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">خطأ في الاتصال</div>';
+        container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--text-muted);">خطأ في الاتصال. تأكد من تسجيل الدخول.</div>';
       }
     }
 
@@ -2433,16 +2456,21 @@
     async function reviewVideoQuiz(idx, newStatus) {
       const quiz = allVideoQuizzes[idx];
       if (!quiz) return;
-      const quizId = quiz.id;
-      const quizIndex = idx;
       try {
-        const resp = await apiRequest({ action: 'adminReviewVideoQuiz', adminPassword, quizId, quizIndex, status: newStatus, comment: '' });
+        const resp = await apiRequest({
+          action: 'adminReviewVideoQuiz',
+          adminUsername, adminPassword,
+          quizId: quiz.id,
+          quizIndex: idx,
+          status: newStatus,
+          comment: ''
+        });
         if (resp.success) {
           allVideoQuizzes[idx].status = allVideoQuizzes[idx].Status = newStatus;
           renderVideoQuizzes();
           showToast('✅ تم تحديث حالة الاختبار.', 'success');
         } else {
-          showToast(resp.message, 'error');
+          showToast(resp.message || 'خطأ', 'error');
         }
       } catch(err) { console.error(err); }
     }
@@ -2454,16 +2482,14 @@
       const q = questions[questionIdx];
       if (!q) return;
 
-      if (!confirm(`هل تريد إضافة هذا السؤال لبنك أسئلة امتحان المستوى "${level}"?
-
-${q.q}`)) return;
+      if (!confirm(`هل تريد إضافة هذا السؤال لبنك أسئلة امتحان المستوى "${level}"?\n\n${q.q}`)) return;
 
       const opts = q.options || [];
       try {
         const resp = await apiRequest({
           action: 'adminPromoteQuizQuestion',
-          adminPassword,
-          level: level,
+          adminUsername, adminPassword,
+          level,
           questionAr: q.q,
           questionEn: q.q,
           option1Ar: opts[0] || '',
@@ -2480,28 +2506,6 @@ ${q.q}`)) return;
     }
 
   </script>
-
-  <!-- Video Quiz Submissions Panel -->
-  <section class="card admin-section-content" id="sec-videoquizzes" style="padding: 20px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
-      <h3 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 10px;">
-        <i class="fa-solid fa-brain" style="color: var(--color-gold);"></i>
-        مراجعة أسئلة الذكاء الاصطناعي للفيديوهات
-      </h3>
-      <button class="btn btn-primary" onclick="loadVideoQuizzes()" style="gap: 6px;">
-        <i class="fa-solid fa-rotate"></i> تحديث
-      </button>
-    </div>
-    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">
-      هذه الأسئلة تم توليدها تلقائياً بواسطة الذكاء الاصطناعي (Gemini) بناءً على عنوان كل محاضرة. يمكنك مراجعتها وإضافة الجيد منها لبنك اسئلة الامتحان.
-    </p>
-    <div id="video-quizzes-list" style="display: flex; flex-direction: column; gap: 16px;">
-      <div style="text-align: center; color: var(--text-muted); padding: 40px;">
-        <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 12px;"></i>
-        <div>جاري تحميل الاختبارات...</div>
-      </div>
-    </div>
-  </section>
 
   <!-- Report Review Modal -->
   <div class="modal-overlay" id="report-review-modal" style="z-index: 10000;">
