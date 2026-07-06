@@ -1291,9 +1291,7 @@
     const adminPermSS      = (sessionStorage.getItem("admin_permissions") || "").trim().toLowerCase();
     const adminDisplayName = (sessionStorage.getItem("admin_display_name") || adminUsername).trim();
 
-    if (!adminLoggedIn || !adminUsername) {
-      window.location.href = "index.html";
-    }
+    if (!adminLoggedIn || !adminUsername) { document.getElementById("admin-login-view").style.display = "flex"; document.getElementById("admin-dashboard-view").style.display = "none"; } else { document.getElementById("admin-login-view").style.display = "none"; document.getElementById("admin-dashboard-view").style.display = "block"; }
 
     let allTrainees = [];
     let allVideos = [];
@@ -1357,11 +1355,7 @@
     let activeFormPerms = ["trainees", "promotions", "videos", "reports"];
 
     // Greet the logged supervisor on startup
-    window.addEventListener("DOMContentLoaded", () => {
-      applySettings();
-      setupMenuAccessibility();
-      loadAdminDashboardData();
-    });
+    window.addEventListener("DOMContentLoaded", () => { applySettings(); setupMenuAccessibility(); if (adminLoggedIn && adminUsername) loadAdminDashboardData(); });
 
     function applySettings() {
       document.body.classList.remove("green-theme", "dark-theme");
@@ -2460,3 +2454,5 @@
 </div>
 </body>
 </html>
+
+
