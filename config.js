@@ -761,9 +761,9 @@ function handleDemoRequest(params) {
       return { success: false, message: "غير مصرح بالدخول." };
     }
     return { success: true, progress: getTable("Progress") };
-  }
 
   } else if (action === "submitVideoQuiz") {
+
     const trainees = getTable("Trainees");
     const email = String(params.email).trim().toLowerCase();
     const password = String(params.password).trim();
