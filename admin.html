@@ -1,0 +1,2462 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم | PharMReady</title>
+  <!-- Google Fonts: Cairo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-wrapper {
+      display: flex;
+      min-height: 100vh;
+    }
+    .admin-sidebar {
+      width: 260px;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      transition: var(--transition);
+      z-index: 100;
+    }
+    .admin-sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+    .admin-tab-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .admin-tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: right;
+      transition: var(--transition);
+      width: 100%;
+    }
+    .admin-tab-btn:hover {
+      background: var(--bg-primary);
+      color: var(--text-main);
+    }
+    .admin-tab-btn.active {
+      background: var(--color-primary-glow);
+      color: var(--color-primary);
+      border-color: var(--border-color);
+    }
+    .admin-main-container {
+      flex: 1;
+      padding: 25px;
+      background: var(--bg-primary);
+      transition: var(--transition);
+      overflow-y: auto;
+    }
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+    .stat-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-box p {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stat-box .stat-num {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .admin-section-content {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+    .admin-section-content.active {
+      display: block;
+    }
+    .admin-table-container {
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 14px 18px;
+      text-align: right;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      background: var(--bg-primary);
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+    .status-pending { background: rgba(245, 158, 11, 0.15); color: #b45309; }
+    .status-accepted { background: rgba(16, 185, 129, 0.15); color: #047857; }
+    .status-rejected { background: rgba(225, 29, 72, 0.15); color: #e11d48; }
+    
+    .menu-toggle-btn {
+      display: none;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    @media (max-width: 992px) {
+      .admin-sidebar {
+        position: fixed;
+        right: -260px;
+        top: 0;
+        bottom: 0;
+        box-shadow: -5px 0 20px rgba(0,0,0,0.15);
+      }
+      .admin-sidebar.active {
+        right: 0;
+      }
+      .menu-toggle-btn {
+        display: flex;
+      }
+    }
+  
+    .pass-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    .pass-input {
+      width: 100%;
+      padding-left: 45px !important;
+      padding-right: 45px !important;
+      font-size: 16px !important;
+      letter-spacing: 2px !important;
+      font-family: monospace, 'Cairo', sans-serif !important;
+      direction: ltr !important;
+      text-align: left !important;
+      transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+    .pass-icon-left {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+      z-index: 5;
+    }
+    .btn-toggle-visibility {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0;
+      font-size: 1rem;
+      transition: color 0.2s ease, transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+    .btn-toggle-visibility:hover {
+      color: var(--color-primary);
+      transform: translateY(-50%) scale(1.15);
+    }
+    .tracker-dot {
+      position: absolute;
+      bottom: 8px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--color-gold, #c5bd63);
+      box-shadow: 0 0 8px var(--color-gold, #c5bd63), 0 0 15px var(--color-gold, #c5bd63);
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: opacity 0.2s ease, transform 0.2s ease, left 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      z-index: 4;
+    }
+    .pass-input:focus ~ .tracker-dot {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .text-mirror {
+      position: absolute;
+      top: 0;
+      left: 0;
+      white-space: pre;
+      visibility: hidden;
+      font-size: 16px;
+      letter-spacing: 2px;
+      font-family: monospace, 'Cairo', sans-serif;
+      pointer-events: none;
+    }
+  
+</style>
+</head>
+<body>
+<div id="admin-login-view" style="display:none; justify-content: center; align-items: center; min-height: 100vh; background: var(--bg-primary);"><div class="auth-wrapper">
+      
+      <!-- Brand Header -->
+      <div class="auth-header" style="text-align: center;">
+        <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 20px;">
+          <img src="logo_pr.png" alt="PharmReady" class="logo-img" style="height: 48px; max-height: 48px; width: auto; object-fit: contain;">
+          <i class="fa-solid fa-handshake" style="font-size: 32px; color: var(--color-primary); margin: 0 8px;"></i>
+          <img src="logo.png" alt="شعار منصة PharMReady" class="logo-img" style="height: 48px; max-height: 48px; width: auto; object-fit: contain;">
+        </div>
+        <h2 data-i18n="admin_title">منصة PharMReady &amp; PharmReady</h2>
+        <p data-i18n="admin_subtitle">بوابة الدخول المخصصة للمدير والمطور</p>
+      </div>
+
+      <!-- Login Form Card -->
+      <div class="card">
+        <form id="admin-login-form">
+          <!-- Trick browser password managers to prevent autocomplete popup suggestions -->
+          <input type="password" name="dummy-password" style="display:none;" autocomplete="current-password">
+
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label for="admin-username" style="font-weight: bold; margin-bottom: 8px; display: block;">اسم المستخدم للمسؤول <span class="required">*</span></label>
+            <div style="position: relative; display: flex; align-items: center; width: 100%;">
+              <input type="text" id="admin-username" name="admin-user" required placeholder="اسم المستخدم" class="pass-input" style="font-family: inherit; direction: ltr; text-align: left; padding-left: 45px !important;" autocomplete="username">
+              <i class="fa-solid fa-user pass-icon-left"></i>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label for="admin-password" data-i18n="admin_pass_label">رمز المرور السري للمسؤول <span class="required">*</span></label>
+            <div class="pass-wrapper">
+              <input type="password" id="admin-password" name="admin-secret-key" required placeholder="••••••••" autocomplete="new-password" autocomplete="off" class="pass-input" spellingcheck="false">
+              <i class="fa-solid fa-key pass-icon-left"></i>
+              
+              <!-- Toggle visibility button -->
+              <button type="button" id="btn-toggle-pass" class="btn-toggle-visibility" title="إظهار/إخفاء رمز المرور">
+                <i class="fa-solid fa-eye-slash"></i>
+              </button>
+              
+              <!-- Text mirror and tracker dot -->
+              <span id="text-mirror" class="text-mirror"></span>
+              <div id="tracker-dot" class="tracker-dot"></div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-gold" style="width: 100%; padding: 14px;">
+            <i class="fa-solid fa-unlock-keyhole"></i> <span data-i18n="admin_btn_login">تسجيل الدخول للمستودع</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- Footer option to go back to student login -->
+      <div class="auth-footer">
+        <a href="index.html" style="font-size: 13px;"><i class="fa-solid fa-arrow-right"></i> <span data-i18n="admin_back">العودة لبوابة المتدربين</span></a>
+      </div>
+
+    </div></div></div>
+<div id="admin-dashboard-view" style="display:none;">
+
+  
+
+  <div class="admin-wrapper">
+    <!-- Sidebar Navigation Menu -->
+    <aside class="admin-sidebar" id="admin-sidebar-menu">
+      <div class="admin-sidebar-header" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <img src="logo_pr.png" alt="PharmReady" style="height: 32px; width: auto; object-fit: contain;">
+          <i class="fa-solid fa-handshake" style="font-size: 14px; color: var(--color-primary);"></i>
+          <img src="logo.png" alt="Logo" style="height: 32px; width: auto; object-fit: contain;">
+        </div>
+        <div>
+          <h4 id="sidebar-admin-name" style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">جاري التحميل...</h4>
+          <span id="sidebar-admin-role" style="font-size: 11px; color: var(--text-muted);">...</span>
+        </div>
+      </div>
+
+      <nav class="admin-tab-nav">
+        <button class="admin-tab-btn active" id="tab-btn-requests" onclick="switchAdminTab('requests')">
+          <i class="fa-solid fa-user-clock"></i> <span>طلبات الاشتراك</span>
+        </button>
+        <button class="admin-tab-btn" id="tab-btn-promotions" onclick="switchAdminTab('promotions')">
+          <i class="fa-solid fa-award"></i> <span>طلبات الترقية</span>
+        </button>
+        <button class="admin-tab-btn" id="tab-btn-students" onclick="switchAdminTab('students')">
+          <i class="fa-solid fa-users"></i> <span>قاعدة المتدربين</span>
+        </button>
+        <button class="admin-tab-btn" id="tab-btn-videos" onclick="switchAdminTab('videos')">
+          <i class="fa-solid fa-video-camera"></i> <span>محاضرات التدريب</span>
+        </button>
+        <button class="admin-tab-btn" id="tab-btn-questions" onclick="switchAdminTab('questions')">
+          <i class="fa-solid fa-file-signature"></i> <span>إدارة الأسئلة</span>
+        </button>
+        <button class="admin-tab-btn" id="tab-btn-reports" onclick="switchAdminTab('reports')">
+          <i class="fa-solid fa-file-invoice"></i> <span>تقارير الطلاب</span>
+        </button>
+        <button class="admin-tab-btn" id="tab-btn-prices" onclick="switchAdminTab('prices')">
+          <i class="fa-solid fa-tags"></i> <span>الأسعار والعروض</span>
+        </button>
+        <button class="admin-tab-btn" id="tab-btn-admins" onclick="switchAdminTab('admins')">
+          <i class="fa-solid fa-user-shield"></i> <span>إدارة المدراء</span>
+        </button>
+        <button class="admin-tab-btn" id="tab-btn-notifs" onclick="switchAdminTab('notifs')">
+          <i class="fa-solid fa-bell"></i> <span>إشعارات الرموز</span>
+        </button>
+        <button class="admin-tab-btn" id="tab-btn-backup" onclick="switchAdminTab('backup')">
+          <i class="fa-solid fa-database"></i> <span>النسخ الاحتياطي والاستعادة</span>
+        </button>
+        <button class="admin-tab-btn" id="tab-btn-settings" onclick="switchAdminTab('settings')">
+          <i class="fa-solid fa-gear"></i> <span>إعدادات المنصة</span>
+        </button>
+      </nav>
+
+      <div style="margin-top: auto; padding-top: 15px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
+        <a href="index.html" class="btn btn-primary" style="width: 100%; text-decoration: none; justify-content: center; align-items: center; gap: 8px; cursor: pointer; background-color: var(--color-brand-blue); border-color: var(--color-brand-blue); color: white;">
+          <i class="fa-solid fa-house"></i> <span>العودة للرئيسية</span>
+        </a>
+        <button class="btn btn-danger" id="btn-admin-logout" style="width: 100%; cursor: pointer;" onclick="adminLogout()"><i class="fa-solid fa-right-from-bracket"></i> <span>تسجيل الخروج</span></button>
+      </div>
+    </aside>
+
+    <!-- Main Container -->
+    <main class="admin-main-container">
+      <!-- Topbar Header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; gap: 15px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <button class="menu-toggle-btn" onclick="document.getElementById('admin-sidebar-menu').classList.toggle('active')"><i class="fa-solid fa-bars"></i></button>
+          <div>
+            <h1 style="font-size: 20px; font-weight: 800; margin: 0; color: var(--text-main);">لوحة إدارة PharMReady</h1>
+            <p id="topbar-subtitle" style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">المالك والمطور: د. أحمد فاضل</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="theme-switch-btn" id="btn-theme" title="تبديل المظهر / Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+          <button class="lang-switch-btn" id="btn-lang" title="Toggle Language / تبديل اللغة"><i class="fa-solid fa-globe"></i></button>
+        </div>
+      </div>
+
+      <!-- Statistics Summary Cards -->
+      <div class="admin-stats">
+        <div class="stat-box">
+          <p><i class="fa-solid fa-hourglass-start"></i> <span>طلبات معلقة</span></p>
+          <div class="stat-num" id="stat-pending">0</div>
+        </div>
+        <div class="stat-box">
+          <p><i class="fa-solid fa-user-check"></i> <span>متدربين مقبولين</span></p>
+          <div class="stat-num" id="stat-accepted">0</div>
+        </div>
+        <div class="stat-box">
+          <p><i class="fa-solid fa-graduation-cap"></i> <span>طلبات ترقية معلقة</span></p>
+          <div class="stat-num" id="stat-promotions">0</div>
+        </div>
+      </div>
+
+      <!-- Content Panels -->
+
+      <!-- Panel 1: Requests -->
+      <section class="card admin-section-content active" id="sec-requests">
+        <h3 class="card-title"><i class="fa-solid fa-user-clock"></i> طلبات الاشتراك المعلقة</h3>
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>اسم المتدرب</th>
+                <th>السن / الميلاد</th>
+                <th>الهاتف الجوال</th>
+                <th>الكلية والجامعة</th>
+                <th>المستوى / فرع التدريب</th>
+                <th>تاريخ الطلب</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="requests-table-body">
+              <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">جاري تحميل طلبات الاشتراك...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panel 2: Promotions -->
+      <section class="card admin-section-content" id="sec-promotions">
+        <h3 class="card-title"><i class="fa-solid fa-award"></i> طلبات الترقية والشهادات</h3>
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>اسم المتدرب</th>
+                <th>المستوى الحالي</th>
+                <th>المستوى المطلوب</th>
+                <th>النتيجة المحرزة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="promotions-table-body">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">لا توجد طلبات ترقية حالياً.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panel 3: Trainees list -->
+      <section class="card admin-section-content" id="sec-students">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-users"></i> قاعدة بيانات المتدربين المقبولين</h3>
+          <button class="btn btn-primary" onclick="openAddTraineeModal()"><i class="fa-solid fa-user-plus"></i> إضافة متدرب يدوياً</button>
+        </div>
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>رقم الهاتف</th>
+                <th>البريد الإلكتروني المنشأ</th>
+                <th>كلمة المرور</th>
+                <th>المستوى الحالي</th>
+                <th>فرع التدريب</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="students-table-body">
+              <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">جاري تحميل المتدربين...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panel 4: Videos -->
+      <section class="card admin-section-content" id="sec-videos">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-video-camera"></i> إدارة المحاضرات المرئية</h3>
+          <button class="btn btn-primary" onclick="openAddVideoModal()"><i class="fa-solid fa-plus"></i> رفع فيديو جديد</button>
+        </div>
+
+        <!-- Split Grid Layout for Player Preview (Like Trainee Dashboard) -->
+        <div class="dashboard-grid" style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px; margin-bottom: 25px;">
+          <!-- Left: Player Viewport -->
+          <div class="card" style="padding: 15px; background: var(--bg-secondary); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; min-height: 380px;">
+            <h3 id="admin-playing-title" style="font-size: 15px; margin-bottom: 10px; color: var(--text-main); text-align: right;">
+              <i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i> لم يتم اختيار محاضرة لعرضها حالياً.
+            </h3>
+            
+            <div class="video-player-container" id="admin-video-wrapper" style="position: relative; background: #000; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; height: 300px; width: 100%;">
+              <!-- Watermark -->
+              <div class="security-watermark" id="admin-watermark-overlay" style="position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; color: rgba(255,255,255,0.15); font-size: 12px; font-weight: bold; line-height: 1.5; text-align: center; z-index: 5;">
+                <span>المطور العام - لوحة الإدارة</span>
+                <span>PharMReady Security SYSTEM</span>
+              </div>
+              
+              <!-- Player Placeholder -->
+              <div id="admin-yt-placeholder" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 13px;">
+                اضغط على زر "عرض ومعاينة" أدناه لتشغيل المحاضرة هنا
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Quick Playlist -->
+          <div class="card sidebar-card" style="max-height: 380px; overflow-y: auto; padding: 15px; background: var(--bg-secondary); border: 1px solid var(--border-color);">
+            <h3 style="font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; text-align: right; color: var(--color-primary);">
+              <i class="fa-solid fa-play"></i> قائمة التشغيل السريعة المعاينة
+            </h3>
+            <ul class="video-list" id="admin-playlist-container" style="display: flex; flex-direction: column; gap: 8px; list-style: none; padding: 0;">
+              <!-- Dynamically populated same as trainee dashboard -->
+              <li style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px;">لا توجد محاضرات.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>العنوان</th>
+                <th>معرف يوتيوب</th>
+                <th>المستوى المستهدف</th>
+                <th>الترتيب</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="videos-table-body">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">جاري تحميل المحاضرات...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panel 5: Questions -->
+      <section class="card admin-section-content" id="sec-questions">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-file-signature"></i> قاعدة الأسئلة والامتحانات</h3>
+          <button class="btn btn-primary" onclick="openAddQuestionModal()"><i class="fa-solid fa-plus"></i> إضافة سؤال جديد</button>
+        </div>
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>السؤال (عربي)</th>
+                <th>المستوى</th>
+                <th>الموضوع</th>
+                <th>الإجابة الصحيحة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="questions-table-body">
+              <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">جاري تحميل الأسئلة...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panel Settings -->
+      <section class="card admin-section-content" id="sec-settings">
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h2>إعدادات المنصة</h2>
+          <button class="btn btn-primary" id="btn-save-settings"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>
+        </div>
+        <div class="admin-card" style="padding: 20px;">
+          <h3 style="margin-bottom: 15px; color: var(--color-primary);">إعدادات التسجيل والقبول</h3>
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="setting-require-external-form" style="width: 20px; height: 20px;">
+            <span style="font-size: 16px; font-weight: bold;">إجبار الطلاب الجدد على التسجيل في الاستمارة الخارجية (Almaghawry Form)</span>
+          </label>
+          <p style="margin-top: 10px; font-size: 13px; color: var(--text-muted);">عند التفعيل، سيُطلب من الطالب أثناء إنشاء حساب جديد تأكيد تسجيله في الاستمارة الخارجية وإدخال رقم المطابقة لتتمكن من مراجعته في طلبات الانضمام.</p>
+        </div>
+      </section>
+
+      <!-- Panel 6: Reports -->
+      <section class="card admin-section-content" id="sec-reports">
+        <h3 class="card-title"><i class="fa-solid fa-file-invoice"></i> تقارير وشكاوى الطلاب</h3>
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>اسم المتدرب</th>
+                <th>النوع</th>
+                <th>المضمون</th>
+                <th>التاريخ</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="reports-table-body">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">لا توجد بلاغات مسجلة حالياً.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panel 7: Prices -->
+      <section class="card admin-section-content" id="sec-prices">
+        <h3 class="card-title"><i class="fa-solid fa-tags"></i> تسعير وعروض المستويات التدريبية</h3>
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>المستوى</th>
+                <th>الموضوع</th>
+                <th>السعر الأصلي</th>
+                <th>السعر بعد الخصم</th>
+                <th>متاح مجاناً؟</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="prices-table-body">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">جاري تحميل الأسعار...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panel 8: Admins -->
+      <section class="card admin-section-content" id="sec-admins">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-user-shield"></i> إدارة حسابات المشرفين والمدراء</h3>
+          <button class="btn btn-primary" id="btn-add-admin-trigger" onclick="openAddAdminModal()"><i class="fa-solid fa-user-plus"></i> إضافة مشرف جديد</button>
+        </div>
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>اسم المستخدم</th>
+                <th>الاسم المعروض</th>
+                <th>الدور</th>
+                <th>الصلاحيات النشطة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="admins-table-body">
+              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">جاري تحميل حسابات المدراء...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panel 9: Notifications -->
+      <section class="card admin-section-content" id="sec-notifs">
+        <h3 class="card-title"><i class="fa-solid fa-bell"></i> إرسال إشعار جديد للمتدربين</h3>
+        <div class="admin-card" style="padding: 20px; margin-bottom: 30px; border: 1px solid var(--border-color); border-radius: 8px;">
+          <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: bold; margin-bottom: 5px; display: block;">تحديد المستلمين:</label>
+            <select id="notif-target" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid var(--border-color);">
+              <option value="ALL">جميع المتدربين والمدراء عامة</option>
+              <option value="SPECIFIC">متدرب محدد (إيميل أو هاتف)</option>
+            </select>
+          </div>
+          <div class="form-group" id="notif-target-specific" style="margin-bottom: 15px; display: none;">
+            <label style="font-weight: bold; margin-bottom: 5px; display: block;">بريد أو هاتف المتدرب المستهدف:</label>
+            <input type="text" id="notif-target-input" placeholder="01XXXXXXXXX or student@pharmready.com" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid var(--border-color);">
+          </div>
+          <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: bold; margin-bottom: 5px; display: block;">عنوان الإشعار:</label>
+            <input type="text" id="notif-title" placeholder="عنوان التنبيه أو التحديث" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid var(--border-color);">
+          </div>
+          <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: bold; margin-bottom: 5px; display: block;">نص الإشعار:</label>
+            <textarea id="notif-msg" rows="4" placeholder="اكتب تفاصيل الإشعار هنا..." style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid var(--border-color); font-family: inherit; resize: vertical;"></textarea>
+          </div>
+          <button class="btn btn-primary" id="btn-send-notif" style="width: 100%; justify-content: center;"><i class="fa-solid fa-paper-plane"></i> إرسال الإشعار الآن</button>
+        </div>
+
+        <h3 class="card-title" style="margin-top: 20px;"><i class="fa-solid fa-clock-rotate-left"></i> سجل إشعارات الرموز والعمليات</h3>
+        <div class="admin-table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>اسم المتدرب</th>
+                <th>العملية</th>
+                <th>التوقيت</th>
+              </tr>
+            </thead>
+            <tbody id="notifs-table-body">
+              <tr><td colspan="3" style="text-align: center; color: var(--text-muted);">لا توجد إشعارات مسجلة.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Panel 10: Backup & Restore Tool -->
+      <section class="card admin-section-content" id="sec-backup">
+        <h3 class="card-title"><i class="fa-solid fa-database"></i> النسخ الاحتياطي واستعادة البيانات</h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.6;">
+          أداة الأمان وحفظ البيانات: يمكنك تصدير قاعدة البيانات بالكامل (تشمل المشرفين، المتدربين، الأسئلة، الكورسات والتقارير) في ملف JSON وحفظها محلياً على جهازك، ويمكنك في أي وقت استعادة هذا الملف لاسترجاع بياناتك كاملة.
+        </p>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 15px;">
+          <div style="flex: 1; min-width: 260px; padding: 20px; border: 1px dashed var(--border-color); border-radius: 12px; text-align: center;">
+            <i class="fa-solid fa-file-export" style="font-size: 32px; color: var(--color-primary); margin-bottom: 12px;"></i>
+            <h4>تصدير نسخة احتياطية</h4>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px;">توليد ملف تحميل مباشر بجميع البيانات الحالية للسيستم</p>
+            <button class="btn btn-primary" onclick="exportDatabaseBackup()"><i class="fa-solid fa-download"></i> تصدير Backup.json</button>
+          </div>
+
+          <div style="flex: 1; min-width: 260px; padding: 20px; border: 1px dashed var(--border-color); border-radius: 12px; text-align: center;">
+            <i class="fa-solid fa-file-import" style="font-size: 32px; color: var(--color-gold); margin-bottom: 12px;"></i>
+            <h4>استيراد واستعادة البيانات</h4>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 15px;">⚠️ سيتم الكتابة فوق قاعدة البيانات الحالية واستبدالها بالملف</p>
+            <div style="position: relative; display: inline-block;">
+              <input type="file" id="import-backup-file" accept=".json" style="display: none;" onchange="handleBackupRestoreUpload(event)">
+              <button class="btn btn-gold" onclick="document.getElementById('import-backup-file').click()"><i class="fa-solid fa-upload"></i> رفع ملف واستعادة</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Accept Modal (Blocked Browser Autofill tags) -->
+  <div class="modal-overlay" id="accept-modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+        <h3 style="font-size: 17px;"><i class="fa-solid fa-user-check" style="color: #10b981;"></i> اعتماد وقبول المتدرب</h3>
+        <button class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('accept-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="accept-trainee-form">
+        <div class="modal-body">
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">توليد بريد رسمي وكلمة مرور للمتدرب للدخول على المنصة:</p>
+          <div style="font-weight: bold; font-size: 15px; margin-bottom: 15px; color: var(--text-main);" id="accept-trainee-name">...</div>
+          
+          <div class="form-group">
+            <label for="generated-email">البريد الإلكتروني الرسمي المولَّد <span class="required">*</span></label>
+            <div style="display: flex; gap: 8px;">
+              <input type="email" id="generated-email" required autocomplete="off" style="flex: 1; font-family: monospace; font-size: 13px;">
+              <button type="button" class="btn btn-secondary" onclick="regenerateEmail()" title="توليد بريد جديد"><i class="fa-solid fa-arrows-rotate"></i></button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="generated-password">كلمة المرور المؤقتة <span class="required">*</span></label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="generated-password" required autocomplete="new-password" style="flex: 1; font-family: monospace; font-size: 13px;">
+              <button type="button" class="btn btn-secondary" onclick="regenerateTempPassword()" title="توليد كلمة مرور جديدة"><i class="fa-solid fa-key"></i></button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="generated-level">المستوى الابتدائي المعتمد <span class="required">*</span></label>
+            <select id="generated-level" required>
+              <option value="Passengers">Passengers (المستوى الصفري)</option>
+              <option value="Starters">Starters (المستوى الأول)</option>
+              <option value="Movers">Movers (المستوى الثاني)</option>
+              <option value="Flyers">Flyers (المستوى الثالث)</option>
+              <option value="Beast">ليفل الوحش 👑 (المستوى الرابع)</option>
+            </select>
+          </div>
+
+          <hr style="margin: 20px 0; border-color: var(--border-color);">
+          <h4>إضافة سؤال على المحاضرة (اختياري)</h4>
+          <div class="form-group">
+            <label for="video-q-text">نص السؤال</label>
+            <input type="text" id="video-q-text" placeholder="ما هي المعلومة الرئيسية...">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="video-q-opt1">الخيار الأول</label>
+              <input type="text" id="video-q-opt1" placeholder="خيار 1">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt2">الخيار الثاني</label>
+              <input type="text" id="video-q-opt2" placeholder="خيار 2">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt3">الخيار الثالث</label>
+              <input type="text" id="video-q-opt3" placeholder="خيار 3">
+            </div>
+            <div class="form-group">
+              <label for="video-q-correct">الإجابة الصحيحة</label>
+              <select id="video-q-correct">
+                <option value="0">الخيار الأول</option>
+                <option value="1">الخيار الثاني</option>
+                <option value="2">الخيار الثالث</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('accept-modal').classList.remove('active')">إلغاء</button>
+          <button type="submit" class="btn btn-primary">قبول واعتماد الحساب</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div class="modal-overlay" id="reject-modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+        <h3 style="font-size: 17px;"><i class="fa-solid fa-user-xmark" style="color: var(--color-danger);"></i> رفض طلب اشتراك المتدرب</h3>
+        <button class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('reject-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="reject-trainee-form">
+        <div class="modal-body">
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">سيتم رفض طلب المتدرب وإرسال سبب الرفض لصفحة الانتظار الخاصة به:</p>
+          <div style="font-weight: bold; font-size: 15px; margin-bottom: 15px; color: var(--text-main);" id="reject-trainee-name">...</div>
+          <div class="form-group">
+            <label for="reject-reason">سبب الرفض <span class="required">*</span></label>
+            <textarea id="reject-reason" required rows="3" placeholder="مثال: المستند المرفق غير واضح، أو هذا الفرع لا يتبع نطاق تدريبك..."></textarea>
+          </div>
+
+          <hr style="margin: 20px 0; border-color: var(--border-color);">
+          <h4>إضافة سؤال على المحاضرة (اختياري)</h4>
+          <div class="form-group">
+            <label for="video-q-text">نص السؤال</label>
+            <input type="text" id="video-q-text" placeholder="ما هي المعلومة الرئيسية...">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="video-q-opt1">الخيار الأول</label>
+              <input type="text" id="video-q-opt1" placeholder="خيار 1">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt2">الخيار الثاني</label>
+              <input type="text" id="video-q-opt2" placeholder="خيار 2">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt3">الخيار الثالث</label>
+              <input type="text" id="video-q-opt3" placeholder="خيار 3">
+            </div>
+            <div class="form-group">
+              <label for="video-q-correct">الإجابة الصحيحة</label>
+              <select id="video-q-correct">
+                <option value="0">الخيار الأول</option>
+                <option value="1">الخيار الثاني</option>
+                <option value="2">الخيار الثالث</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('reject-modal').classList.remove('active')">إلغاء</button>
+          <button type="submit" class="btn btn-danger">رفض الطلب</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Admin Edit / Add Modal (Permission Slider Board) -->
+  <div class="modal-overlay" id="admin-modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+        <h3 id="admin-modal-title" style="font-size: 17px;"><i class="fa-solid fa-user-shield"></i> مشرف جديد</h3>
+        <button class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('admin-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="admin-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="admin-username-input">اسم المستخدم <span class="required">*</span></label>
+            <input type="text" id="admin-username-input" required autocomplete="off" placeholder="مثال: lashin">
+          </div>
+          <div class="form-group">
+            <label for="admin-display-name-input">الاسم المعروض</label>
+            <input type="text" id="admin-display-name-input" placeholder="مثال: د. محمد لاشين">
+          </div>
+          <div class="form-group">
+            <label for="admin-password-input">كلمة المرور <span class="required">*</span></label>
+            <input type="password" id="admin-password-input" required autocomplete="new-password" placeholder="••••••••">
+          </div>
+
+          <div style="font-weight: bold; font-size: 13px; margin: 15px 0 8px;">أقسام الصلاحيات والوصول (Slider Board):</div>
+          <div class="perm-board-grid">
+            <div class="perm-card active" id="perm-trainees" onclick="togglePermCard('trainees')">
+              <i class="fa-solid fa-users"></i><br><span style="font-size: 11px;">قاعدة المتدربين</span>
+            </div>
+            <div class="perm-card active" id="perm-promotions" onclick="togglePermCard('promotions')">
+              <i class="fa-solid fa-award"></i><br><span style="font-size: 11px;">طلبات الترقية</span>
+            </div>
+            <div class="perm-card active" id="perm-videos" onclick="togglePermCard('videos')">
+              <i class="fa-solid fa-video-camera"></i><br><span style="font-size: 11px;">المحاضرات</span>
+            </div>
+            <div class="perm-card active" id="perm-questions" onclick="togglePermCard('questions')">
+              <i class="fa-solid fa-file-signature"></i><br><span style="font-size: 11px;">إدارة الأسئلة</span>
+            </div>
+            <div class="perm-card active" id="perm-reports" onclick="togglePermCard('reports')">
+              <i class="fa-solid fa-file-invoice"></i><br><span style="font-size: 11px;">التقارير</span>
+            </div>
+            <div class="perm-card active" id="perm-prices" onclick="togglePermCard('prices')">
+              <i class="fa-solid fa-tags"></i><br><span style="font-size: 11px;">الأسعار</span>
+            </div>
+            <div class="perm-card active" id="perm-admins" onclick="togglePermCard('admins')">
+              <i class="fa-solid fa-user-shield"></i><br><span style="font-size: 11px;">إدارة المدراء</span>
+            </div>
+          </div>
+
+          <hr style="margin: 20px 0; border-color: var(--border-color);">
+          <h4>إضافة سؤال على المحاضرة (اختياري)</h4>
+          <div class="form-group">
+            <label for="video-q-text">نص السؤال</label>
+            <input type="text" id="video-q-text" placeholder="ما هي المعلومة الرئيسية...">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="video-q-opt1">الخيار الأول</label>
+              <input type="text" id="video-q-opt1" placeholder="خيار 1">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt2">الخيار الثاني</label>
+              <input type="text" id="video-q-opt2" placeholder="خيار 2">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt3">الخيار الثالث</label>
+              <input type="text" id="video-q-opt3" placeholder="خيار 3">
+            </div>
+            <div class="form-group">
+              <label for="video-q-correct">الإجابة الصحيحة</label>
+              <select id="video-q-correct">
+                <option value="0">الخيار الأول</option>
+                <option value="1">الخيار الثاني</option>
+                <option value="2">الخيار الثالث</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('admin-modal').classList.remove('active')">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ البيانات</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Trainee Add Modal -->
+  <div class="modal-overlay" id="add-trainee-modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+        <h3><i class="fa-solid fa-user-plus"></i> إضافة متدرب جديد يدوياً</h3>
+        <button class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('add-trainee-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="add-trainee-form">
+        <div class="modal-body" style="max-height: 450px; overflow-y: auto; padding-right: 5px;">
+          <div class="form-group">
+            <label for="add-tr-name">الاسم بالكامل <span class="required">*</span></label>
+            <input type="text" id="add-tr-name" required placeholder="الاسم ثلاثي أو رباعي">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="add-tr-age">السن <span class="required">*</span></label>
+              <input type="number" id="add-tr-age" required min="17" max="40">
+            </div>
+            <div class="form-group">
+              <label for="add-tr-birth">سنة الميلاد <span class="required">*</span></label>
+              <input type="number" id="add-tr-birth" required min="1985" max="2010">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="add-tr-phone">الهاتف الجوال <span class="required">*</span></label>
+            <input type="tel" id="add-tr-phone" required pattern="[0-9]{11}" placeholder="01XXXXXXXXX">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="add-tr-univ">الجامعة <span class="required">*</span></label>
+              <input type="text" id="add-tr-univ" required placeholder="مثال: جامعة دمياط">
+            </div>
+            <div class="form-group">
+              <label for="add-tr-college">الكلية والفرقة <span class="required">*</span></label>
+              <input type="text" id="add-tr-college" required placeholder="مثال: صيدلة - الفرقة الخامسة">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="add-tr-branch">فرع التدريب <span class="required">*</span></label>
+              <select id="add-tr-branch" required>
+                <option value="فرع البنك">فرع البنك</option>
+                <option value="فرع ابو الخير">فرع ابو الخير</option>
+                <option value="فرع الأزهر">فرع الأزهر</option>
+                <option value="فرع الصعيدي القديم">فرع الصعيدي القديم</option>
+                <option value="فرع السبعين">فرع السبعين</option>
+                <option value="كول سنتر">كول سنتر</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="add-tr-level">المستوى الافتراضي <span class="required">*</span></label>
+              <select id="add-tr-level" required>
+                <option value="Passengers">Passengers (المستوى الصفري)</option>
+                <option value="Starters">Starters (المستوى الأول)</option>
+                <option value="Movers">Movers (المستوى الثاني)</option>
+                <option value="Flyers">Flyers (المستوى الثالث)</option>
+                <option value="Beast">ليفل الوحش 👑</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="add-tr-email">البريد الإلكتروني <span class="required">*</span></label>
+              <input type="email" id="add-tr-email" required placeholder="username@pharmready.com">
+            </div>
+            <div class="form-group">
+              <label for="add-tr-pass">كلمة المرور <span class="required">*</span></label>
+              <input type="text" id="add-tr-pass" required placeholder="كلمة المرور الخاصة به">
+            </div>
+          </div>
+
+          <hr style="margin: 20px 0; border-color: var(--border-color);">
+          <h4>إضافة سؤال على المحاضرة (اختياري)</h4>
+          <div class="form-group">
+            <label for="video-q-text">نص السؤال</label>
+            <input type="text" id="video-q-text" placeholder="ما هي المعلومة الرئيسية...">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="video-q-opt1">الخيار الأول</label>
+              <input type="text" id="video-q-opt1" placeholder="خيار 1">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt2">الخيار الثاني</label>
+              <input type="text" id="video-q-opt2" placeholder="خيار 2">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt3">الخيار الثالث</label>
+              <input type="text" id="video-q-opt3" placeholder="خيار 3">
+            </div>
+            <div class="form-group">
+              <label for="video-q-correct">الإجابة الصحيحة</label>
+              <select id="video-q-correct">
+                <option value="0">الخيار الأول</option>
+                <option value="1">الخيار الثاني</option>
+                <option value="2">الخيار الثالث</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('add-trainee-modal').classList.remove('active')">إلغاء</button>
+          <button type="submit" class="btn btn-primary">إضافة الطالب</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Video Modal -->
+  <div class="modal-overlay" id="video-modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+        <h3 id="video-modal-title">رفع فيديو جديد</h3>
+        <button class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('video-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="video-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="video-title-input">عنوان المحاضرة <span class="required">*</span></label>
+            <input type="text" id="video-title-input" required placeholder="مثال: محاضرة الجلدية الأولى">
+          </div>
+          
+          <div class="form-group">
+            <label for="video-topic-input">الموضوع / Topic <span class="required">*</span></label>
+            <input type="text" id="video-topic-input" required placeholder="مثال: الأدوية المسكنة">
+          </div>
+<div class="form-group">
+            <label for="video-url-input">معرف يوتيوب YouTube ID <span class="required">*</span></label>
+            <input type="text" id="video-url-input" required placeholder="مثال: 7dyVA3pFKS4">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="video-level-input">المستوى <span class="required">*</span></label>
+              <select id="video-level-input" required>
+                <option value="Passengers">Passengers</option>
+                <option value="Starters">Starters</option>
+                <option value="Movers">Movers</option>
+                <option value="Flyers">Flyers</option>
+                <option value="Beast">Beast</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="video-order-input">الترتيب الرقمي <span class="required">*</span></label>
+              <input type="number" id="video-order-input" required min="1" value="1">
+            </div>
+          </div>
+
+          <hr style="margin: 20px 0; border-color: var(--border-color);">
+          <h4>إضافة سؤال على المحاضرة (اختياري)</h4>
+          <div class="form-group">
+            <label for="video-q-text">نص السؤال</label>
+            <input type="text" id="video-q-text" placeholder="ما هي المعلومة الرئيسية...">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="video-q-opt1">الخيار الأول</label>
+              <input type="text" id="video-q-opt1" placeholder="خيار 1">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt2">الخيار الثاني</label>
+              <input type="text" id="video-q-opt2" placeholder="خيار 2">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt3">الخيار الثالث</label>
+              <input type="text" id="video-q-opt3" placeholder="خيار 3">
+            </div>
+            <div class="form-group">
+              <label for="video-q-correct">الإجابة الصحيحة</label>
+              <select id="video-q-correct">
+                <option value="0">الخيار الأول</option>
+                <option value="1">الخيار الثاني</option>
+                <option value="2">الخيار الثالث</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('video-modal').classList.remove('active')">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ المحاضرة</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Question Modal -->
+  <div class="modal-overlay" id="question-modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+        <h3 id="question-modal-title">إضافة سؤال جديد</h3>
+        <button class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('question-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="question-form">
+        <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+          <div class="form-group">
+            <label for="q-level">المستوى المستهدف <span class="required">*</span></label>
+            <select id="q-level" required>
+              <option value="Passengers">Passengers</option>
+              <option value="Starters">Starters</option>
+              <option value="Movers">Movers</option>
+              <option value="Flyers">Flyers</option>
+              <option value="Beast">Beast</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="q-text-ar">نص السؤال (بالعربية) <span class="required">*</span></label>
+            <input type="text" id="q-text-ar" required>
+          </div>
+          <div class="form-group">
+            <label for="q-text-en">نص السؤال (بالإنجليزية)</label>
+            <input type="text" id="q-text-en">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="q-opt1-ar">خيار 1 (عربي) <span class="required">*</span></label>
+              <input type="text" id="q-opt1-ar" required>
+            </div>
+            <div class="form-group">
+              <label for="q-opt1-en">خيار 1 (إنجليزي)</label>
+              <input type="text" id="q-opt1-en">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="q-opt2-ar">خيار 2 (عربي) <span class="required">*</span></label>
+              <input type="text" id="q-opt2-ar" required>
+            </div>
+            <div class="form-group">
+              <label for="q-opt2-en">خيار 2 (إنجليزي)</label>
+              <input type="text" id="q-opt2-en">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="q-opt3-ar">خيار 3 (عربي)</label>
+              <input type="text" id="q-opt3-ar">
+            </div>
+            <div class="form-group">
+              <label for="q-opt3-en">خيار 3 (إنجليزي)</label>
+              <input type="text" id="q-opt3-en">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="q-correct">مؤشر الإجابة الصحيحة <span class="required">*</span></label>
+            <select id="q-correct" required>
+              <option value="0">الخيار الأول (Option 1)</option>
+              <option value="1">الخيار الثاني (Option 2)</option>
+              <option value="2">الخيار الثالث (Option 3)</option>
+            </select>
+          </div>
+
+          <hr style="margin: 20px 0; border-color: var(--border-color);">
+          <h4>إضافة سؤال على المحاضرة (اختياري)</h4>
+          <div class="form-group">
+            <label for="video-q-text">نص السؤال</label>
+            <input type="text" id="video-q-text" placeholder="ما هي المعلومة الرئيسية...">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="video-q-opt1">الخيار الأول</label>
+              <input type="text" id="video-q-opt1" placeholder="خيار 1">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt2">الخيار الثاني</label>
+              <input type="text" id="video-q-opt2" placeholder="خيار 2">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt3">الخيار الثالث</label>
+              <input type="text" id="video-q-opt3" placeholder="خيار 3">
+            </div>
+            <div class="form-group">
+              <label for="video-q-correct">الإجابة الصحيحة</label>
+              <select id="video-q-correct">
+                <option value="0">الخيار الأول</option>
+                <option value="1">الخيار الثاني</option>
+                <option value="2">الخيار الثالث</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('question-modal').classList.remove('active')">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ السؤال</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Price Modal -->
+  <div class="modal-overlay" id="price-modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 480px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+        <h3 id="price-modal-title">تعديل التسعير والعرض</h3>
+        <button class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('price-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="price-form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="price-level-disp">المستوى</label>
+            <input type="text" id="price-level-disp" disabled style="opacity: 0.7;">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="price-original-input">السعر الأصلي (EGP)</label>
+              <input type="number" id="price-original-input" required min="0">
+            </div>
+            <div class="form-group">
+              <label for="price-offer-input">السعر بعد الخصم (اختياري)</label>
+              <input type="number" id="price-offer-input" min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 10px;">
+              <input type="checkbox" id="price-free-input" style="width: auto;">
+              <span>متاح مجاناً بالكامل للمتدربين المقبولين</span>
+            </label>
+          </div>
+
+          <hr style="margin: 20px 0; border-color: var(--border-color);">
+          <h4>إضافة سؤال على المحاضرة (اختياري)</h4>
+          <div class="form-group">
+            <label for="video-q-text">نص السؤال</label>
+            <input type="text" id="video-q-text" placeholder="ما هي المعلومة الرئيسية...">
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="video-q-opt1">الخيار الأول</label>
+              <input type="text" id="video-q-opt1" placeholder="خيار 1">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt2">الخيار الثاني</label>
+              <input type="text" id="video-q-opt2" placeholder="خيار 2">
+            </div>
+            <div class="form-group">
+              <label for="video-q-opt3">الخيار الثالث</label>
+              <input type="text" id="video-q-opt3" placeholder="خيار 3">
+            </div>
+            <div class="form-group">
+              <label for="video-q-correct">الإجابة الصحيحة</label>
+              <select id="video-q-correct">
+                <option value="0">الخيار الأول</option>
+                <option value="1">الخيار الثاني</option>
+                <option value="2">الخيار الثالث</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('price-modal').classList.remove('active')">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ التغييرات</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script>
+    const adminUsername    = (localStorage.getItem("admin_username") || "").trim().toLowerCase();
+    const adminPassword    = (localStorage.getItem("admin_password") || "").trim().toLowerCase();
+    const adminLoggedIn    = localStorage.getItem("admin_logged_in");
+    const adminRoleSS      = (localStorage.getItem("admin_role") || "").trim();
+    const adminPermSS      = (localStorage.getItem("admin_permissions") || "").trim().toLowerCase();
+    const adminDisplayName = (localStorage.getItem("admin_display_name") || adminUsername).trim();
+
+    if (!adminLoggedIn || !adminUsername) {
+      window.location.href = "index.html";
+    }
+
+    let allTrainees = [];
+    let allVideos = [];
+    let allPromotions = [];
+    let allAdmins = [];
+    let allQuestions = [];
+    let allReports = [];
+    let allProgress = [];
+    let allPrices = [];
+    
+    let selectedTraineePhone = null;
+    let selectedAdminUsername = null;
+    let selectedPriceLevel = null;
+    let selectedVideoId = null;
+    let selectedQuestionId = null;
+    
+    let currentLang = localStorage.getItem("app_lang") || "ar";
+    let currentTheme = localStorage.getItem("app_theme") || "sand";
+    
+    // Active permission list parsed from sessionStorage
+    const activePermissions = adminUsername === "madmody" ? ["trainees","promotions","videos","questions","reports","prices","admins","notifs","backup"] : adminPermSS.split(",");
+
+    const langData = {
+      ar: {
+        logo_title: "لوحة إدارة PharMReady",
+        logo_sub: "المالك والمطور: د. أحمد فاضل",
+        btn_logout: "تسجيل الخروج",
+        stat_pending_lbl: "طلبات معلقة",
+        stat_accepted_lbl: "متدربين مقبولين",
+        stat_promotions_lbl: "طلبات ترقية معلقة",
+        level_Passengers: "Passengers (المستوى الصفري)",
+        level_Starters: "Starters (المستوى الأول)",
+        level_Movers: "Movers (المستوى الثاني)",
+        level_Flyers: "Flyers (المستوى الثالث)",
+        level_Beast: "ليفل الوحش 👑 (المستوى الرابع)",
+        action_accept: "قبول واعتماد",
+        action_reject: "رفض الطلب"
+      },
+      en: {
+        logo_title: "PharMReady Panel",
+        logo_sub: "Academic Administrator Portal",
+        btn_logout: "Sign Out",
+        stat_pending_lbl: "Pending requests",
+        stat_accepted_lbl: "Accepted trainees",
+        stat_promotions_lbl: "Pending promotions",
+        level_Passengers: "Passengers (Level 0)",
+        level_Starters: "Starters (Level 1)",
+        level_Movers: "Movers (Level 2)",
+        level_Flyers: "Flyers (Level 3)",
+        level_Beast: "Beast Level 👑 (Level 4)",
+        action_accept: "Accept & Verify",
+        action_reject: "Reject request"
+      }
+    };
+
+    // State for accept modal
+    let _acceptTraineeName  = "";
+    let _acceptTraineePhone = "";
+
+    // State for dynamic permissions slider board creation
+    let activeFormPerms = ["trainees", "promotions", "videos", "reports"];
+
+    // Greet the logged supervisor on startup
+    window.addEventListener("DOMContentLoaded", () => {
+      applySettings();
+      setupMenuAccessibility();
+      loadAdminDashboardData();
+    });
+
+    function applySettings() {
+      document.body.classList.remove("green-theme", "dark-theme");
+      if (currentTheme === "green") {
+        document.body.classList.add("green-theme");
+        document.getElementById("btn-theme").innerHTML = `<i class="fa-solid fa-leaf" style="color: var(--color-primary);"></i>`;
+      } else if (currentTheme === "dark") {
+        document.body.classList.add("dark-theme");
+        document.getElementById("btn-theme").innerHTML = `<i class="fa-solid fa-sun" style="color: var(--color-gold);"></i>`;
+      } else {
+        document.getElementById("btn-theme").innerHTML = `<i class="fa-solid fa-moon"></i>`;
+      }
+      
+      document.getElementById("sidebar-admin-name").textContent = adminDisplayName;
+      document.getElementById("sidebar-admin-role").textContent = adminUsername === "madmody" ? "المالك والمطور (Owner)" : "مشرف أكاديمي (Admin)";
+      
+      document.documentElement.lang = currentLang;
+      document.body.dir = currentLang === "ar" ? "rtl" : "ltr";
+    }
+
+    document.getElementById("btn-theme").addEventListener("click", () => {
+      currentTheme = currentTheme === "sand" ? "green" : (currentTheme === "green" ? "dark" : "sand");
+      localStorage.setItem("app_theme", currentTheme);
+      applySettings();
+    });
+
+    document.getElementById("btn-lang").addEventListener("click", () => {
+      currentLang = currentLang === "ar" ? "en" : "ar";
+      localStorage.setItem("app_lang", currentLang);
+      applySettings();
+      loadAdminDashboardData();
+    });
+
+    // Hide modules that the current supervisor does not have access to
+    function setupMenuAccessibility() {
+      // Hide Sidebar Tabs
+      const mappings = {
+        requests: "tab-btn-requests",
+        promotions: "tab-btn-promotions",
+        trainees: "tab-btn-students",
+        videos: "tab-btn-videos",
+        questions: "tab-btn-questions",
+        reports: "tab-btn-reports",
+        prices: "tab-btn-prices",
+        admins: "tab-btn-admins",
+        notifs: "tab-btn-notifs",
+        backup: "tab-btn-backup"
+      };
+
+      for (const [key, btnId] of Object.entries(mappings)) {
+        const btn = document.getElementById(btnId);
+        if (btn) {
+          // If not in permissions array, hide it!
+          if (adminUsername !== "madmody" && !activePermissions.includes(key)) {
+            btn.style.display = "none";
+          }
+        }
+      }
+
+      // Hide custom triggers
+      if (adminUsername !== "madmody") {
+        document.getElementById("btn-add-admin-trigger").style.display = "none";
+      }
+
+      // Automatically select the first visible tab
+      const visibleTabs = Array.from(document.querySelectorAll(".admin-tab-btn")).filter(b => b.style.display !== "none");
+      if (visibleTabs.length > 0) {
+        visibleTabs[0].click();
+      }
+    }
+
+    window.switchAdminTab = function(tabName) {
+      document.querySelectorAll(".admin-tab-btn").forEach(btn => btn.classList.remove("active"));
+      document.querySelectorAll(".admin-section-content").forEach(sec => sec.classList.remove("active"));
+      
+      const targetBtn = document.querySelector(`.admin-tab-btn[onclick*="${tabName}"]`);
+      const targetSec = document.getElementById(`sec-${tabName}`);
+      
+      if (targetBtn) targetBtn.classList.add("active");
+      if (targetSec) targetSec.classList.add("active");
+      
+      // Close mobile sidebar if open
+      document.getElementById('admin-sidebar-menu').classList.remove('active');
+    };
+
+    // Database Loaders
+    async function loadAdminDashboardData() {
+      await loadTrainees();
+      await loadVideos();
+      await loadQuestions();
+      await loadVideoAnswers();
+      await loadPrices();
+      await loadPromotions();
+      await loadReports();
+      await loadAdmins();
+      await loadNotifs();
+      await loadSettings();
+      
+      renderPendingRequests();
+      renderApprovedTrainees();
+      renderVideos();
+      renderQuestions();
+      renderPrices();
+      renderPromotions();
+      renderReports();
+      renderAdmins();
+      renderNotifs();
+      
+      // Calculate Stats
+      const pendingCount = allTrainees.filter(t => t.Status === "pending").length;
+      const acceptedCount = allTrainees.filter(t => t.Status === "accepted").length;
+      const promoCount = allPromotions.filter(p => p.Status === "pending").length;
+      
+      document.getElementById("stat-pending").textContent = pendingCount;
+      document.getElementById("stat-accepted").textContent = acceptedCount;
+      document.getElementById("stat-promotions").textContent = promoCount;
+    }
+
+    async function loadTrainees() {
+      try {
+        const response = await apiRequest({ action: "adminGetTrainees", adminPassword });
+        if (response.success) allTrainees = response.trainees;
+      } catch (err) { console.error(err); }
+    }
+    async function loadVideos() {
+      try {
+        const response = await apiRequest({ action: "adminGetVideos", adminPassword });
+        if (response.success) allVideos = response.videos;
+      } catch (err) { console.error(err); }
+    }
+
+    async function loadVideoAnswers() {
+      try {
+        const response = await apiRequest({ action: "adminGetVideoAnswers", adminPassword });
+        if (response.success) {
+          const tbody = document.getElementById("video-answers-tbody");
+          tbody.innerHTML = "";
+          if (!response.answers || response.answers.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">لا توجد إجابات بعد</td></tr>';
+            return;
+          }
+          response.answers.forEach(a => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${new Date(a.timestamp || a.created_at).toLocaleString('ar-EG')}</td>
+              <td>${a.email}</td>
+              <td>${a.video_id}</td>
+              <td>${a.is_correct ? '<span style="color: green;">✅ نعم</span>' : '<span style="color: red;">❌ لا</span>'}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      } catch (err) { console.error(err); }
+    }
+    
+    // add to loadAdminDashboardData
+    async function loadQuestions() {
+      try {
+        const response = await apiRequest({ action: "adminGetQuestions", adminPassword });
+        if (response.success) allQuestions = response.questions;
+      } catch (err) { console.error(err); }
+    }
+    async function loadPrices() {
+      try {
+        const response = await apiRequest({ action: "adminGetCoursePrices", adminPassword });
+        if (response.success) allPrices = response.prices;
+      } catch (err) { console.error(err); }
+    }
+    async function loadPromotions() {
+      try {
+        const response = await apiRequest({ action: "adminGetPromotions", adminPassword });
+        if (response.success) allPromotions = response.promotions;
+      } catch (err) { console.error(err); }
+    }
+    async function loadReports() {
+      try {
+        const response = await apiRequest({ action: "adminGetReports", adminPassword });
+        if (response.success) allReports = response.reports;
+      } catch (err) { console.error(err); }
+    }
+    async function loadAdmins() {
+      if (adminUsername !== "madmody") return;
+      try {
+        const response = await apiRequest({ action: "adminGetAdmins", adminPassword });
+        if (response.success) allAdmins = response.admins;
+      } catch (err) { console.error(err); }
+    }
+
+    async function loadSettings() {
+      try {
+        const res = await apiRequest({ action: "getSettings" });
+        if (res.success && res.settings) {
+          document.getElementById("setting-require-external-form").checked = res.settings.requireExternalForm === true || res.settings.requireExternalForm === "true";
+        }
+      } catch (err) { console.error(err); }
+    }
+    document.getElementById("btn-save-settings").addEventListener("click", async () => {
+      const requireExternalForm = document.getElementById("setting-require-external-form").checked;
+      try {
+        const res = await apiRequest({ action: "adminUpdateSettings", adminUsername, adminPassword, settings: { requireExternalForm } });
+        if (res.success) showToast("تم حفظ الإعدادات بنجاح", "success");
+        else showToast(res.message, "error");
+      } catch (err) { showToast("حدث خطأ أثناء الحفظ", "error"); }
+    });
+
+    document.getElementById("notif-target").addEventListener("change", (e) => {
+      document.getElementById("notif-target-specific").style.display = e.target.value === "SPECIFIC" ? "block" : "none";
+    });
+
+    document.getElementById("btn-send-notif").addEventListener("click", async () => {
+      const targetType = document.getElementById("notif-target").value;
+      const targetInput = document.getElementById("notif-target-input").value.trim();
+      const title = document.getElementById("notif-title").value.trim();
+      const msg = document.getElementById("notif-msg").value.trim();
+
+      if (!title || !msg) { showToast("رجاء إدخال العنوان والنص", "error"); return; }
+      const target = targetType === "ALL" ? "ALL" : targetInput;
+      if (targetType === "SPECIFIC" && !target) { showToast("رجاء إدخال رقم الهاتف أو الإيميل", "error"); return; }
+
+      try {
+        const res = await apiRequest({ action: "adminSendNotification", adminUsername, adminPassword, target, title, message: msg });
+        if (res.success) {
+          showToast(res.message, "success");
+          document.getElementById("notif-title").value = "";
+          document.getElementById("notif-msg").value = "";
+        } else {
+          showToast(res.message, "error");
+        }
+      } catch (err) { showToast("حدث خطأ أثناء الإرسال", "error"); }
+    });
+
+    async function loadNotifs() {
+      try {
+        const response = await apiRequest({ action: "adminGetNotifications", adminPassword });
+        if (response.success) allProgress = response.notifications;
+      } catch (err) { console.error(err); }
+    }
+
+    // Renders
+    function renderPendingRequests() {
+      const tbody = document.getElementById("requests-table-body");
+      const pending = allTrainees.filter(t => t.Status === "pending");
+
+      if (pending.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); font-size: 14px; padding: 25px;">لا توجد طلبات اشتراك معلقة حالياً.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = "";
+      pending.forEach(t => {
+        const tr = document.createElement("tr");
+        const dateStr = new Date(t.Timestamp).toLocaleDateString("ar-EG", {month: 'short', day: 'numeric'});
+        const levelText = langData[currentLang][`level_${t.CurrentLevel}`] || t.CurrentLevel;
+
+        tr.innerHTML = `
+          <td><strong>${t.Name}</strong></td>
+          <td>${t.Age} / ${t.BirthYear}</td>
+          <td>
+            <a href="https://wa.me/2${t.Phone}" target="_blank" style="color: #10b981;"><i class="fa-brands fa-whatsapp"></i> ${t.Phone}</a>
+          </td>
+          <td>${t.University}<br><span style="font-size: 11px; color: var(--text-muted);">${t.College} - ${t.Squad}</span></td>
+          <td style="font-size: 12px;">${t.ExternalFormStatus === 'نعم' ? '<span style="color: green; font-weight: bold;">✅ نعم</span><br><span style="color: var(--text-muted);">'+(t.ExternalFormData||'')+'</span>' : '<span style="color: red; font-weight: bold;">❌ لا</span>'}</td>
+          <td><span class="status-badge level-badge-${t.CurrentLevel || 'Passengers'}">${levelText}</span><br><span style="font-size: 10px; color: var(--text-muted);">${t.TrainingBranch}</span></td>
+          <td style="font-size: 11px; color: var(--text-muted);">${dateStr}</td>
+          <td style="text-align: center; display: flex; gap: 8px; justify-content: center;">
+            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 11px; cursor: pointer;" onclick="openAcceptModal('${t.Phone}', '${t.Name}', '${t.CurrentLevel || 'Passengers'}')">${langData[currentLang].action_accept}</button>
+            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 11px; cursor: pointer;" onclick="openRejectModal('${t.Phone}', '${t.Name}')">${langData[currentLang].action_reject}</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderApprovedTrainees() {
+      const tbody = document.getElementById("students-table-body");
+      const approved = allTrainees.filter(t => t.Status === "accepted" || t.Status === "blocked");
+
+      if (approved.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); font-size: 14px; padding: 25px;">لا يوجد متدربين مقبولين.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = "";
+      approved.forEach(t => {
+        const tr = document.createElement("tr");
+        const levelText = langData[currentLang][`level_${t.CurrentLevel}`] || t.CurrentLevel;
+        const isBlocked = t.Status === "blocked";
+        
+        tr.innerHTML = `
+          <td><strong>${t.Name}</strong></td>
+          <td><a href="https://wa.me/2${t.Phone}" target="_blank" style="color: #10b981;"><i class="fa-brands fa-whatsapp"></i> ${t.Phone}</a></td>
+          <td style="font-family: monospace;">${t.Email}</td>
+          <td style="font-family: monospace;">${t.Password}</td>
+          <td><span class="status-badge level-badge-${t.CurrentLevel || 'Passengers'}">${levelText}</span></td>
+          <td>${t.TrainingBranch}</td>
+          <td>
+            <span class="status-badge ${isBlocked ? 'status-rejected' : 'status-accepted'}">${isBlocked ? 'محظور' : 'نشط'}</span>
+          </td>
+          <td style="display: flex; gap: 6px;">
+            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="toggleBlockTrainee('${t.Phone}', ${isBlocked})">${isBlocked ? 'إلغاء الحظر' : 'حظر الحساب'}</button>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteTrainee('${t.Phone}')"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function previewAdminVideo(videoId, title) {
+      document.getElementById("admin-playing-title").innerHTML = `<i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i> ${title}`;
+      const wrapper = document.getElementById("admin-video-wrapper");
+      wrapper.innerHTML = `
+        <div class="security-watermark" id="admin-watermark-overlay" style="position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; color: rgba(255,255,255,0.15); font-size: 12px; font-weight: bold; line-height: 1.5; text-align: center; z-index: 5;">
+          <span>المطور العام - لوحة الإدارة</span>
+          <span>PharMReady Security SYSTEM</span>
+        </div>
+        <iframe src="https://www.youtube.com/embed/${videoId}?rel=0&controls=1" style="width:100%; height:100%; border:none;" allowfullscreen></iframe>
+      `;
+    }
+
+    function renderVideos() {
+      const tbody = document.getElementById("videos-table-body");
+      const playlist = document.getElementById("admin-playlist-container");
+      
+      if (allVideos.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد محاضرات مرفوعة.</td></tr>`;
+        playlist.innerHTML = `<li style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px;">لا توجد محاضرات.</li>`;
+        return;
+      }
+      
+      tbody.innerHTML = "";
+      playlist.innerHTML = "";
+      
+      allVideos.forEach(v => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${v.Title}</strong></td>
+          <td style="font-family: monospace;">${v.Url}</td>
+          <td>${v.Level}</td>
+          <td>${v.Topic || v.topic || "عام"}</td>
+          <td>${v.Index}</td>
+          <td style="display: flex; gap: 6px;">
+            <button class="btn btn-primary" style="padding: 4px 8px; font-size: 11px;" onclick="previewAdminVideo('${v.Url}', '${v.Title}')"><i class="fa-solid fa-play"></i> معاينة</button>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteVideo('${v.Id || v.Url}')"><i class="fa-solid fa-trash"></i> حذف</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+        
+        const li = document.createElement("li");
+        li.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; font-size: 12px;";
+        li.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i>
+            <span>${v.Title}</span>
+          </div>
+          <span style="font-size: 10px; color: var(--text-muted);">${v.Level}</span>
+        `;
+        li.onclick = () => previewAdminVideo(v.Url, v.Title);
+        playlist.appendChild(li);
+      });
+      
+      if (allVideos.length > 0) {
+        previewAdminVideo(allVideos[0].Url, allVideos[0].Title);
+      }
+    }
+
+    function renderQuestions() {
+      const tbody = document.getElementById("questions-table-body");
+      if (allQuestions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد أسئلة مضافة.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = "";
+      allQuestions.forEach((q, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${q.QuestionAr || q.QuestionEn}</td>
+          <td>${q.Level}</td>
+          <td>الخيار ${parseInt(q.CorrectIndex) + 1}</td>
+          <td>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteQuestion(${q.rowNum || idx})"><i class="fa-solid fa-trash"></i> حذف</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderPrices() {
+      const tbody = document.getElementById("prices-table-body");
+      tbody.innerHTML = "";
+      allPrices.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${p.Level}</strong></td>
+          <td>EGP ${p.OriginalPrice}</td>
+          <td>EGP ${p.OfferPrice || 'لا يوجد'}</td>
+          <td><span class="status-badge ${p.IsFree ? 'status-accepted' : 'status-rejected'}">${p.IsFree ? 'نعم' : 'لا'}</span></td>
+          <td>
+            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditPriceModal('${p.Level}', '${p.OriginalPrice}', '${p.OfferPrice}', ${p.IsFree})"><i class="fa-solid fa-pen"></i> تعديل</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderPromotions() {
+      const tbody = document.getElementById("promotions-table-body");
+      const pending = allPromotions.filter(p => p.Status === "pending");
+      if (pending.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد طلبات ترقية معلقة حالياً.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = "";
+      pending.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${p.TraineeName}</strong></td>
+          <td>${p.CurrentLevel}</td>
+          <td>${p.TargetLevel}</td>
+          <td>${p.Score}% (اجتياز)</td>
+          <td style="display: flex; gap: 8px;">
+            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 11px;" onclick="approvePromotion('${p.TraineePhone}', '${p.TargetLevel}')">اعتماد وترقية</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderReports() {
+      const tbody = document.getElementById("reports-table-body");
+      if (allReports.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد تقارير أو شكاوى.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = "";
+      allReports.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${r.TraineeName}</strong></td>
+          <td>${r.Type}</td>
+          <td>${r.Content}</td>
+          <td style="font-size: 11px; color: var(--text-muted);">${new Date(r.Timestamp).toLocaleDateString("ar-EG")}</td>
+          <td>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteReport('${r.TraineePhone}')"><i class="fa-solid fa-trash"></i> حذف</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderAdmins() {
+      const tbody = document.getElementById("admins-table-body");
+      if (adminUsername !== "madmody") {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">غير مصرح بعرض المدراء سوى للمطور الرئيسي.</td></tr>`;
+        return;
+      }
+      if (allAdmins.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">لا يوجد مشرفين مضافين.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = "";
+      allAdmins.forEach(a => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${a.Username}</strong></td>
+          <td>${a.DisplayName}</td>
+          <td>${a.Role}</td>
+          <td style="font-size: 11px; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${a.Permissions}</td>
+          <td style="display: flex; gap: 6px;">
+            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditAdminModal('${a.Username}', '${a.DisplayName}', '${a.Permissions}')"><i class="fa-solid fa-pen"></i> تعديل</button>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteAdmin('${a.Username}')"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderNotifs() {
+      const tbody = document.getElementById("notifs-table-body");
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">لا يوجد إشعارات نشطة.</td></tr>`;
+    }
+
+    // ACTIONS TRIGGERS
+
+    // Smart memorable email generator
+    const PHARMA_WORDS = ["rx","pharm","med","dose","pill","lab","cure","vita","bio","alma","cap","tab","syrup","gel","drop"];
+    
+    function generateMemorableEmail(name, phone) {
+      const translit = (str) => str
+        .replace(/[أإآا]/g,"a").replace(/ب/g,"b").replace(/ت/g,"t").replace(/ث/g,"th")
+        .replace(/ج/g,"j").replace(/ح/g,"h").replace(/خ/g,"kh").replace(/د/g,"d")
+        .replace(/ذ/g,"dh").replace(/ر/g,"r").replace(/ز/g,"z").replace(/س/g,"s")
+        .replace(/ش/g,"sh").replace(/ص/g,"s").replace(/ض/g,"d").replace(/ط/g,"t")
+        .replace(/ظ/g,"z").replace(/ع/g,"a").replace(/غ/g,"gh").replace(/ف/g,"f")
+        .replace(/ق/g,"q").replace(/ك/g,"k").replace(/ل/g,"l").replace(/م/g,"m")
+        .replace(/ن/g,"n").replace(/ه/g,"h").replace(/و/g,"w").replace(/ي|ى/g,"y")
+        .replace(/ة/g,"a").replace(/[^a-z0-9]/gi,"");
+
+      const parts     = name.trim().split(/\s+/);
+      const firstName = translit(parts[0] || "").slice(0, 8).toLowerCase() || "trainee";
+      const lastName  = translit(parts[1] || "").slice(0, 6).toLowerCase();
+      
+      let attempt = 0;
+      let email = "";
+      
+      do {
+        const word = PHARMA_WORDS[Math.floor(Math.random() * PHARMA_WORDS.length)];
+        const randNum = Math.floor(1000 + Math.random() * 9000);
+        const suffix = attempt === 0 ? (phone ? phone.slice(-4) : randNum) : `${randNum}${attempt}`;
+        
+        const local = lastName
+          ? `${firstName}.${lastName}.${word}${suffix}`
+          : `${firstName}.${word}${suffix}`;
+        
+        email = `${local}@pharmready.com`.toLowerCase();
+        attempt++;
+      } while (allTrainees.some(t => String(t.Email).trim().toLowerCase() === email) && attempt < 20);
+
+      return email;
+    }
+
+    window.regenerateEmail = function() {
+      if (!_acceptTraineeName || !_acceptTraineePhone) return;
+      document.getElementById("generated-email").value = generateMemorableEmail(_acceptTraineeName, _acceptTraineePhone);
+    };
+
+    window.regenerateTempPassword = function() {
+      const words  = ["pharma","healer","clinic","medix","rxpro","vitals","cure","active"];
+      const word   = words[Math.floor(Math.random() * words.length)];
+      const num    = Math.floor(10000 + Math.random() * 90000);
+      const sym    = ["@","#","!","$","&"][Math.floor(Math.random() * 5)];
+      document.getElementById("generated-password").value = `${word}${sym}${num}`;
+    };
+
+    window.openAcceptModal = function(phone, name, requestedLevel) {
+      selectedTraineePhone = phone;
+      _acceptTraineeName   = name;
+      _acceptTraineePhone  = phone;
+      
+      document.getElementById("accept-trainee-name").textContent = name;
+      document.getElementById("generated-email").value  = generateMemorableEmail(name, phone);
+      document.getElementById("generated-level").value  = requestedLevel;
+      regenerateTempPassword();
+      
+      document.getElementById("accept-modal").classList.add("active");
+    };
+
+    // WhatsApp Message Builder
+    function buildWhatsAppMessage() {
+      const email    = document.getElementById("generated-email")?.value    || "";
+      const password = document.getElementById("generated-password")?.value || "";
+      const level    = document.getElementById("generated-level")?.value    || "";
+      const name     = _acceptTraineeName || "";
+      const siteUrl  = window.location.origin || "https://maghawry.com";
+      
+      return [
+        `🎓 مبروك ${name}! تم اعتماد اشتراكك في أكاديمية PharMReady ✅`,
+        ``,
+        `📧 بريدك الإلكتروني (اسم المستخدم):`,
+        `${email}`,
+        ``,
+        `🔑 كلمة المرور الخاصة بك:`,
+        `${password}`,
+        ``,
+        `📈 المستوى المعتمد البدائي:`,
+        `${level}`,
+        ``,
+        `🌐 رابط تسجيل الدخول للمنصة:`,
+        `${siteUrl}`,
+        ``,
+        `⚠️ تنبيه: يُرجى حفظ هذه البيانات جيداً وعدم مشاركتها مع أحد.`,
+        ``,
+        `📞 للمساعدة تواصل مع إدارة الأكاديمية.`
+      ].join("\n");
+    }
+
+    document.getElementById("accept-trainee-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const generatedEmail = document.getElementById("generated-email").value.trim();
+      const generatedPassword = document.getElementById("generated-password").value.trim();
+      const currentLevel = document.getElementById("generated-level").value;
+
+      try {
+        const response = await apiRequest({
+          action: "adminAction",
+          adminPassword,
+          phone: selectedTraineePhone,
+          actionState: "accept",
+          generatedEmail,
+          generatedPassword,
+          currentLevel
+        });
+
+        if (response.success) {
+          const msg   = buildWhatsAppMessage();
+          const phone = _acceptTraineePhone ? "2" + _acceptTraineePhone.replace(/^0/, "") : "";
+          const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+
+          showToast("🎉 تم قبول واشراك المتدرب! جاري فتح واتساب لإرسال بيانات الدخول...", "success");
+          document.getElementById("accept-modal").classList.remove("active");
+          loadAdminDashboardData();
+
+          setTimeout(() => window.open(waUrl, "_blank"), 600);
+        } else {
+          if (response.message && (response.message.includes("unique constraint") || response.message.includes("duplicate"))) {
+            showToast("⚠️ البريد الإلكتروني المولَّد موجود بالفعل لمتدرب آخر. يرجى توليد بريد مختلف بالضغط على زر التوليد 🔄 ثم المحاولة مرة أخرى.", "error");
+          } else {
+            showToast(response.message, "error");
+          }
+        }
+      } catch (err) {
+        showToast("Error processing accept request.", "error");
+      }
+    });
+
+    window.openRejectModal = function(phone, name) {
+      selectedTraineePhone = phone;
+      document.getElementById("reject-trainee-name").textContent = name;
+      document.getElementById("reject-reason").value = "";
+      document.getElementById("reject-modal").classList.add("active");
+    };
+
+    document.getElementById("reject-trainee-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const reason = document.getElementById("reject-reason").value.trim();
+      try {
+        const response = await apiRequest({
+          action: "adminAction",
+          adminPassword,
+          phone: selectedTraineePhone,
+          actionState: "reject",
+          rejectReason: reason
+        });
+        if (response.success) {
+          showToast("تم رفض الطلب بنجاح.", "success");
+          document.getElementById("reject-modal").classList.remove("active");
+          loadAdminDashboardData();
+        } else {
+          showToast(response.message, "error");
+        }
+      } catch (err) { console.error(err); }
+    });
+
+    window.openAddTraineeModal = function() {
+      document.getElementById("add-trainee-form").reset();
+      document.getElementById("add-trainee-modal").classList.add("active");
+    };
+
+    document.getElementById("add-trainee-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("add-tr-name").value.trim();
+      const age = document.getElementById("add-tr-age").value.trim();
+      const birth = document.getElementById("add-tr-birth").value.trim();
+      const phone = document.getElementById("add-tr-phone").value.trim();
+      const university = document.getElementById("add-tr-univ").value.trim();
+      const college = document.getElementById("add-tr-college").value.trim();
+      const branch = document.getElementById("add-tr-branch").value;
+      const level = document.getElementById("add-tr-level").value;
+      const email = document.getElementById("add-tr-email").value.trim();
+      const password = document.getElementById("add-tr-pass").value.trim();
+
+      try {
+        const response = await apiRequest({
+          action: "adminAddTrainee",
+          adminPassword,
+          name, age, birth, phone, university, college, branch, level, email, password
+        });
+
+        if (response.success) {
+          showToast("تم إضافة المتدرب يدوياً بنجاح!", "success");
+          document.getElementById("add-trainee-modal").classList.remove("active");
+          loadAdminDashboardData();
+        } else {
+          showToast(response.message, "error");
+        }
+      } catch (err) { console.error(err); }
+    });
+
+    window.toggleBlockTrainee = async function(phone, isBlocked) {
+      if (!confirm(isBlocked ? "هل تريد إلغاء حظر المتدرب؟" : "هل أنت متأكد من حظر المتدرب عن المنصة؟")) return;
+      try {
+        const response = await apiRequest({
+          action: "adminToggleBlockTrainee",
+          adminPassword,
+          phone,
+          blockState: !isBlocked
+        });
+        if (response.success) {
+          showToast(isBlocked ? "تم تفعيل حساب المتدرب." : "تم حظر حساب المتدرب.", "success");
+          loadAdminDashboardData();
+        }
+      } catch (err) { console.error(err); }
+    };
+
+    window.deleteTrainee = async function(phone) {
+      if (!confirm("⚠️ هل أنت متأكد من حذف حساب المتدرب نهائياً؟ لا يمكن استرجاع هذا الإجراء.")) return;
+      try {
+        const response = await apiRequest({
+          action: "adminDeleteTrainee",
+          adminPassword,
+          phone
+        });
+        if (response.success) {
+          showToast("تم حذف المتدرب بنجاح.", "success");
+          loadAdminDashboardData();
+        }
+      } catch (err) { console.error(err); }
+    };
+
+    // Videos
+    window.openAddVideoModal = function() {
+      document.getElementById("video-form").reset();
+      document.getElementById("video-modal-title").textContent = "رفع فيديو جديد";
+      selectedVideoId = null;
+      document.getElementById("video-modal").classList.add("active");
+    };
+
+    document.getElementById("video-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const title = document.getElementById("video-title-input").value.trim();
+      const topic = document.getElementById("video-topic-input").value.trim();
+      const url = document.getElementById("video-url-input").value.trim();
+      const level = document.getElementById("video-level-input").value;
+      const order = document.getElementById("video-order-input").value.trim();
+      
+      const qText = document.getElementById("video-q-text").value.trim();
+      const qOpt1 = document.getElementById("video-q-opt1").value.trim();
+      const qOpt2 = document.getElementById("video-q-opt2").value.trim();
+      const qOpt3 = document.getElementById("video-q-opt3").value.trim();
+      const qCorrect = document.getElementById("video-q-correct").value;
+
+      try {
+        const response = await apiRequest({
+          action: "adminAddVideo",
+          adminPassword,
+          title, topic, url, level, order
+        });
+        if (response.success && qText) {
+          const videoId = url.length === 11 ? url : url.split('v=')[1]?.substring(0,11) || url.split('/').pop().substring(0,11);
+          await apiRequest({
+            action: "adminAddVideoQuestion", adminPassword,
+            video_id: videoId, question_ar: qText,
+            option1_ar: qOpt1, option2_ar: qOpt2, option3_ar: qOpt3, correct_index: qCorrect
+          });
+        }
+
+        if (response.success) {
+          showToast("تم حفظ المحاضرة بنجاح!", "success");
+          document.getElementById("video-modal").classList.remove("active");
+          loadAdminDashboardData();
+        }
+      } catch (err) { console.error(err); }
+    });
+
+    window.deleteVideo = async function(id) {
+      if (!confirm("هل تريد حذف هذا الفيديو؟")) return;
+      try {
+        const response = await apiRequest({ action: "adminDeleteVideo", adminPassword, id });
+        if (response.success) {
+          showToast("تم الحذف بنجاح.", "success");
+          loadAdminDashboardData();
+        }
+      } catch (err) { console.error(err); }
+    };
+
+    // Questions
+    window.openAddQuestionModal = function() {
+      document.getElementById("question-form").reset();
+      document.getElementById("question-modal").classList.add("active");
+    };
+
+    document.getElementById("question-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const level = document.getElementById("q-level").value;
+      const textAr = document.getElementById("q-text-ar").value.trim();
+      const textEn = document.getElementById("q-text-en").value.trim();
+      const opt1Ar = document.getElementById("q-opt1-ar").value.trim();
+      const opt1En = document.getElementById("q-opt1-en").value.trim();
+      const opt2Ar = document.getElementById("q-opt2-ar").value.trim();
+      const opt2En = document.getElementById("q-opt2-en").value.trim();
+      const opt3Ar = document.getElementById("q-opt3-ar").value.trim();
+      const opt3En = document.getElementById("q-opt3-en").value.trim();
+      const correct = document.getElementById("q-correct").value;
+
+      try {
+        const response = await apiRequest({
+          action: "adminAddQuestion",
+          adminPassword,
+          level, textAr, textEn, opt1Ar, opt1En, opt2Ar, opt2En, opt3Ar, opt3En, correct
+        });
+        if (response.success) {
+          showToast("تم إضافة السؤال بنجاح!", "success");
+          document.getElementById("question-modal").classList.remove("active");
+          loadAdminDashboardData();
+        }
+      } catch (err) { console.error(err); }
+    });
+
+    window.deleteQuestion = async function(rowNum) {
+      if (!confirm("هل أنت متأكد من حذف هذا السؤال؟")) return;
+      try {
+        const response = await apiRequest({ action: "adminDeleteQuestion", adminPassword, rowNum });
+        if (response.success) {
+          showToast("تم حذف السؤال بنجاح.", "success");
+          loadAdminDashboardData();
+        }
+      } catch (err) { console.error(err); }
+    };
+
+    // Prices
+    window.openEditPriceModal = function(level, orig, offer, isFree) {
+      selectedPriceLevel = level;
+      document.getElementById("price-level-disp").value = level;
+      document.getElementById("price-original-input").value = orig;
+      document.getElementById("price-offer-input").value = offer || "";
+      document.getElementById("price-free-input").checked = isFree;
+      document.getElementById("price-modal").classList.add("active");
+    };
+
+    document.getElementById("price-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const original = document.getElementById("price-original-input").value.trim();
+      const offer = document.getElementById("price-offer-input").value.trim();
+      const isFree = document.getElementById("price-free-input").checked;
+
+      try {
+        const response = await apiRequest({
+          action: "adminUpdateCoursePrice",
+          adminPassword,
+          level: selectedPriceLevel,
+          originalPrice: original,
+          offerPrice: offer,
+          isFree: isFree
+        });
+        if (response.success) {
+          showToast("تم تعديل السعر بنجاح!", "success");
+          document.getElementById("price-modal").classList.remove("active");
+          loadAdminDashboardData();
+        }
+      } catch (err) { console.error(err); }
+    });
+
+    // Promotions
+    window.approvePromotion = async function(phone, targetLevel) {
+      if (!confirm("هل توافق على ترقية هذا المتدرب للمستوى التالي وإصدار الشهادة؟")) return;
+      try {
+        const response = await apiRequest({
+          action: "adminApprovePromotion",
+          adminPassword,
+          phone,
+          targetLevel
+        });
+        if (response.success) {
+          showToast("🎉 تم ترقية المتدرب بنجاح وإشعار حسابه بالشهادة!", "success");
+          loadAdminDashboardData();
+        }
+      } catch (err) { console.error(err); }
+    };
+
+    // Reports
+    window.deleteReport = async function(phone) {
+      if (!confirm("هل تريد حذف هذا التقرير؟")) return;
+      try {
+        const response = await apiRequest({ action: "adminDeleteReport", adminPassword, phone });
+        if (response.success) {
+          showToast("تم الحذف بنجاح.", "success");
+          loadAdminDashboardData();
+        }
+      } catch (err) { console.error(err); }
+    };
+
+    // Admins
+    window.togglePermCard = function(permKey) {
+      const card = document.getElementById(`perm-${permKey}`);
+      if (activeFormPerms.includes(permKey)) {
+        activeFormPerms = activeFormPerms.filter(k => k !== permKey);
+        card.className = "perm-card inactive";
+      } else {
+        activeFormPerms.push(permKey);
+        card.className = "perm-card active";
+      }
+    };
+
+    window.openAddAdminModal = function() {
+      document.getElementById("admin-form").reset();
+      selectedAdminUsername = null;
+      document.getElementById("admin-modal-title").textContent = "إضافة مشرف جديد";
+      document.getElementById("admin-username-input").disabled = false;
+      
+      activeFormPerms = ["trainees", "promotions", "videos", "reports"];
+      document.querySelectorAll(".perm-card").forEach(card => {
+        const key = card.id.replace("perm-", "");
+        if (activeFormPerms.includes(key)) {
+          card.className = "perm-card active";
+        } else {
+          card.className = "perm-card inactive";
+        }
+      });
+      document.getElementById("admin-modal").classList.add("active");
+    };
+
+    window.openEditAdminModal = function(user, displayName, permsStr) {
+      selectedAdminUsername = user;
+      document.getElementById("admin-modal-title").textContent = "تعديل بيانات المشرف";
+      document.getElementById("admin-username-input").value = user;
+      document.getElementById("admin-username-input").disabled = true;
+      document.getElementById("admin-display-name-input").value = displayName || "";
+      document.getElementById("admin-password-input").value = "";
+      
+      activeFormPerms = permsStr.split(",");
+      document.querySelectorAll(".perm-card").forEach(card => {
+        const key = card.id.replace("perm-", "");
+        if (activeFormPerms.includes(key)) {
+          card.className = "perm-card active";
+        } else {
+          card.className = "perm-card inactive";
+        }
+      });
+      document.getElementById("admin-modal").classList.add("active");
+    };
+
+    document.getElementById("admin-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const username = document.getElementById("admin-username-input").value.trim().toLowerCase();
+      const displayName = document.getElementById("admin-display-name-input").value.trim();
+      const password = document.getElementById("admin-password-input").value.trim();
+      const perms = activeFormPerms.join(",");
+
+      try {
+        const response = await apiRequest({
+          action: "adminSaveAdmin",
+          adminPassword,
+          username,
+          displayName,
+          password,
+          permissions: perms,
+          isEdit: !!selectedAdminUsername
+        });
+
+        if (response.success) {
+          showToast("تم حفظ بيانات المشرف بنجاح!", "success");
+          document.getElementById("admin-modal").classList.remove("active");
+          loadAdminDashboardData();
+        } else {
+          showToast(response.message, "error");
+        }
+      } catch (err) { console.error(err); }
+    });
+
+    window.deleteAdmin = async function(user) {
+      if (user === "madmody") {
+        showToast("⚠️ لا يمكن حذف المطور والمالك الرئيسي للسيستم!", "error");
+        return;
+      }
+      if (!confirm("هل أنت متأكد من حذف حساب المشرف هذا؟")) return;
+      try {
+        const response = await apiRequest({ action: "adminDeleteAdmin", adminPassword, username: user });
+        if (response.success) {
+          showToast("تم الحذف بنجاح.", "success");
+          loadAdminDashboardData();
+        }
+      } catch (err) { console.error(err); }
+    };
+
+    // DATABASE BACKUP & RESTORE ACTIONS
+    window.exportDatabaseBackup = async function() {
+      const tables = ['trainees', 'admins', 'videos', 'course_prices', 'promotions', 'notifications', 'questions', 'progress', 'reports'];
+      const backupData = {};
+      
+      try {
+        if (supabaseClient) {
+          // Supabase Cloud backup
+          for (const table of tables) {
+            const { data, error } = await supabaseClient.from(table).select('*');
+            if (error) {
+              showToast(`Error fetching table ${table}: ${error.message}`, "error");
+              return;
+            }
+            backupData[table] = data;
+          }
+        } else {
+          // Local storage mockup backup
+          const mapping = {
+            trainees: "Trainees",
+            admins: "Admins",
+            videos: "Videos",
+            course_prices: "CoursePrices",
+            promotions: "Promotions",
+            notifications: "Notifications",
+            questions: "Questions",
+            progress: "Progress",
+            reports: "Reports"
+          };
+          for (const [tKey, dbName] of Object.entries(mapping)) {
+            const dataStr = localStorage.getItem(`maghawry_db_${dbName}`);
+            backupData[tKey] = dataStr ? JSON.parse(dataStr) : [];
+          }
+        }
+        
+        // Trigger download
+        const jsonStr = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `pharmready_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        showToast("🎉 تم تصدير النسخة الاحتياطية بنجاح!", "success");
+      } catch (err) {
+        showToast("فشل تصدير النسخة الاحتياطية.", "error");
+      }
+    };
+
+    window.handleBackupRestoreUpload = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const backupData = JSON.parse(e.target.result);
+          const tables = ['trainees', 'admins', 'videos', 'course_prices', 'promotions', 'notifications', 'questions', 'progress', 'reports'];
+          
+          for (const table of tables) {
+            if (!backupData[table]) {
+              showToast(`⚠️ ملف النسخة الاحتياطية غير صالح (مفقود جدول ${table})`, "error");
+              return;
+            }
+          }
+          
+          if (!confirm("⚠️ تحذير هام: استعادة النسخة الاحتياطية ستقوم بحذف جميع البيانات الحالية واستبدالها بالنسخة المرفوعة. هل أنت متأكد من الاستمرار؟")) {
+            return;
+          }
+          
+          showToast("⏳ جاري استعادة النسخة الاحتياطية... يرجى الانتظار", "success");
+          
+          if (supabaseClient) {
+            // Restore Cloud Supabase
+            for (const table of tables) {
+              // Delete all rows
+              const { error: delErr } = await supabaseClient.from(table).delete().neq('created_at', '1970-01-01');
+              if (delErr) {
+                showToast(`Error clearing table ${table}: ${delErr.message}`, "error");
+                return;
+              }
+              // Insert rows
+              const rows = backupData[table];
+              if (rows.length > 0) {
+                const { error: insErr } = await supabaseClient.from(table).insert(rows);
+                if (insErr) {
+                  showToast(`Error restoring table ${table}: ${insErr.message}`, "error");
+                  return;
+                }
+              }
+            }
+          } else {
+            // Restore Local mockup
+            const mapping = {
+              trainees: "Trainees",
+              admins: "Admins",
+              videos: "Videos",
+              course_prices: "CoursePrices",
+              promotions: "Promotions",
+              notifications: "Notifications",
+              questions: "Questions",
+              progress: "Progress",
+              reports: "Reports"
+            };
+            for (const [tKey, dbName] of Object.entries(mapping)) {
+              localStorage.setItem(`maghawry_db_${dbName}`, JSON.stringify(backupData[tKey]));
+            }
+          }
+          
+          showToast("🎉 تم استعادة قاعدة البيانات بالكامل بنجاح!", "success");
+          loadAdminDashboardData();
+        } catch(err) {
+          showToast("⚠️ فشل قراءة الملف الاحتياطي. تأكد أنه ملف JSON صالح.", "error");
+        }
+      };
+      reader.readAsText(file);
+    };
+
+    window.adminLogout = function() {
+      localStorage.removeItem("admin_logged_in");
+    localStorage.removeItem("admin_username");
+    localStorage.removeItem("admin_password");
+    localStorage.removeItem("admin_role");
+    localStorage.removeItem("admin_permissions");
+    localStorage.removeItem("admin_display_name");
+      window.location.href = "index.html";
+    };
+
+    // Hide Preloader on Load
+    </script>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>صفحة الانتظار | PharmReady-AlmaghwryBy-Fadel</title>
+  <!-- Google Fonts: Cairo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .bio-img-placeholder {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--color-primary), var(--color-gold));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 900;
+      color: #0b0f19;
+      margin-bottom: 15px;
+    }
+    .check-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  
+
+  <!-- Top Utilities bar -->
+  <div class="app-container" style="max-width: 1200px; padding: 20px 20px 0; display: flex; justify-content: flex-end; gap: 10px;">
+    <button class="theme-switch-btn" id="btn-theme" title="تبديل المظهر / Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+    <button class="lang-switch-btn" id="btn-lang" title="Toggle Language / تبديل اللغة"><i class="fa-solid fa-globe"></i></button>
+  </div>
+
+  <!-- App Header -->
+  <header class="app-container" style="max-width: 1200px; padding: 0 20px 0;">
+    <div class="app-header" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--border-color);">
+      <div class="logo-section" style="display: flex; align-items: center; gap: 8px;">
+        <img src="logo_pr.png" alt="PharmReady" class="logo-img" style="height: 40px; width: auto; object-fit: contain;">
+        <i class="fa-solid fa-handshake" style="font-size: 18px; color: var(--color-primary); margin: 0 2px;"></i>
+        <img src="logo.png" alt="شعار منصة PharMReady" class="logo-img" style="height: 40px; width: auto; object-fit: contain;">
+        <div style="border-right: 1px solid var(--border-color); padding-right: 10px; margin-right: 4px;">
+          <h1 style="font-size: 15px; font-weight: 700; line-height: 1.2;" data-i18n="logo_title">منصة PharMReady &amp; PharmReady</h1>
+          <p style="font-size: 10px; color: var(--text-muted); margin: 0;" data-i18n="logo_sub">بوابة متابعة طلبات المتدربين</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="index.html" class="btn btn-secondary" style="padding: 8px 15px; font-size: 13px;"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="btn_login">تسجيل الدخول</span></a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="app-container" style="flex: 1; padding: 25px 20px;">
+    <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 25px;">
+      
+      <!-- Status Checking Panel -->
+      <div class="card" style="display: flex; flex-direction: column; justify-content: center;">
+        <h3 class="card-title" style="margin-bottom: 15px;"><i class="fa-solid fa-circle-info"></i> <span data-i18n="status_card_title">حالة طلب الانضمام للمنصة</span></h3>
+        
+        <div id="status-container">
+          <!-- Manual phone input -->
+          <div class="check-box" id="no-phone-saved" style="display: none;">
+            <p style="margin-bottom: 15px;" data-i18n="enter_phone_check">لم نجد رقم هاتف مسجل في الذاكرة المحلية لجهازك. يرجى إدخال رقم هاتفك للتحقق من حالة طلبك:</p>
+            <div style="display: flex; gap: 10px; max-width: 400px; margin: 0 auto;">
+              <input type="tel" id="check-phone-input" placeholder="01XXXXXXXXX" style="flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);">
+              <button class="btn btn-primary" id="btn-check-manual" style="padding: 10px 20px;"><i class="fa-solid fa-magnifying-glass"></i> <span data-i18n="btn_verify">تحقق</span></button>
+            </div>
+          </div>
+
+          <!-- Pending status -->
+          <div class="status-card pending" id="status-pending" style="display: none; padding: 30px; text-align: center; border-radius: 12px; background: rgba(195,159,104,0.05); border: 1px dashed var(--color-primary);">
+            <div style="font-size: 40px; color: var(--color-primary); margin-bottom: 15px;"><i class="fa-solid fa-hourglass-half fa-spin"></i></div>
+            <h3 data-i18n="pending_status_title">طلبك قيد المراجعة والموافقة ⏳</h3>
+            <p style="margin-top: 10px;"><span data-i18n="welcome_dr">مرحباً يا دكتور</span> <span id="trainee-name-pending" style="font-weight: bold; color: var(--color-primary);">...</span>. <span data-i18n="pending_welcome_msg">تم تسجيل بياناتك بنجاح في نظام المراجعة لمنصة PharMReady.</span></p>
+            <p style="margin-top: 15px; font-size: 12px; color: var(--text-muted);" data-i18n="pending_auto_refresh">نقوم بمراجعة الطلبات والتحقق من فروع التدريب يدوياً. يتم تحديث هذه الصفحة تلقائياً كل 15 ثانية فور اتخاذ المدير قرار القبول.</p>
+            <button class="btn btn-secondary" style="margin-top: 20px;" onclick="checkCurrentStatus()"><i class="fa-solid fa-rotate"></i> <span data-i18n="btn_refresh_now">تحديث الحالة الآن</span></button>
+          </div>
+
+          <!-- Accepted status -->
+          <div class="status-card accepted" id="status-accepted" style="display: none; padding: 30px; text-align: center; border-radius: 12px; background: rgba(16,185,129,0.05); border: 1px dashed #10b981;">
+            <div style="font-size: 50px; color: #10b981; margin-bottom: 15px;"><i class="fa-solid fa-circle-check"></i></div>
+            <h3 data-i18n="accepted_status_title">تهانينا! تم قبول طلبك بنجاح 🎉</h3>
+            <p style="margin-bottom: 20px; margin-top: 10px;"><span data-i18n="welcome_dr">مرحباً بك يا دكتور</span> <span id="trainee-name-accepted" style="font-weight: bold; color: #10b981;">...</span> <span data-i18n="accepted_welcome_msg">كمتدرب رسمي في منصة PharMReady. إليك بيانات الدخول الخاصة بك:</span></p>
+            
+            <div class="check-box" style="background: var(--bg-primary); text-align: right; max-width: 450px; margin: 15px auto; padding: 15px; border-radius: 10px; border: 1px dashed var(--border-color);">
+              <div style="margin-bottom: 12px;">
+                <strong data-i18n="created_email">البريد الإلكتروني المنشأ:</strong>
+                <div style="font-family: monospace; font-size: 15px; margin-top: 5px; color: var(--text-main); background: rgba(0,0,0,0.03); padding: 8px 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border-color);">
+                  <span id="trainee-email-disp">...</span>
+                  <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="copyText('trainee-email-disp')"><i class="fa-regular fa-copy"></i> <span data-i18n="btn_copy">نسخ</span></button>
+                </div>
+              </div>
+              <div>
+                <strong data-i18n="temp_pass">كلمة المرور المؤقتة:</strong>
+                <div style="font-family: monospace; font-size: 15px; margin-top: 5px; color: var(--text-main); background: rgba(0,0,0,0.03); padding: 8px 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border-color);">
+                  <span id="trainee-pass-disp">...</span>
+                  <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="copyText('trainee-pass-disp')"><i class="fa-regular fa-copy"></i> <span data-i18n="btn_copy">نسخ</span></button>
+                </div>
+                <p style="font-size: 11px; margin-top: 8px; color: var(--color-gold);" data-i18n="warn_change_pass"><i class="fa-solid fa-circle-exclamation"></i> يرجى تغيير كلمة المرور المؤقتة فور تسجيل دخولك الأول لزيادة أمان حسابك.</p>
+              </div>
+            </div>
+
+            <a href="index.html" class="btn btn-primary" style="margin-top: 15px; padding: 12px 25px;"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="btn_go_login">الانتقال لصفحة تسجيل الدخول</span></a>
+          </div>
+
+          <!-- Rejected status -->
+          <div class="status-card rejected" id="status-rejected" style="display: none; padding: 30px; text-align: center; border-radius: 12px; background: rgba(225,29,72,0.05); border: 1px dashed var(--color-danger);">
+            <div style="font-size: 50px; color: var(--color-danger); margin-bottom: 15px;"><i class="fa-solid fa-circle-xmark"></i></div>
+            <h3 data-i18n="rejected_status_title">عذراً، تم رفض طلب الانضمام ❌</h3>
+            <p style="margin-top: 10px;"><span data-i18n="welcome_dr">مرحباً يا دكتور</span> <span id="trainee-name-rejected" style="font-weight: bold; color: var(--color-danger);">...</span>. <span data-i18n="rejected_welcome_msg">نأسف لإبلاغك بأنه تم رفض طلب انضمامك للأكاديمية.</span></p>
+            
+            <div class="check-box" style="background: var(--bg-primary); text-align: right; max-width: 450px; margin: 15px auto; padding: 15px; border-radius: 10px; border: 1px dashed var(--border-color);">
+              <strong data-i18n="reject_reason_label">سبب الرفض المسجل من الإدارة:</strong>
+              <p style="margin-top: 8px; font-size: 14px; font-weight: 600;" id="trainee-reject-reason">...</p>
+            </div>
+
+            <p style="margin-top: 20px;" data-i18n="reject_support_msg">للمزيد من الاستفسارات أو مراجعة الطلب، يرجى التواصل مع رقم الدعم الفني المباشر:</p>
+            <div style="font-size: 20px; font-weight: bold; color: var(--color-gold); margin-top: 10px;">
+              <i class="fa-solid fa-phone-volume"></i> 01107118948
+            </div>
+            <a href="register.html" class="btn btn-secondary" style="margin-top: 20px;"><i class="fa-solid fa-user-plus"></i> <span data-i18n="btn_re_register">إعادة التسجيل ببيانات أخرى</span></a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Biography & History -->
+      <div class="bio-section" style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card bio-card">
+          <div class="bio-img-placeholder"><i class="fa-solid fa-prescription-bottle-medical"></i></div>
+          <h4 style="font-size: 16px; margin-bottom: 10px;" data-i18n="maghawry_history_title">نبذة عن منصة PharMReady</h4>
+          <p style="font-size: 13px; line-height: 1.6; color: var(--text-muted);" data-i18n="maghawry_history_p">
+            تأسست منصة PharMReady كواحدة من الكيانات الصيدلانية الرائدة في محافظة دمياط. ترتكز رؤية المجموعة على تقديم خدمات صيدلانية متكاملة ورعاية صحية متطورة تليق بالمجتمع. وتولي المجموعة اهتماماً بالغاً بتدريب وتأهيل الأجيال الجديدة من خريجي وطلاب كليات الصيدلة، وتزويدهم بالخبرة العملية المطلوبة للانخراط بكفاءة في سوق العمل الدوائي، معتمدين على أحدث الأساليب التعليمية والمعايير المهنية العالمية. المدير التنفيذي للصيدليات هو الدكتور عبد العزيز المغاوري.
+          </p>
+        </div>
+
+        <div class="card bio-card">
+          <div class="bio-img-placeholder" style="background: linear-gradient(135deg, var(--color-gold), #fff);"><i class="fa-solid fa-code"></i></div>
+          <h4 style="font-size: 16px; margin-bottom: 10px;" data-i18n="dev_bio_title">نبذة عن المطور (أحمد فاضل)</h4>
+          <p style="font-size: 13px; line-height: 1.6; color: var(--text-muted);" data-i18n="dev_bio_p">
+            أحمد فاضل، هو المهندس والمطور المسؤول عن تصميم وتطوير المنصة الأكاديمية (PharmReady-AlmaghwryBy-Fadel). تم بناء هذا النظام خصيصاً لتسهيل إدارة العملية التدريبية وتأمين المحتوى العلمي المقدم للطلاب. يهدف النظام لتسجيل المتدربين الجدد وإصدار حسابات الدخول الرسمية ومتابعة مستويات التقدم الدراسي إلكترونياً وبطريقة ذكية بدون أي تعقيد تقني أو استهلاك غير مبرر لباقات الإنترنت.
+          </p>
+        </div>
+      </div>
+      
+    </div>
+  </main>
+
+  <footer class="app-footer" style="text-align: center; padding: 20px 0; margin-top: auto; border-top: 1px solid var(--border-color); background: var(--bg-secondary);">
+    <p data-i18n="footer_text">© 2026 PharMReady | جميع الحقوق محفوظة لمنصة PharMReady - تصميم وتطوير د. أحمد فاضل</p>
+    <p style="font-size: 10px; margin-top: 5px; color: rgba(128,128,128,0.4)">Support: 01107118948</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script>
+    const langData = {
+      ar: {
+        logo_title: "منصة PharMReady",
+        logo_sub: "بوابة متابعة طلبات المتدربين",
+        btn_login: "تسجيل الدخول",
+        status_card_title: "حالة طلب الانضمام للمنصة",
+        enter_phone_check: "لم نجد رقم هاتف مسجل في الذاكرة المحلية لجهازك. يرجى إدخال رقم هاتفك للتحقق من حالة طلبك:",
+        btn_verify: "تحقق",
+        pending_status_title: "طلبك قيد المراجعة والموافقة ⏳",
+        welcome_dr: "مرحباً يا دكتور",
+        pending_welcome_msg: "تم تسجيل بياناتك بنجاح في نظام المراجعة لمنصة PharMReady.",
+        pending_auto_refresh: "نقوم بمراجعة الطلبات والتحقق من فروع التدريب يدوياً. يتم تحديث هذه الصفحة تلقائياً كل 15 ثانية فور اتخاذ المدير قرار القبول.",
+        btn_refresh_now: "تحديث الحالة الآن",
+        accepted_status_title: "تهانينا! تم قبول طلبك بنجاح 🎉",
+        accepted_welcome_msg: "كمتدرب رسمي في منصة PharMReady. إليك بيانات الدخول الخاصة بك:",
+        created_email: "البريد الإلكتروني المنشأ:",
+        temp_pass: "كلمة المرور المؤقتة:",
+        btn_copy: "نسخ",
+        warn_change_pass: "يرجى تغيير كلمة المرور المؤقتة فور تسجيل دخولك الأول لزيادة أمان حسابك.",
+        btn_go_login: "الانتقال لصفحة تسجيل الدخول",
+        rejected_status_title: "عذراً، تم رفض طلب الانضمام ❌",
+        rejected_welcome_msg: "نأسف لإبلاغك بأنه تم رفض طلب انضمامك للأكاديمية.",
+        reject_reason_label: "سبب الرفض المسجل من الإدارة:",
+        reject_support_msg: "للمزيد من الاستفسارات أو مراجعة الطلب، يرجى التواصل مع رقم الدعم الفني المباشر:",
+        btn_re_register: "إعادة التسجيل ببيانات أخرى",
+        maghawry_history_title: "نبذة عن منصة PharMReady",
+        maghawry_history_p: "تأسست منصة PharMReady كواحدة من الكيانات الصيدلانية الرائدة في محافظة دمياط. ترتكز رؤية المجموعة على تقديم خدمات صيدلانية متكاملة ورعاية صحية متطورة تليق بالمجتمع. وتولي المجموعة اهتماماً بالغاً بتدريب وتأهيل الأجيال الجديدة من خريجي وطلاب كليات الصيدلة، وتزويدهم بالخبرة العملية المطلوبة للانخراط بكفاءة في سوق العمل الدوائي، معتمدين على أحدث الأساليب التعليمية والمعايير المهنية العالمية. المدير التنفيذي للصيدليات هو الدكتور عبد العزيز المغاوري.",
+        dev_bio_title: "نبذة عن المطور (أحمد فاضل)",
+        dev_bio_p: "أحمد فاضل، هو المهندس والمطور المسؤول عن تصميم وتطوير المنصة الأكاديمية (PharmReady-AlmaghwryBy-Fadel). تم بناء هذا النظام خصيصاً لتسهيل إدارة العملية التدريبية وتأمين المحتوى العلمي المقدم للطلاب. يهدف النظام لتسجيل المتدربين الجدد وإصدار حسابات الدخول الرسمية ومتابعة مستويات التقدم الدراسي إلكترونياً وبطريقة ذكية بدون أي تعقيد تقني أو استهلاك غير مبرر لباقات الإنترنت.",
+        footer_text: "© 2026 PharMReady | جميع الحقوق محفوظة لمنصة PharMReady - تصميم وتطوير د. أحمد فاضل",
+        copied_success: "📋 تم نسخ النص للحافظة بنجاح!",
+        copied_fail: "فشل في نسخ النص تلقائياً.",
+        invalid_phone_err: "يرجى إدخال رقم هاتف صحيح مكون من 11 رقماً ويبدأ بـ 01."
+      },
+      en: {
+        logo_title: "PharMReady Platform",
+        logo_sub: "Trainees Request Tracking Portal",
+        btn_login: "Login Gate",
+        status_card_title: "Your Subscription Request Status",
+        enter_phone_check: "We did not find any registered phone number in this device. Please enter your mobile number to search status:",
+        btn_verify: "Verify",
+        pending_status_title: "Your Request is Under Review ⏳",
+        welcome_dr: "Welcome, Dr.",
+        pending_welcome_msg: "Your information has been successfully registered in PharMReady Platform review system.",
+        pending_auto_refresh: "We review registration requests and verify training branch details manually. This page updates automatically every 15 seconds.",
+        btn_refresh_now: "Check Status Now",
+        accepted_status_title: "Congratulations! Request Approved 🎉",
+        accepted_welcome_msg: "as an official trainee in PharMReady Platform. Here are your credentials:",
+        created_email: "Assigned Login Email:",
+        temp_pass: "Temporary Passcode:",
+        btn_copy: "Copy",
+        warn_change_pass: "Please change this temporary password immediately after your first login for security.",
+        btn_go_login: "Go to Login Page",
+        rejected_status_title: "We Regret to Inform You, Request Declined ❌",
+        rejected_welcome_msg: "Your request to join the training academy has been rejected by the administrator.",
+        reject_reason_label: "Reason for rejection recorded by Admin:",
+        reject_support_msg: "For more details or to appeal, please contact our direct support phone number:",
+        btn_re_register: "Re-Register with New Information",
+        maghawry_history_title: "About PharMReady Platform",
+        maghawry_history_p: "PharMReady Platform was established as a premier pharmacy group in Damietta. Our vision is centered on delivering comprehensive pharmacy care and advanced healthcare services. The group prioritizes the training and qualification of new pharmacy graduates and students, providing them with real-world clinical and practical experiences to integrate successfully into the job market, guided by modern educational tools. The group's CEO is Dr. Abdel Aziz PharMReady.",
+        dev_bio_title: "About the Developer (Ahmed Fadel)",
+        dev_bio_p: "Ahmed Fadel is the lead software engineer and developer of the PharmReady academy portal (PharmReady-AlmaghwryBy-Fadel). The system is custom-built to organize training workflows, secure scientific video content from recording, and track trainees' academic progress efficiently, operating with zero server subscription fees and minimal internet data consumption.",
+        footer_text: "Engineered by Dr. Ahmed Fadel © 2026 | PharMReady Platform",
+        copied_success: "📋 Copied to clipboard successfully!",
+        copied_fail: "Failed to copy text automatically.",
+        invalid_phone_err: "Please enter a valid 11-digit mobile number starting with 01."
+      }
+    };
+
+    let pollInterval = null;
+    let traineePhone = localStorage.getItem("trainee_pending_phone");
+    let currentLang = localStorage.getItem("app_lang") || "ar";
+    let currentTheme = localStorage.getItem("app_theme") || "sand";
+
+    function applySettings() {
+      document.body.classList.remove("green-theme", "dark-theme");
+      if (currentTheme === "green") {
+        document.body.classList.add("green-theme");
+        document.getElementById("btn-theme").innerHTML = `<i class="fa-solid fa-leaf" style="color: var(--color-primary);"></i>`;
+      } else if (currentTheme === "dark") {
+        document.body.classList.add("dark-theme");
+        document.getElementById("btn-theme").innerHTML = `<i class="fa-solid fa-sun" style="color: var(--color-gold);"></i>`;
+      } else {
+        document.getElementById("btn-theme").innerHTML = `<i class="fa-solid fa-moon"></i>`;
+      }
+
+      document.documentElement.lang = currentLang;
+      document.body.dir = currentLang === "ar" ? "rtl" : "ltr";
+
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (langData[currentLang][key]) {
+          el.textContent = langData[currentLang][key];
+        }
+      });
+    }
+
+    document.getElementById("btn-theme").addEventListener("click", () => {
+      currentTheme = currentTheme === "sand" ? "green" : (currentTheme === "green" ? "dark" : "sand");
+      localStorage.setItem("app_theme", currentTheme);
+      applySettings();
+    });
+
+    document.getElementById("btn-lang").addEventListener("click", () => {
+      currentLang = currentLang === "ar" ? "en" : "ar";
+      localStorage.setItem("app_lang", currentLang);
+      applySettings();
+    });
+
+    applySettings();
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (traineePhone) {
+        checkCurrentStatus();
+        pollInterval = setInterval(checkCurrentStatus, 15000);
+      } else {
+        document.getElementById("no-phone-saved").style.display = "block";
+      }
+    });
+
+    document.getElementById("btn-check-manual").addEventListener("click", () => {
+      const phoneInput = document.getElementById("check-phone-input").value.trim();
+      if (phoneInput.length === 11 && phoneInput.startsWith("01")) {
+        traineePhone = phoneInput;
+        localStorage.setItem("trainee_pending_phone", phoneInput);
+        document.getElementById("no-phone-saved").style.display = "none";
+        checkCurrentStatus();
+        pollInterval = setInterval(checkCurrentStatus, 15000);
+      } else {
+        showToast(langData[currentLang].invalid_phone_err, "error");
+      }
+    });
+
+    async function checkCurrentStatus() {
+      if (!traineePhone) return;
+      try {
+        const response = await apiRequest({
+          action: "checkStatus",
+          phone: traineePhone
+        });
+
+        document.getElementById("status-pending").style.display = "none";
+        document.getElementById("status-accepted").style.display = "none";
+        document.getElementById("status-rejected").style.display = "none";
+        document.getElementById("no-phone-saved").style.display = "none";
+
+        if (response.success) {
+          if (response.status === "pending") {
+            document.getElementById("status-pending").style.display = "block";
+            document.getElementById("trainee-name-pending").textContent = response.name;
+          } else if (response.status === "accepted") {
+            document.getElementById("status-accepted").style.display = "block";
+            document.getElementById("trainee-name-accepted").textContent = response.name;
+            document.getElementById("trainee-email-disp").textContent = response.email;
+            document.getElementById("trainee-pass-disp").textContent = response.password;
+            clearInterval(pollInterval);
+          } else if (response.status === "rejected") {
+            document.getElementById("status-rejected").style.display = "block";
+            document.getElementById("trainee-name-rejected").textContent = response.name;
+            document.getElementById("trainee-reject-reason").textContent = response.rejectReason || "No reason recorded.";
+            clearInterval(pollInterval);
+          }
+        } else {
+          document.getElementById("no-phone-saved").style.display = "block";
+          clearInterval(pollInterval);
+        }
+      } catch (err) {
+        console.error("Error polling status:", err);
+      }
+    }
+
+    function copyText(elementId) {
+      const text = document.getElementById(elementId).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(langData[currentLang].copied_success, "success");
+      }).catch(err => {
+        showToast(langData[currentLang].copied_fail, "error");
+      });
+    }
+
+    // Hide Preloader on Load
+    </script>
+</body>
+</html>

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل متدرب جديد | PharmReady-AlmaghwryBy-Fadel</title>
+  <!-- Google Fonts: Cairo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .steps-indicator {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      position: relative;
+    }
+    .steps-indicator::before {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--border-color);
+      z-index: 1;
+    }
+    .step-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-primary);
+      border: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 2;
+      transition: var(--transition);
+      color: var(--text-muted);
+    }
+    .step-dot.active {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      box-shadow: 0 0 10px var(--color-primary-glow);
+    }
+    .step-dot.completed {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: #fff;
+    }
+    .wizard-step {
+      display: none;
+      animation: fadeIn 0.4s ease forwards;
+    }
+    .wizard-step.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .wizard-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 30px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  
+
+  <!-- Top Utilities bar -->
+  <div class="app-container" style="max-width: 1200px; padding: 20px 20px 0; display: flex; justify-content: flex-end; gap: 10px;">
+    <button class="theme-switch-btn" id="btn-theme" title="تبديل المظهر / Toggle Theme"><i class="fa-solid fa-moon"></i></button>
+    <button class="lang-switch-btn" id="btn-lang" title="Toggle Language / تبديل اللغة"><i class="fa-solid fa-globe"></i></button>
+  </div>
+
+  <div class="app-container">
+    <div class="auth-wrapper" style="max-width: 600px; margin: 20px auto;">
+      
+      <!-- Header -->
+      <div class="auth-header" style="text-align: center; margin-bottom: 25px;">
+        <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 20px;">
+          <img src="logo_pr.png" alt="PharmReady" class="logo-img" style="height: 48px; max-height: 48px; width: auto; object-fit: contain;">
+          <i class="fa-solid fa-handshake" style="font-size: 32px; color: var(--color-primary); margin: 0 8px;"></i>
+          <img src="logo.png" alt="شعار منصة PharMReady" class="logo-img" style="height: 48px; max-height: 48px; width: auto; object-fit: contain;">
+        </div>
+        <h2 data-i18n="reg_title">تسجيل متدرب جديد</h2>
+        <p data-i18n="reg_subtitle">يرجى إدخال بياناتك بدقة للانضمام لأكاديمية منصة PharMReady</p>
+      </div>
+
+      <!-- Registration Wizard Card -->
+      <div class="card">
+        
+        <!-- Step Indicators -->
+        <div class="steps-indicator">
+          <div class="step-dot active" id="dot-1">1</div>
+          <div class="step-dot" id="dot-2">2</div>
+          <div class="step-dot" id="dot-3">3</div>
+        </div>
+
+        <form id="register-form">
+          
+          <!-- STEP 1: Personal & Contact Details -->
+          <div class="wizard-step active" id="step-1">
+            <h3 class="card-title" style="margin-bottom: 15px;"><i class="fa-solid fa-address-card"></i> <span data-i18n="step1_title">البيانات الشخصية وبيانات الاتصال</span></h3>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+              <label for="reg-name" data-i18n="lbl_name">الاسم الرباعي <span class="required">*</span></label>
+              <input type="text" id="reg-name" required placeholder="أدخل اسمك الرباعي باللغة العربية" autocomplete="off">
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="reg-age" data-i18n="lbl_age">السن الحالي <span class="required">*</span></label>
+                <input type="number" id="reg-age" required min="17" max="40" placeholder="مثال: 22">
+              </div>
+              <div class="form-group">
+                <label for="reg-birthyear" data-i18n="lbl_birth">سنة الميلاد <span class="required">*</span></label>
+                <input type="number" id="reg-birthyear" required min="1985" max="2010" placeholder="مثال: 2004">
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 15px;">
+              <label for="reg-phone" data-i18n="lbl_phone">رقم الهاتف الجوال <span class="required">*</span></label>
+              <input type="tel" id="reg-phone" required placeholder="مثال: 010XXXXXXXX" pattern="[0-9]{11}" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label for="reg-whatsapp" data-i18n="lbl_whatsapp">هل الرقم مزود بخدمة واتساب؟</label>
+              <select id="reg-whatsapp">
+                <option value="نعم، نفس الرقم" data-i18n="opt_wa_yes">نعم، نفس الرقم (مفضل)</option>
+                <option value="لا، رقم آخر" data-i18n="opt_wa_no">لا، رقم آخر</option>
+              </select>
+            </div>
+
+            <!-- External Form Verification (Dynamically Shown) -->
+            <div id="external-form-section" style="display: none; background: rgba(182, 116, 28, 0.05); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
+              <h4 style="margin-bottom: 10px; color: var(--color-primary); font-size: 14px;"><i class="fa-solid fa-circle-exclamation"></i> تأكيد التسجيل في الاستمارة الخارجية</h4>
+              <p style="font-size: 13px; margin-bottom: 10px;">رجاء التأكد من تسجيل بياناتك في الاستمارة من خلال الرابط التالي: <a href="https://ahmedoh.github.io/Almaghawry-form-/" target="_blank" style="font-weight: bold; text-decoration: underline;">اضغط هنا لفتح الاستمارة</a> أولاً</p>
+              <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+                <label style="cursor: pointer;"><input type="radio" name="ext-form-status" value="نعم"> نعم، قمت بالتسجيل</label>
+                <label style="cursor: pointer;"><input type="radio" name="ext-form-status" value="لا" checked> لا، لم أقم بالتسجيل</label>
+              </div>
+              <div id="ext-form-data-container" style="display: none;">
+                <label style="font-size: 12px; margin-bottom: 5px; display: block;">يرجى كتابة رقم الهاتف أو البريد الإلكتروني الذي سجلت به في الاستمارة:</label>
+                <input type="text" id="reg-ext-data" placeholder="01XXXXXXXXX" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid var(--border-color);">
+              </div>
+              <p id="ext-form-warning" style="display: none; color: red; font-size: 12px; margin-top: 5px; font-weight: bold;">يجب عليك تعبئة الاستمارة الخارجية واختيار "نعم" للمتابعة.</p>
+            </div>
+          </div>
+
+          <!-- STEP 2: University and Target Level -->
+          <div class="wizard-step" id="step-2">
+            <h3 class="card-title" style="margin-bottom: 15px;"><i class="fa-solid fa-graduation-cap"></i> <span data-i18n="step2_title">البيانات الدراسية ومقر التدريب</span></h3>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="reg-university" data-i18n="lbl_univ">الجامعة <span class="required">*</span></label>
+                <input type="text" id="reg-university" required placeholder="مثال: جامعة دمياط">
+              </div>
+              <div class="form-group">
+                <label for="reg-college" data-i18n="lbl_college">الكلية والفرقة <span class="required">*</span></label>
+                <input type="text" id="reg-college" required placeholder="مثال: صيدلة - الفرقة الخامسة">
+              </div>
+            </div>
+
+            <div class="form-grid" style="margin-top: 15px;">
+              <div class="form-group">
+                <label for="reg-branch" data-i18n="lbl_branch">فرع التدريب <span class="required">*</span></label>
+                <select id="reg-branch" required>
+                  <option value="" disabled selected data-i18n="opt_select_branch">اختر الفرع...</option>
+                  <option value="فرع البنك">فرع البنك</option>
+                  <option value="فرع ابو الخير">فرع ابو الخير</option>
+                  <option value="فرع الأزهر">فرع الأزهر</option>
+                  <option value="فرع الصعيدي القديم">فرع الصعيدي القديم</option>
+                  <option value="فرع السبعين">فرع السبعين</option>
+                  <option value="كول سنتر">كول سنتر</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="reg-target-level" data-i18n="lbl_target_level">المستوى المطلوب الانضمام له <span class="required">*</span></label>
+                <select id="reg-target-level" required>
+                  <option value="Passengers" selected>Passengers (المستوى الصفري)</option>
+                  <option value="Starters">Starters (المستوى الأول)</option>
+                  <option value="Movers">Movers (المستوى الثاني)</option>
+                  <option value="Flyers">Flyers (المستوى الثالث)</option>
+                  <option value="Beast">ليفل الوحش 👑 (المستوى الرابع - الأصعب)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 3: Security Question -->
+          <div class="wizard-step" id="step-3">
+            <h3 class="card-title" style="margin-bottom: 15px;"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="step3_title">التحقق وسؤال الأمان</span></h3>
+            <p style="margin-bottom: 20px; font-size: 14px;" data-i18n="security_verify_desc">لإتمام التسجيل، يرجى الإجابة على السؤال الأمني التالي الخاص بفروع منصة PharMReady:</p>
+
+            <div class="form-group">
+              <label style="color: var(--text-main); font-size: 15px; font-weight: bold; margin-bottom: 15px; display: block;" data-i18n="security_question">
+                أين تقع جميع فروع منصة PharMReady؟
+              </label>
+              
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="radio" name="security-choice" value="0" required>
+                  <span data-i18n="sec_opt_1">في مدينة دمياط القديمة فقط.</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="radio" name="security-choice" value="1">
+                  <span style="color: var(--color-primary); font-weight: bold;" data-i18n="sec_opt_2">في مدينة دمياط الجديدة فقط.</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="radio" name="security-choice" value="2">
+                  <span data-i18n="sec_opt_3">في محافظتي القاهرة والإسكندرية.</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wizard Footer Controls -->
+          <div class="wizard-footer">
+            <button type="button" class="btn btn-secondary" id="btn-prev" style="visibility: hidden;">
+              <i class="fa-solid fa-arrow-right"></i> <span data-i18n="btn_prev">السابق</span>
+            </button>
+            <button type="button" class="btn btn-primary" id="btn-next">
+              <span data-i18n="btn_next">التالي</span> <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <button type="submit" class="btn btn-primary" id="btn-submit" style="display: none;">
+              <i class="fa-solid fa-user-plus"></i> <span data-i18n="btn_submit_request">تقديم طلب الاشتراك</span>
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+
+      <div class="auth-footer" style="text-align: center; margin-top: 15px;">
+        <p><span data-i18n="has_account">لديك حساب بالفعل؟</span> <a href="index.html" data-i18n="login_back">اضغط هنا لتسجيل الدخول</a></p>
+      </div>
+
+    </div>
+  </div>
+
+  <footer class="app-footer" style="text-align: center; padding: 20px 0; margin-top: auto; border-top: 1px solid var(--border-color); background: var(--bg-secondary);">
+    <p data-i18n="footer_text">© 2026 PharMReady | جميع الحقوق محفوظة لمنصة PharMReady - تصميم وتطوير د. أحمد فاضل</p>
+    <p style="font-size: 10px; margin-top: 5px; color: rgba(128,128,128,0.4)">Support: 01107118948</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script>
+    const langData = {
+      ar: {
+        reg_title: "تسجيل متدرب جديد",
+        reg_subtitle: "يرجى إدخال بياناتك بدقة للانضمام لأكاديمية منصة PharMReady",
+        step1_title: "البيانات الشخصية وبيانات الاتصال",
+        lbl_name: "الاسم الرباعي",
+        lbl_age: "السن الحالي",
+        lbl_birth: "سنة الميلاد",
+        lbl_phone: "رقم الهاتف الجوال",
+        lbl_whatsapp: "هل رقم الهاتف مسجل عليه حساب واتساب؟",
+        opt_wa_yes: "نعم، هو نفس الرقم (موصى به)",
+        opt_wa_no: "لا، لا يوجد واتساب",
+        step2_title: "البيانات الدراسية ومقر التدريب",
+        lbl_univ: "الجامعة",
+        lbl_college: "الكلية والفرقة",
+        lbl_branch: "فرع التدريب",
+        opt_select_branch: "اختر الفرع...",
+        lbl_target_level: "المستوى المطلوب الانضمام له",
+        step3_title: "التحقق وسؤال الأمان",
+        security_verify_desc: "لإتمام التسجيل، يرجى الإجابة على السؤال الأمني التالي الخاص بفروع منصة PharMReady:",
+        security_question: "أين تقع جميع فروع منصة PharMReady؟",
+        sec_opt_1: "في مدينة دمياط القديمة فقط.",
+        sec_opt_2: "في مدينة دمياط الجديدة فقط.",
+        sec_opt_3: "في محافظتي القاهرة والإسكندرية.",
+        btn_prev: "السابق",
+        btn_next: "التالي",
+        btn_submit_request: "تقديم طلب الاشتراك",
+        has_account: "لديك حساب بالفعل؟",
+        login_back: "اضغط هنا لتسجيل الدخول",
+        footer_text: "© 2026 PharMReady | جميع الحقوق محفوظة لمنصة PharMReady - تصميم وتطوير د. أحمد فاضل",
+        err_name: "يرجى إدخال اسمك الثلاثي أو الرباعي بوضوح.",
+        err_age: "الرجاء إدخال سن واقعي للمتدرب (من 17 إلى 40).",
+        err_birth: "الرجاء إدخال سنة ميلاد واقعية.",
+        err_phone: "رقم الهاتف يجب أن يكون مكوناً من 11 رقماً ويبدأ بـ 01.",
+        err_univ: "يرجى كتابة اسم الجامعة.",
+        err_college: "يرجى كتابة اسم الكلية والفرقة الدراسية.",
+        err_branch: "يرجى اختيار فرع التدريب الملتحق به.",
+        err_security: "❌ إجابة سؤال الأمان خاطئة! فكر مجدداً أو تواصل مع الدعم الفني.",
+        submit_loading: "جاري إرسال البيانات...",
+        submit_success: "🎉 تم إرسال طلبك بنجاح! جاري تحويلك لصفحة المتابعة...",
+        connection_error: "حدث خطأ أثناء إرسال البيانات للاتصال بالخادم."
+      },
+      en: {
+        reg_title: "Register New Trainee",
+        reg_subtitle: "Please enter your information carefully to join PharMReady Academy",
+        step1_title: "Personal & Contact Information",
+        lbl_name: "Full Quadruple Name",
+        lbl_age: "Current Age",
+        lbl_birth: "Birth Year",
+        lbl_phone: "Mobile Phone Number",
+        lbl_whatsapp: "Is this number registered on WhatsApp?",
+        opt_wa_yes: "Yes, it is the same number (Recommended)",
+        opt_wa_no: "No, WhatsApp not available on this",
+        step2_title: "Academic & Training Branch Details",
+        lbl_univ: "University Name",
+        lbl_college: "College & Academic Squad/Year",
+        lbl_branch: "Training Branch location",
+        opt_select_branch: "Select Branch location...",
+        lbl_target_level: "Initial Target Training Level",
+        step3_title: "Security Verification",
+        security_verify_desc: "To finalize registration, please answer the security check regarding PharMReady branches:",
+        security_question: "Where are all PharMReady Platform branches located?",
+        sec_opt_1: "In Old Damietta city only.",
+        sec_opt_2: "In New Damietta city only.",
+        sec_opt_3: "In Cairo and Alexandria Governorates.",
+        btn_prev: "Previous",
+        btn_next: "Next",
+        btn_submit_request: "Submit Subscription Request",
+        has_account: "Already registered?",
+        login_back: "Click here to login",
+        footer_text: "Engineered by Dr. Ahmed Fadel © 2026 | El-Maghwry Pharmacies Group",
+        err_name: "Please enter your full name clearly (at least 3 words).",
+        err_age: "Please enter a valid age (17 to 40).",
+        err_birth: "Please enter a valid birth year.",
+        err_phone: "Phone number must be exactly 11 digits and start with 01.",
+        err_univ: "Please write your university name.",
+        err_college: "Please write your college & squad year.",
+        err_branch: "Please choose your training branch.",
+        err_security: "❌ Security question answer is incorrect! Please try again.",
+        submit_loading: "Sending request data...",
+        submit_success: "🎉 Request submitted successfully! Redirecting to tracking page...",
+        connection_error: "Connection to database server failed."
+      }
+    };
+
+    let currentStep = 1;
+    const totalSteps = 3;
+    let currentLang = localStorage.getItem("app_lang") || "ar";
+    let currentTheme = localStorage.getItem("app_theme") || "sand";
+
+    const step1 = document.getElementById("step-1");
+    const step2 = document.getElementById("step-2");
+    const step3 = document.getElementById("step-3");
+    
+    const dot1 = document.getElementById("dot-1");
+    const dot2 = document.getElementById("dot-2");
+    const dot3 = document.getElementById("dot-3");
+
+    const btnPrev = document.getElementById("btn-prev");
+    const btnNext = document.getElementById("btn-next");
+    const btnSubmit = document.getElementById("btn-submit");
+    const form = document.getElementById("register-form");
+
+    let requireExternalForm = false;
+    async function initExternalFormSettings() {
+      try {
+        const res = await apiRequest({ action: "getSettings" });
+        if (res.success && res.settings) {
+          requireExternalForm = res.settings.requireExternalForm === true || res.settings.requireExternalForm === "true";
+          if (requireExternalForm) {
+            document.getElementById("external-form-section").style.display = "block";
+          }
+        }
+      } catch (err) { console.error("Error fetching settings:", err); }
+    }
+    initExternalFormSettings();
+
+    document.querySelectorAll('input[name="ext-form-status"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const warning = document.getElementById("ext-form-warning");
+        const container = document.getElementById("ext-form-data-container");
+        if (e.target.value === "نعم") {
+          container.style.display = "block";
+          warning.style.display = "none";
+        } else {
+          container.style.display = "none";
+          warning.style.display = "block";
+        }
+      });
+    });
+
+    function applySettings() {
+      document.body.classList.remove("green-theme", "dark-theme");
+      if (currentTheme === "green") {
+        document.body.classList.add("green-theme");
+        document.getElementById("btn-theme").innerHTML = `<i class="fa-solid fa-leaf" style="color: var(--color-primary);"></i>`;
+      } else if (currentTheme === "dark") {
+        document.body.classList.add("dark-theme");
+        document.getElementById("btn-theme").innerHTML = `<i class="fa-solid fa-sun" style="color: var(--color-gold);"></i>`;
+      } else {
+        document.getElementById("btn-theme").innerHTML = `<i class="fa-solid fa-moon"></i>`;
+      }
+
+      document.documentElement.lang = currentLang;
+      document.body.dir = currentLang === "ar" ? "rtl" : "ltr";
+      
+      if (currentLang === "ltr") {
+        btnNext.innerHTML = `Next <i class="fa-solid fa-arrow-right"></i>`;
+        btnPrev.innerHTML = `<i class="fa-solid fa-arrow-left"></i> Previous`;
+      } else {
+        btnNext.innerHTML = `التالي <i class="fa-solid fa-arrow-left"></i>`;
+        btnPrev.innerHTML = `<i class="fa-solid fa-arrow-right"></i> السابق`;
+      }
+
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (langData[currentLang][key]) {
+          el.textContent = langData[currentLang][key];
+        }
+      });
+    }
+
+    document.getElementById("btn-theme").addEventListener("click", () => {
+      currentTheme = currentTheme === "sand" ? "green" : (currentTheme === "green" ? "dark" : "sand");
+      localStorage.setItem("app_theme", currentTheme);
+      applySettings();
+    });
+
+    document.getElementById("btn-lang").addEventListener("click", () => {
+      currentLang = currentLang === "ar" ? "en" : "ar";
+      localStorage.setItem("app_lang", currentLang);
+      applySettings();
+    });
+
+    applySettings();
+
+    function updateWizard() {
+      step1.classList.remove("active");
+      step2.classList.remove("active");
+      step3.classList.remove("active");
+
+      dot1.className = "step-dot" + (currentStep >= 1 ? " active" : "") + (currentStep > 1 ? " completed" : "");
+      dot2.className = "step-dot" + (currentStep >= 2 ? " active" : "") + (currentStep > 2 ? " completed" : "");
+      dot3.className = "step-dot" + (currentStep >= 3 ? " active" : "") + (currentStep > 3 ? " completed" : "");
+
+      if (currentStep === 1) {
+        step1.classList.add("active");
+        btnPrev.style.visibility = "hidden";
+        btnNext.style.display = "inline-flex";
+        btnSubmit.style.display = "none";
+      } else if (currentStep === 2) {
+        step2.classList.add("active");
+        btnPrev.style.visibility = "visible";
+        btnNext.style.display = "inline-flex";
+        btnSubmit.style.display = "none";
+      } else if (currentStep === 3) {
+        step3.classList.add("active");
+        btnPrev.style.visibility = "visible";
+        btnNext.style.display = "none";
+        btnSubmit.style.display = "inline-flex";
+      }
+    }
+
+    function validateCurrentStep() {
+      if (currentStep === 1) {
+        const name = document.getElementById("reg-name").value.trim();
+        const age = document.getElementById("reg-age").value.trim();
+        const birth = document.getElementById("reg-birthyear").value.trim();
+        const phone = document.getElementById("reg-phone").value.trim();
+
+      if (requireExternalForm) {
+        const extStatus = document.querySelector('input[name="ext-form-status"]:checked').value;
+        if (extStatus === "لا") {
+          document.getElementById("ext-form-warning").style.display = "block";
+          showToast("يجب عليك التسجيل في الاستمارة الخارجية أولاً", "error");
+          return false;
+        }
+        const extData = document.getElementById("reg-ext-data").value.trim();
+        if (!extData) {
+          showToast("رجاء إدخال بيانات المطابقة للاستمارة", "error");
+          return false;
+        }
+      }
+
+        
+        if (!name || name.split(" ").length < 3) {
+          showToast(langData[currentLang].err_name, "error");
+          return false;
+        }
+        if (!age || age < 17 || age > 40) {
+          showToast(langData[currentLang].err_age, "error");
+          return false;
+        }
+        if (!birth || birth < 1985 || birth > 2010) {
+          showToast(langData[currentLang].err_birth, "error");
+          return false;
+        }
+        if (!phone || phone.length !== 11 || !phone.startsWith("01")) {
+          showToast(langData[currentLang].err_phone, "error");
+          return false;
+        }
+      } else if (currentStep === 2) {
+        const university = document.getElementById("reg-university").value.trim();
+        const college = document.getElementById("reg-college").value.trim();
+        const branch = document.getElementById("reg-branch").value;
+
+        if (!university) {
+          showToast(langData[currentLang].err_univ, "error");
+          return false;
+        }
+        if (!college) {
+          showToast(langData[currentLang].err_college, "error");
+          return false;
+        }
+        if (!branch) {
+          showToast(langData[currentLang].err_branch, "error");
+          return false;
+        }
+      }
+      return true;
+    }
+
+    btnNext.addEventListener("click", () => {
+      if (validateCurrentStep()) {
+        currentStep++;
+        updateWizard();
+      }
+    });
+
+    btnPrev.addEventListener("click", () => {
+      currentStep--;
+      updateWizard();
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      const securityAnswerElement = document.querySelector('input[name="security-choice"]:checked');
+      if (!securityAnswerElement) {
+        showToast(langData[currentLang].err_security, "error");
+        return;
+      }
+      const securityAnswer = securityAnswerElement.value;
+
+      if (securityAnswer !== "1") {
+        showToast(langData[currentLang].err_security, "error");
+        return;
+      }
+
+      const name = document.getElementById("reg-name").value.trim();
+      const age = document.getElementById("reg-age").value.trim();
+      const birthYear = document.getElementById("reg-birthyear").value.trim();
+      const phone = document.getElementById("reg-phone").value.trim();
+      const whatsApp = document.getElementById("reg-whatsapp").value;
+      const university = document.getElementById("reg-university").value.trim();
+      const college = document.getElementById("reg-college").value.trim();
+      const trainingBranch = document.getElementById("reg-branch").value;
+      const targetLevel = document.getElementById("reg-target-level").value;
+
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> ${langData[currentLang].submit_loading}`;
+
+      try {
+        const response = await apiRequest({
+          action: "register",
+          name,
+          age,
+          birthYear,
+          phone,
+          whatsApp,
+          university,
+          college,
+          trainingBranch,
+          securityAnswer,
+          targetLevel
+        });
+
+        if (response.success) {
+          localStorage.setItem("trainee_pending_phone", phone);
+          showToast(langData[currentLang].submit_success, "success");
+          setTimeout(() => {
+            window.location.href = "waiting.html";
+          }, 2000);
+        } else {
+          showToast(response.message, "error");
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = `<i class="fa-solid fa-user-plus"></i> ${langData[currentLang].btn_submit_request}`;
+        }
+      } catch (err) {
+        showToast(langData[currentLang].connection_error, "error");
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `<i class="fa-solid fa-user-plus"></i> ${langData[currentLang].btn_submit_request}`;
+      }
+    });
+
+    // Hide Preloader on Load
+    </script>
+</body>
+</html>
