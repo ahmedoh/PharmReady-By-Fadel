@@ -2448,11 +2448,77 @@
       window.location.href = "index.html";
     };
 
+        // Form Submission for Admin Login
+    const adminLoginForm = document.getElementById("admin-login-form");
+    if (adminLoginForm) {
+      adminLoginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const username = document.getElementById("admin-username").value.trim().toLowerCase();
+        const password = document.getElementById("admin-password").value.trim().toLowerCase();
+
+        const btnSubmit = e.target.querySelector("button[type='submit']");
+        const originalText = btnSubmit.innerHTML;
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Loading...`;
+
+        try {
+          const response = await apiRequest({
+            action: "adminLogin",
+            username: username,
+            password: password
+          });
+
+          if (response.success && response.admin) {
+            sessionStorage.setItem("admin_logged_in", "true");
+            sessionStorage.setItem("admin_username", response.admin.username);
+            sessionStorage.setItem("admin_password", password);
+            sessionStorage.setItem("admin_role", response.admin.role);
+            sessionStorage.setItem("admin_permissions", response.admin.permissions);
+            sessionStorage.setItem("admin_display_name", response.admin.displayName || response.admin.username);
+
+            showToast("Welcome back " + (response.admin.displayName || response.admin.username), "success");
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          } else if (response.success) {
+            // Fallback
+            sessionStorage.setItem("admin_logged_in", "true");
+            sessionStorage.setItem("admin_username", username);
+            sessionStorage.setItem("admin_password", password);
+            showToast(`Login success: ${username}`, "success");
+            setTimeout(() => { window.location.reload(); }, 1000);
+          } else {
+            showToast(response.message || "Invalid credentials!", "error");
+          }
+        } catch (err) {
+          showToast("Connection error", "error");
+        } finally {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = originalText;
+        }
+      });
+    }
+
+    // Toggle password visibility
+    const passInput = document.getElementById("admin-password");
+    const btnToggle = document.getElementById("btn-toggle-pass");
+    if (btnToggle && passInput) {
+      btnToggle.addEventListener("click", () => {
+        if (passInput.type === "password") {
+          passInput.type = "text";
+          btnToggle.innerHTML = `<i class="fa-solid fa-eye"></i>`;
+        } else {
+          passInput.type = "password";
+          btnToggle.innerHTML = `<i class="fa-solid fa-eye-slash"></i>`;
+        }
+      });
+    }
     // Hide Preloader on Load
     </script>
 
 </div>
 </body>
 </html>
+
 
 
