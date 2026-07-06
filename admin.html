@@ -1025,6 +1025,39 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=2.1"></script>
+  // --- Edit Functions ---
+
+window.openEditVideoModal = function(id) {
+  const video = allVideos.find(v => (v.Id || v.Url) === id);
+  if (!video) return;
+  
+  // Populate the existing Add/Upload Modal
+  document.getElementById("video-modal-title").textContent = "تعديل بيانات المحاضرة";
+  document.getElementById("video-title-input").value = video.Title;
+  document.getElementById("video-url-input").value = video.Url;
+  document.getElementById("video-level-input").value = video.Level;
+  document.getElementById("video-order-input").value = video.Index;
+  
+  selectedVideoId = id; // Track that we are editing
+  document.getElementById("video-modal").classList.add("active");
+};
+
+window.openEditQuestionModal = function(rowNum) {
+  const q = allQuestions.find(item => (item.rowNum || allQuestions.indexOf(item)) === rowNum);
+  if (!q) return;
+
+  document.getElementById("question-modal-title").textContent = "تعديل السؤال";
+  document.getElementById("q-level").value = q.Level;
+  document.getElementById("q-text-ar").value = q.QuestionAr || "";
+  document.getElementById("q-text-en").value = q.QuestionEn || "";
+  document.getElementById("q-opt1-ar").value = q.Opt1Ar || "";
+  document.getElementById("q-opt2-ar").value = q.Opt2Ar || "";
+  document.getElementById("q-opt3-ar").value = q.Opt3Ar || "";
+  document.getElementById("q-correct").value = q.CorrectIndex;
+
+  selectedQuestionId = rowNum;
+  document.getElementById("question-modal").classList.add("active");
+};
   <script>
     const adminUsername    = (sessionStorage.getItem("admin_username") || "").trim().toLowerCase();
     const adminPassword    = (sessionStorage.getItem("admin_password") || "").trim().toLowerCase();
@@ -1358,47 +1391,43 @@
     }
 
     function renderVideos() {
-      const tbody = document.getElementById("videos-table-body");
-      if (allVideos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد محاضرات مرفوعة.</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = "";
-      allVideos.forEach(v => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><strong>${v.Title}</strong></td>
-          <td style="font-family: monospace;">${v.Url}</td>
-          <td>${v.Level}</td>
-          <td>${v.Index}</td>
-          <td>
-            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteVideo('${v.Id || v.Url}')"><i class="fa-solid fa-trash"></i> حذف</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
+  const tbody = document.getElementById("videos-table-body");
+  // ... existing code ...
+  tbody.innerHTML = "";
+  allVideos.forEach(v => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><strong>${v.Title}</strong></td>
+      <td style="font-family: monospace;">${v.Url}</td>
+      <td>${v.Level}</td>
+      <td>${v.Index}</td>
+      <td style="display: flex; gap: 5px;">
+        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditVideoModal('${v.Id || v.Url}')"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteVideo('${v.Id || v.Url}')"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
 
     function renderQuestions() {
-      const tbody = document.getElementById("questions-table-body");
-      if (allQuestions.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد أسئلة مضافة.</td></tr>`;
-        return;
-      }
-      tbody.innerHTML = "";
-      allQuestions.forEach((q, idx) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${q.QuestionAr || q.QuestionEn}</td>
-          <td>${q.Level}</td>
-          <td>الخيار ${parseInt(q.CorrectIndex) + 1}</td>
-          <td>
-            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteQuestion(${q.rowNum || idx})"><i class="fa-solid fa-trash"></i> حذف</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
+  const tbody = document.getElementById("questions-table-body");
+  // ... existing code ...
+  tbody.innerHTML = "";
+  allQuestions.forEach((q, idx) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${q.QuestionAr || q.QuestionEn}</td>
+      <td>${q.Level}</td>
+      <td>الخيار ${parseInt(q.CorrectIndex) + 1}</td>
+      <td style="display: flex; gap: 5px;">
+        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px;" onclick="openEditQuestionModal(${q.rowNum || idx})"><i class="fa-solid fa-pen"></i></button>
+        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteQuestion(${q.rowNum || idx})"><i class="fa-solid fa-trash"></i></button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
 
     function renderPrices() {
       const tbody = document.getElementById("prices-table-body");
@@ -1919,7 +1948,7 @@
     window.deleteVideo = async function(id) {
       if (!confirm("هل تريد حذف هذا الفيديو؟")) return;
       try {
-        const response = await apiRequest({ action: "adminDeleteVideo", adminPassword, id });
+        const response = await apiRequest({ action: "adminDeleteVideo", adminPassword, videoId: id });
         if (response.success) {
           showToast("تم الحذف بنجاح.", "success");
           loadAdminDashboardData();
