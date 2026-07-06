@@ -894,7 +894,7 @@ async function handleSupabaseRequest(params) {
       const { data: t, error } = await supabaseClient
         .from('trainees')
         .select('*')
-        .eq('email', email)
+        .ilike('email', email)
         .eq('password', password)
         .maybeSingle();
         
@@ -930,7 +930,7 @@ async function handleSupabaseRequest(params) {
       const { data: t, error: tErr } = await supabaseClient
         .from('trainees')
         .select('*')
-        .eq('email', email)
+        .ilike('email', email)
         .eq('password', password)
         .maybeSingle();
         
@@ -949,7 +949,7 @@ async function handleSupabaseRequest(params) {
       const { data: prog } = await supabaseClient
         .from('progress')
         .select('*')
-        .eq('email', email)
+        .ilike('email', email)
         .eq('level', currentLevel)
         .maybeSingle();
         
@@ -962,7 +962,7 @@ async function handleSupabaseRequest(params) {
       const { data: promotions } = await supabaseClient
         .from('promotions')
         .select('*')
-        .eq('email', email);
+        .ilike('email', email);
         
       const completedLevels = (promotions || []).filter(p => p.status === 'approved').map(p => String(p.from_level));
       const pendingPromotion = (promotions || []).some(p => p.status === 'pending');
@@ -1030,7 +1030,7 @@ async function handleSupabaseRequest(params) {
       const { data: t, error: tErr } = await supabaseClient
         .from('trainees')
         .select('current_level')
-        .eq('email', email)
+        .ilike('email', email)
         .eq('password', password)
         .maybeSingle();
         
@@ -1041,7 +1041,7 @@ async function handleSupabaseRequest(params) {
       const { data: prog } = await supabaseClient
         .from('progress')
         .select('*')
-        .eq('email', email)
+        .ilike('email', email)
         .eq('level', level)
         .maybeSingle();
         
@@ -1274,7 +1274,7 @@ async function handleSupabaseRequest(params) {
       const { data: existing } = await supabaseClient
         .from('promotions')
         .select('*')
-        .eq('email', email)
+        .ilike('email', email)
         .eq('from_level', fromLevel)
         .eq('to_level', toLevel)
         .maybeSingle();
@@ -1300,7 +1300,7 @@ async function handleSupabaseRequest(params) {
       const { error: promoErr } = await supabaseClient
         .from('promotions')
         .update({ status: "approved" })
-        .eq('email', params.email)
+        .ilike('email', params.email)
         .eq('from_level', params.fromLevel)
         .eq('to_level', params.toLevel);
       if (promoErr) throw promoErr;
@@ -1308,7 +1308,7 @@ async function handleSupabaseRequest(params) {
       const { error: trErr } = await supabaseClient
         .from('trainees')
         .update({ current_level: params.toLevel })
-        .eq('email', params.email);
+        .ilike('email', params.email);
       if (trErr) throw trErr;
       
       return { success: true, message: "تم اعتماد الترقية وإصدار الشهادة للمتدرب بنجاح!" };
@@ -1465,7 +1465,7 @@ async function handleSupabaseRequest(params) {
       const { data, error } = await supabaseClient
         .from('progress')
         .select('*')
-        .eq('email', email)
+        .ilike('email', email)
         .eq('level', level)
         .maybeSingle();
       if (error) throw error;
@@ -1528,7 +1528,7 @@ async function handleSupabaseRequest(params) {
       
     } else if (action === "getTraineeReports") {
       const email = String(params.email).trim().toLowerCase();
-      const { data, error } = await supabaseClient.from('reports').select('*').eq('email', email).order('created_at', { ascending: false });
+      const { data, error } = await supabaseClient.from('reports').select('*').ilike('email', email).order('created_at', { ascending: false });
       if (error) throw error;
       return {
         success: true,
@@ -1590,7 +1590,7 @@ async function handleSupabaseRequest(params) {
       
     } else if (action === "getTraineeNotifications") {
       const email = String(params.email).trim().toLowerCase();
-      const { data, error } = await supabaseClient.from('notifications').select('*').eq('email', email).order('created_at', { ascending: false });
+      const { data, error } = await supabaseClient.from('notifications').select('*').ilike('email', email).order('created_at', { ascending: false });
       if (error) throw error;
       return {
         success: true,
@@ -1605,10 +1605,10 @@ async function handleSupabaseRequest(params) {
       const oldPass = String(params.oldPassword).trim();
       const newPass = String(params.newPassword).trim();
       
-      const { data: t } = await supabaseClient.from('trainees').select('*').eq('email', email).eq('password', oldPass).maybeSingle();
+      const { data: t } = await supabaseClient.from('trainees').select('*').ilike('email', email).eq('password', oldPass).maybeSingle();
       if (!t) return { success: false, message: "كلمة المرور القديمة غير صحيحة." };
       
-      const { error } = await supabaseClient.from('trainees').update({ password: newPass }).eq('email', email);
+      const { error } = await supabaseClient.from('trainees').update({ password: newPass }).ilike('email', email);
       if (error) throw error;
       
       await supabaseClient.from('notifications').insert([{ email, message: `تم تغيير كلمة المرور بنجاح في ${new Date().toLocaleString('ar-EG')}` }]);
@@ -1625,7 +1625,7 @@ async function handleSupabaseRequest(params) {
           college: params.college,
           whatsapp: params.whatsapp
         })
-        .eq('email', email);
+        .ilike('email', email);
       if (error) throw error;
       return { success: true, message: "تم تحديث الملف الشخصي بنجاح!" };
     }
