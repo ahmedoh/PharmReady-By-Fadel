@@ -272,6 +272,7 @@
           sessionStorage.setItem("admin_role", response.admin.role);
           sessionStorage.setItem("admin_permissions", response.admin.permissions);
           sessionStorage.setItem("admin_display_name", response.admin.displayName || response.admin.username);
+          sessionStorage.setItem("login_timestamp", Date.now().toString());
 
           const welcomeAdminMsg = currentLang === "ar"
             ? `👑 مرحباً ${response.admin.displayName || response.admin.username} (دور: ${response.admin.role})`
@@ -285,6 +286,7 @@
           sessionStorage.setItem("admin_logged_in", "true");
           sessionStorage.setItem("admin_username", username);
           sessionStorage.setItem("admin_password", password);
+          sessionStorage.setItem("login_timestamp", Date.now().toString());
           showToast(`👑 تم تسجيل الدخول: ${username}`, "success");
           setTimeout(() => { window.location.href = "admin.html"; }, 1800);
         } else {

@@ -907,6 +907,137 @@ async function handleSupabaseRequest(params) {
         }
       };
       
+    } else if (action === "getTraineeVideos") {
+      const email = String(params.email).trim().toLowerCase();
+      const password = String(params.password).trim();
+      
+      const { data: t, error: tErr } = await supabaseClient
+        .from('trainees')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .maybeSingle();
+        
+      if (tErr || !t) return { success: false, message: "غير مصرح بالدخول." };
+      if (t.status !== "accepted") return { success: false, message: "الحساب غير نشط." };
+      
+      const currentLevel = t.current_level || "Passengers";
+      
+      // Fetch level videos
+      const { data: videos } = await supabaseClient
+        .from('videos')
+        .select('*')
+        .eq('level', currentLevel);
+        
+      // Fetch progress
+      const { data: prog } = await supabaseClient
+        .from('progress')
+        .select('*')
+        .eq('email', email)
+        .eq('level', currentLevel)
+        .maybeSingle();
+        
+      let watched = [];
+      if (prog && prog.watched_videos) {
+        watched = prog.watched_videos.split(',').map(x => x.trim()).filter(Boolean);
+      }
+      
+      // Fetch promotions
+      const { data: promotions } = await supabaseClient
+        .from('promotions')
+        .select('*')
+        .eq('email', email);
+        
+      const completedLevels = (promotions || []).filter(p => p.status === 'approved').map(p => String(p.from_level));
+      const pendingPromotion = (promotions || []).some(p => p.status === 'pending');
+      
+      // Fetch questions
+      const { data: levelQuestions } = await supabaseClient
+        .from('questions')
+        .select('*')
+        .eq('level', currentLevel);
+        
+      // Fetch video questions
+      const { data: videoQuestions } = await supabaseClient
+        .from('video_questions')
+        .select('*');
+        
+      return {
+        success: true,
+        videos: (videos || []).map(v => ({
+          VideoId: String(v.id),
+          Title: v.title,
+          Url: v.url,
+          Level: v.level
+        })),
+        watched: watched,
+        currentLevel: currentLevel,
+        completedLevels: completedLevels,
+        pendingPromotion: pendingPromotion,
+        questions: (levelQuestions || []).map(q => ({
+          q: q.question_ar,
+          q_en: q.question_en,
+          options: [q.option1_ar, q.option2_ar, q.option3_ar].filter(Boolean),
+          options_en: [q.option1_en, q.option2_en, q.option3_en].filter(Boolean),
+          correct: parseInt(q.correct_index) || 0
+        })),
+        videoQuestions: (videoQuestions || []).map(vq => ({
+          video_id: String(vq.video_id),
+          question_ar: vq.question_ar,
+          option1_ar: vq.option1_ar,
+          option2_ar: vq.option2_ar,
+          option3_ar: vq.option3_ar,
+          correct_index: parseInt(vq.correct_index) || 0,
+          id: String(vq.id)
+        }))
+      };
+
+    } else if (action === "updateProgress") {
+      const email = String(params.email).trim().toLowerCase();
+      const password = String(params.password).trim();
+      const videoId = String(params.videoId).trim();
+      
+      const { data: t, error: tErr } = await supabaseClient
+        .from('trainees')
+        .select('current_level')
+        .eq('email', email)
+        .eq('password', password)
+        .maybeSingle();
+        
+      if (tErr || !t) return { success: false, message: "غير مصرح." };
+      
+      const level = t.current_level || "Passengers";
+      
+      const { data: prog } = await supabaseClient
+        .from('progress')
+        .select('*')
+        .eq('email', email)
+        .eq('level', level)
+        .maybeSingle();
+        
+      let watchedList = [];
+      if (prog && prog.watched_videos) {
+        watchedList = prog.watched_videos.split(',').map(x => x.trim()).filter(Boolean);
+      }
+      
+      if (!watchedList.includes(videoId)) {
+        watchedList.push(videoId);
+        const watchedStr = watchedList.join(',');
+        
+        const { error: upsertErr } = await supabaseClient
+          .from('progress')
+          .upsert({
+            email,
+            level,
+            watched_videos: watchedStr,
+            updated_at: new Date()
+          });
+          
+        if (upsertErr) throw upsertErr;
+      }
+      
+      return { success: true };
+
     } else if (action === "register") {
       const phone = String(params.phone).trim();
       

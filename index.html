@@ -1093,6 +1093,7 @@
           sessionStorage.setItem("admin_role", adminCheck.admin.role);
           sessionStorage.setItem("admin_permissions", adminCheck.admin.permissions);
           sessionStorage.setItem("admin_display_name", adminCheck.admin.displayName || adminCheck.admin.username);
+          sessionStorage.setItem("login_timestamp", Date.now().toString());
 
           showToast(currentLang === "ar"
             ? `👑 مرحباً ${adminCheck.admin.displayName} — جاري التوجيه للوحة التحكم...`
@@ -1103,6 +1104,7 @@
           sessionStorage.setItem("admin_logged_in", "true");
           sessionStorage.setItem("admin_username", cleanUsername);
           sessionStorage.setItem("admin_password", password);
+          sessionStorage.setItem("login_timestamp", Date.now().toString());
           showToast(`👑 مدير معروف: ${cleanUsername}`, "success");
           setTimeout(() => { window.location.href = "admin.html"; }, 1800);
           return;
@@ -1123,6 +1125,7 @@
           sessionStorage.setItem("trainee_name", response.trainee.name);
           sessionStorage.setItem("trainee_branch", response.trainee.branch);
           sessionStorage.setItem("trainee_level", response.trainee.level);
+          sessionStorage.setItem("login_timestamp", Date.now().toString());
 
           const welcomeMsg = currentLang === "ar" 
             ? `🎉 تم تسجيل الدخول بنجاح! مرحباً دكتور: ${response.trainee.name}` 

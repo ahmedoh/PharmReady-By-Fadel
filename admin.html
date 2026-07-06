@@ -941,7 +941,13 @@
     const adminPermSS      = (sessionStorage.getItem("admin_permissions") || "").trim().toLowerCase();
     const adminDisplayName = (sessionStorage.getItem("admin_display_name") || adminUsername).trim();
 
-    if (!adminLoggedIn || !adminUsername) {
+    const loginTime = sessionStorage.getItem("login_timestamp");
+    const maxSessionDuration = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+    const now = Date.now();
+    const isExpired = loginTime && (now - parseInt(loginTime) > maxSessionDuration);
+
+    if (!adminLoggedIn || !adminUsername || isExpired) {
+      sessionStorage.clear();
       window.location.href = "index.html";
     }
 
