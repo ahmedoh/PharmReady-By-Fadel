@@ -1024,10 +1024,7 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=2.1"></script>
-  // --- Edit Functions ---
-
-window.openEditVideoModal = function(id) {
+  <script src="config.js?v=2.1">window.openEditVideoModal = function(id) {
   const video = allVideos.find(v => (v.Id || v.Url) === id);
   if (!video) return;
   
@@ -1057,7 +1054,8 @@ window.openEditQuestionModal = function(rowNum) {
 
   selectedQuestionId = rowNum;
   document.getElementById("question-modal").classList.add("active");
-};
+};</script>
+
   <script>
     const adminUsername    = (sessionStorage.getItem("admin_username") || "").trim().toLowerCase();
     const adminPassword    = (sessionStorage.getItem("admin_password") || "").trim().toLowerCase();
