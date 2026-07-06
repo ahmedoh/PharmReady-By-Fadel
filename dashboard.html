@@ -119,19 +119,44 @@
       position: absolute;
       inset: 0;
       z-index: 5;
-      /* Blocks right-click / link extraction on the iframe */
+      pointer-events: none;   /* CRITICAL: must not block clicks — controls handle everything */
       -webkit-user-select: none;
       user-select: none;
     }
     .security-watermark {
+      position: absolute;
+      inset: 0;
       z-index: 6;
+      pointer-events: none;   /* watermark never blocks clicks */
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      align-items: center;
+      padding: 20px;
+      gap: 8px;
+      color: rgba(255,255,255,0.07); /* very subtle so video is clearly visible */
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-align: center;
+      line-height: 1.4;
+      overflow: hidden;
+      user-select: none;
+    }
+    .security-watermark span {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 90%;
     }
 
     /* Custom control bar */
     .custom-player-controls {
       position: absolute;
       left: 0; right: 0; bottom: 0;
-      z-index: 10;
+      z-index: 20;              /* must be above overlay (5) and watermark (6) */
+      pointer-events: all;      /* CRITICAL: ensure controls always receive events */
       display: flex;
       align-items: center;
       gap: 8px;
@@ -474,17 +499,27 @@
           </h3>
 
           <div class="video-player-container" id="video-wrapper">
-            <!-- Security Overlay click blocker: Prevents clicking the YouTube controls directly -->
-            <div class="video-overlay-protection" id="player-click-blocker" style="cursor: pointer;"></div>
+            <!-- Security non-interactive overlay (pointer-events:none in CSS) -->
+            <div class="video-overlay-protection" id="player-click-blocker"></div>
 
-            <!-- Anti-recording moving Watermark overlay -->
+            <!-- Subtle watermark (pointer-events:none in CSS) -->
             <div class="security-watermark" id="watermark-overlay">
               <span id="watermark-name">Trainee Name</span>
               <span id="watermark-email">email@maghawry.com</span>
               <span id="watermark-phone">010XXXXXXXX</span>
-              <span>PharmReady-Almaghwry</span>
+              <span>PharmReady-Almaghwry ©</span>
             </div>
-            
+
+            <!-- Click-to-play zone: covers middle of video, above controls -->
+            <div id="player-tap-zone" onclick="togglePlayPause()" style="
+              position: absolute;
+              inset: 0;
+              bottom: 58px;   /* leave controls bar uncovered */
+              z-index: 10;
+              cursor: pointer;
+              background: transparent;
+            "></div>
+
             <div id="yt-player-placeholder"></div>
 
             <!-- Custom HTML Player controls bar -->
@@ -1443,11 +1478,9 @@
       }
     }
 
-    // Attach click toggle to blocker overlay
-    document.getElementById("player-click-blocker").addEventListener("click", togglePlayPause);
-    
     // Play/Pause button trigger
-    document.getElementById("ctrl-play-pause").addEventListener("click", togglePlayPause);
+    document.getElementById("ctrl-play-pause").addEventListener("click", (e) => { e.stopPropagation(); togglePlayPause(); });
+
 
     // Rewind / forward 10 seconds
     function skipSeconds(delta) {

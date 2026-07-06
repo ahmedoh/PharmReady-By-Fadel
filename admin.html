@@ -387,7 +387,7 @@
               <tr>
                 <th>العنوان</th>
                 <th>معرف يوتيوب</th>
-                <th>المستوى المستهدف</th>
+                <th>المستوى</th>
                 <th>الترتيب</th>
                 <th>الإجراءات</th>
               </tr>
@@ -1390,25 +1390,50 @@
 
     function renderVideos() {
       const tbody = document.getElementById("videos-table-body");
-      if (allVideos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد محاضرات مرفوعة.</td></tr>`;
+      const sorted = [...allVideos].sort((a, b) => parseInt(a.Order || a.Index || 999) - parseInt(b.Order || b.Index || 999));
+      if (sorted.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد محاضرات مرفوعة.</td></tr>`;
         return;
       }
       tbody.innerHTML = "";
-      allVideos.forEach(v => {
+      sorted.forEach((v, i) => {
+        const vid = v.VideoId || (v.Url ? (v.Url.match(/([\w-]{11})(?:[?&]|$)/) || [])[1] || v.Url : '-');
+        const order = v.Order || v.Index || (i + 1);
+        const titleDisplay = (v.Title && !v.Title.startsWith('http')) ? v.Title : (v.Url || '-');
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><strong>${v.Title}</strong></td>
-          <td style="font-family: monospace;">${v.Url}</td>
-          <td>${v.Level}</td>
-          <td>${v.Index}</td>
-          <td>
-            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteVideo('${v.Id || v.Url}')"><i class="fa-solid fa-trash"></i> حذف</button>
+          <td><strong>${titleDisplay}</strong></td>
+          <td style="font-family: monospace; font-size: 11px; color: var(--text-muted);">${vid}</td>
+          <td><span class="status-badge level-badge-${v.Level}">${v.Level}</span></td>
+          <td style="text-align:center; font-weight: bold;">${order}</td>
+          <td style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; cursor: pointer;"
+              onclick="openEditVideoModal(${i})"><i class="fa-solid fa-pen"></i> تعديل</button>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px; cursor: pointer;"
+              onclick="deleteVideo('${vid}')"><i class="fa-solid fa-trash"></i> حذف</button>
+            <button class="btn" style="padding: 4px 8px; font-size: 11px; cursor: pointer; background: rgba(251,191,36,0.15); color: var(--color-gold); border: 1px solid rgba(251,191,36,0.3);"
+              onclick="adminPlayVideo('${vid}', '${titleDisplay.replace(/'/g, "\\'")}')"><i class="fa-solid fa-play"></i> معاينة</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
     }
+
+    let editingVideoIndex = null; // track which video is being edited
+
+    window.openEditVideoModal = function(idx) {
+      const sorted = [...allVideos].sort((a, b) => parseInt(a.Order || a.Index || 999) - parseInt(b.Order || b.Index || 999));
+      const v = sorted[idx];
+      if (!v) return;
+      editingVideoIndex = allVideos.indexOf(v); // original index
+      document.getElementById("video-modal-title").textContent = "تعديل بيانات المحاضرة";
+      const titleVal = (v.Title && !v.Title.startsWith('http')) ? v.Title : '';
+      document.getElementById("video-title-input").value = titleVal;
+      document.getElementById("video-url-input").value = v.VideoId || v.Url || '';
+      document.getElementById("video-level-input").value = v.Level || 'Passengers';
+      document.getElementById("video-order-input").value = v.Order || v.Index || (idx + 1);
+      document.getElementById("video-modal").classList.add("active");
+    };
 
     function renderQuestions() {
       const tbody = document.getElementById("questions-table-body");
@@ -1905,6 +1930,7 @@
     window.openAddVideoModal = function() {
       document.getElementById("video-form").reset();
       document.getElementById("video-modal-title").textContent = "رفع فيديو جديد";
+      editingVideoIndex = null;
       selectedVideoId = null;
       document.getElementById("video-modal").classList.add("active");
     };
@@ -1917,7 +1943,7 @@
       const order = document.getElementById("video-order-input").value.trim();
 
       // Extract YouTube video ID from full URL or raw ID
-      function extractYouTubeId(input) {
+      function extractId(input) {
         const patterns = [
           /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/,
           /^([\w-]{11})$/
@@ -1928,33 +1954,46 @@
         }
         return input;
       }
-      const url = extractYouTubeId(rawUrl);
+      const videoId = extractId(rawUrl);
 
+      // Edit mode: delete old + add new
+      if (editingVideoIndex !== null) {
+        const oldVideo = allVideos[editingVideoIndex];
+        const oldId = oldVideo ? (oldVideo.VideoId || extractId(oldVideo.Url || '')) : null;
+        try {
+          if (oldId) {
+            await apiRequest({ action: "adminDeleteVideo", adminPassword, videoId: oldId });
+          }
+          const response = await apiRequest({ action: "adminAddVideo", adminPassword, title, url: videoId, level, order });
+          if (response.success) {
+            showToast("✅ تم تعديل المحاضرة بنجاح!", "success");
+            editingVideoIndex = null;
+            document.getElementById("video-modal").classList.remove("active");
+            loadAdminDashboardData();
+          } else { showToast(response.message || 'خطأ', 'error'); }
+        } catch (err) { console.error(err); }
+        return;
+      }
+
+      // Add mode
       try {
-        const response = await apiRequest({
-          action: "adminAddVideo",
-          adminPassword,
-          title,
-          url,
-          level,
-          order
-        });
+        const response = await apiRequest({ action: "adminAddVideo", adminPassword, title, url: videoId, level, order });
         if (response.success) {
           showToast("تم حفظ المحاضرة بنجاح!", "success");
           document.getElementById("video-modal").classList.remove("active");
           loadAdminDashboardData();
-        }
+        } else { showToast(response.message || 'خطأ في الإضافة', 'error'); }
       } catch (err) { console.error(err); }
     });
 
-    window.deleteVideo = async function(id) {
+    window.deleteVideo = async function(videoId) {
       if (!confirm("هل تريد حذف هذا الفيديو؟")) return;
       try {
-        const response = await apiRequest({ action: "adminDeleteVideo", adminPassword, id });
+        const response = await apiRequest({ action: "adminDeleteVideo", adminPassword, videoId });
         if (response.success) {
           showToast("تم الحذف بنجاح.", "success");
           loadAdminDashboardData();
-        }
+        } else { showToast(response.message || 'خطأ في الحذف', 'error'); }
       } catch (err) { console.error(err); }
     };
 

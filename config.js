@@ -474,7 +474,8 @@ function handleDemoRequest(params) {
       VideoId: videoId,
       Title: title,
       Url: url,
-      Level: level
+      Level: level,
+      Order: parseInt(params.order) || (videos.length + 1)
     });
     saveTable("Videos", videos);
     return { success: true, message: "تم إضافة الفيديو للمستوى بنجاح." };
@@ -484,14 +485,19 @@ function handleDemoRequest(params) {
       return { success: false, message: "غير مصرح بالعملية." };
     }
     const videos = getTable("Videos");
-    const videoId = String(params.videoId).trim();
-    const vIndex = videos.findIndex(x => String(x.VideoId).trim() === videoId);
+    // Accept both 'videoId' (new) and 'id' (legacy) param names
+    const videoId = String(params.videoId || params.id || "").trim();
+    const vIndex = videos.findIndex(x =>
+      String(x.VideoId).trim() === videoId ||
+      String(x.Url).trim() === videoId ||
+      String(x.Url).includes(videoId)
+    );
     if (vIndex !== -1) {
       videos.splice(vIndex, 1);
       saveTable("Videos", videos);
       return { success: true, message: "تم حذف الفيديو بنجاح." };
     }
-    return { success: false, message: "لم يتم العثور على الفيديو." };
+    return { success: false, message: "لم يتم العثور على الفيديو (ID: " + videoId + ")" };
     
   } else if (action === "adminGetNotifications") {
     if (!verifyLocalAdmin(params.adminPassword)) {
