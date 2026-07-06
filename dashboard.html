@@ -88,20 +88,18 @@
     #main-panel {
       min-height: 600px;
     }
+    /* Width is capped so the height never exceeds 80% of the viewport,
+       while the 16:9 ratio is always preserved — works for any screen
+       size or orientation (phone, tablet, desktop, ultra-wide, etc). */
     .video-player-container {
       position: relative;
-      width: 100%;
+      width: min(100%, calc(80vh * 16 / 9));
       aspect-ratio: 16 / 9;
-      min-height: 340px;
+      min-height: 200px;
+      margin: 0 auto;
       background: #000;
       border-radius: 14px;
       overflow: hidden;
-    }
-    @media (min-width: 900px) {
-      .video-player-container { min-height: 560px; }
-    }
-    @media (min-width: 1300px) {
-      .video-player-container { min-height: 640px; }
     }
     #yt-player-placeholder,
     .video-player-container iframe {
