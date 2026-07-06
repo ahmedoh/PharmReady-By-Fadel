@@ -29,10 +29,12 @@ console.log(SUPABASE_URL && SUPABASE_KEY ? "🚀 Running in SUPABASE MODE" : (is
  * API Request Wrapper
  */
 async function apiRequest(params) {
-  const sUser = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem("admin_username") : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem("admin_username") : null);
-  const sPass = (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem("admin_password") : null) || (typeof localStorage !== 'undefined' ? localStorage.getItem("admin_password") : null);
-  if (sUser && !params.adminUsername) params.adminUsername = sUser.trim().toLowerCase();
-  if (sPass && !params.adminPassword) params.adminPassword = sPass.trim().toLowerCase();
+  if (typeof localStorage !== 'undefined') {
+    const sUser = localStorage.getItem("admin_username");
+    const sPass = localStorage.getItem("admin_password");
+    if (sUser && !params.adminUsername) params.adminUsername = sUser.trim().toLowerCase();
+    if (sPass && !params.adminPassword) params.adminPassword = sPass.trim().toLowerCase();
+  }
 
   // Intercept and route to Supabase handler if configured
   if (SUPABASE_URL && SUPABASE_KEY && window.supabase) {
@@ -962,6 +964,13 @@ async function handleSupabaseRequest(params) {
         .from('video_questions')
         .select('*');
         
+      // Fetch curriculum topics
+      const { data: curr } = await supabaseClient
+        .from('curriculum')
+        .select('*')
+        .eq('level', currentLevel)
+        .order('sort_order', { ascending: true });
+        
       return {
         success: true,
         videos: (videos || []).map(v => ({
@@ -989,6 +998,13 @@ async function handleSupabaseRequest(params) {
           option3_ar: vq.option3_ar,
           correct_index: parseInt(vq.correct_index) || 0,
           id: String(vq.id)
+        })),
+        curriculum: (curr || []).map(c => ({
+          id: String(c.id),
+          title: c.title,
+          content_html: c.content_html || '',
+          level: c.level,
+          sort_order: c.sort_order
         }))
       };
 
@@ -1037,7 +1053,7 @@ async function handleSupabaseRequest(params) {
       }
       
       return { success: true };
-
+      
     } else if (action === "register") {
       const phone = String(params.phone).trim();
       

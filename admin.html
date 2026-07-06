@@ -204,7 +204,10 @@
           <i class="fa-solid fa-file-signature"></i> <span>إدارة الأسئلة</span>
         </button>
         <button class="admin-tab-btn" id="tab-btn-reports" onclick="switchAdminTab('reports')">
-          <i class="fa-solid fa-file-invoice"></i> <span>تقارير الطلاب</span>
+          <i class="fa-solid fa-file-invoice"></i> <span>تقارير المتدربين</span>
+        </button>
+        <button class="admin-tab-btn" id="tab-btn-curriculum" onclick="switchAdminTab('curriculum')">
+          <i class="fa-solid fa-book-open"></i> <span>محتوى المستويات</span>
         </button>
         <button class="admin-tab-btn" id="tab-btn-prices" onclick="switchAdminTab('prices')">
           <i class="fa-solid fa-tags"></i> <span>الأسعار والعروض</span>
@@ -422,7 +425,7 @@
           <h2>إعدادات المنصة</h2>
           <button class="btn btn-primary" id="btn-save-settings"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>
         </div>
-        <div class="admin-card" style="padding: 20px;">
+        <div class="admin-card" style="padding: 20px; margin-bottom: 15px;">
           <h3 style="margin-bottom: 15px; color: var(--color-primary);">إعدادات التسجيل والقبول</h3>
           <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
             <input type="checkbox" id="setting-require-external-form" style="width: 20px; height: 20px;">
@@ -430,26 +433,114 @@
           </label>
           <p style="margin-top: 10px; font-size: 13px; color: var(--text-muted);">عند التفعيل، سيُطلب من الطالب أثناء إنشاء حساب جديد تأكيد تسجيله في الاستمارة الخارجية وإدخال رقم المطابقة لتتمكن من مراجعته في طلبات الانضمام.</p>
         </div>
+        <div class="admin-card" style="padding: 20px;">
+          <h3 style="margin-bottom: 15px; color: var(--color-primary);">🔐 صلاحية فتح تقارير المتدربين للمشرفين</h3>
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;" id="reports-perm-label">
+            <input type="checkbox" id="setting-reports-open" style="width: 20px; height: 20px;" checked>
+            <span style="font-size: 15px; font-weight: bold;">السماح للمشرفين بفتح وعرض تفاصيل تقارير المتدربين</span>
+          </label>
+          <p style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">عند إيقاف التفعيل، يمكن للمشرفين رؤية قائمة التقارير فقط ولا يستطيعون فتح محتواها. هذا الإعداد للمالك فقط.</p>
+          <p id="reports-perm-owner-only" style="margin-top: 8px; font-size: 12px; color: var(--color-danger); display: none;">⚠️ هذا الإعداد متاح للمالك فقط.</p>
+        </div>
       </section>
 
-      <!-- Panel 6: Reports -->
+      <!-- Panel 6: Reports (Trainee Activity Reports) -->
       <section class="card admin-section-content" id="sec-reports">
-        <h3 class="card-title"><i class="fa-solid fa-file-invoice"></i> تقارير وشكاوى الطلاب</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+          <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-file-invoice" style="color: var(--color-gold);"></i> تقارير المتدربين الميدانية</h3>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="reports-filter-level" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main); font-size: 13px;" onchange="loadAdminReports()">
+              <option value="">كل المستويات</option>
+              <option value="Passengers">Passengers</option>
+              <option value="Starters">Starters</option>
+              <option value="Movers">Movers</option>
+              <option value="Flyers">Flyers</option>
+              <option value="Beast">Beast</option>
+            </select>
+            <select id="reports-filter-status" style="padding: 7px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main); font-size: 13px;" onchange="loadAdminReports()">
+              <option value="">كل الحالات</option>
+              <option value="pending">معلق</option>
+              <option value="accepted">مقبول</option>
+              <option value="needs_revision">تعديل مطلوب</option>
+              <option value="rejected">مرفوض</option>
+            </select>
+          </div>
+        </div>
+        <div id="reports-access-blocked" style="display: none; text-align: center; padding: 30px; color: var(--text-muted);">
+          <i class="fa-solid fa-lock" style="font-size: 40px; margin-bottom: 12px; color: var(--border-color);"></i>
+          <p style="font-size: 14px;">صلاحية فتح التقارير مُعطَّلة حالياً من قِبَل المالك.</p>
+        </div>
         <div class="admin-table-container">
           <table>
             <thead>
               <tr>
                 <th>اسم المتدرب</th>
-                <th>النوع</th>
-                <th>المضمون</th>
+                <th>عنوان التقرير</th>
+                <th>المستوى</th>
                 <th>التاريخ</th>
+                <th>الحالة</th>
                 <th>الإجراءات</th>
               </tr>
             </thead>
             <tbody id="reports-table-body">
-              <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">لا توجد بلاغات مسجلة حالياً.</td></tr>
+              <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">جاري تحميل التقارير...</td></tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- Panel: Curriculum & Level Content -->
+      <section class="card admin-section-content" id="sec-curriculum">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+          <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-book-open" style="color: var(--color-primary);"></i> إدارة محتوى المستويات</h3>
+        </div>
+
+        <!-- Level Welcome Text Editor -->
+        <div style="border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 25px; background: var(--bg-primary);">
+          <h4 style="color: var(--color-gold); margin-bottom: 12px;"><i class="fa-solid fa-pen-to-square"></i> تعديل نص الترحيب لكل مستوى</h4>
+          <div class="form-grid" style="margin-bottom: 12px;">
+            <div class="form-group">
+              <label for="lc-level-select">المستوى</label>
+              <select id="lc-level-select" onchange="loadLevelContent()" style="width:100%;">
+                <option value="Passengers">Passengers (المستوى الصفري)</option>
+                <option value="Starters">Starters (المستوى الأول)</option>
+                <option value="Movers">Movers (المستوى الثاني)</option>
+                <option value="Flyers">Flyers (المستوى الثالث)</option>
+                <option value="Beast">Beast (المستوى الرابع)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="lc-welcome-html">نص الترحيب (HTML مسموح به)</label>
+            <textarea id="lc-welcome-html" rows="8" placeholder="أدخل نص الترحيب لهذا المستوى هنا... يمكنك استخدام HTML للتنسيق." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main); font-family: monospace; font-size: 13px; resize: vertical;"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="saveLevelContent()" style="cursor: pointer;"><i class="fa-solid fa-floppy-disk"></i> حفظ نص الترحيب</button>
+        </div>
+
+        <!-- Accordion / Curriculum Topics Manager -->
+        <div style="border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; background: var(--bg-primary);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h4 style="color: var(--color-gold); margin: 0;"><i class="fa-solid fa-layer-group"></i> موضوعات المنهج (Accordion Slider)</h4>
+            <button class="btn btn-primary" onclick="openCurriculumModal()" style="cursor: pointer;"><i class="fa-solid fa-plus"></i> إضافة موضوع</button>
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="curr-level-filter">فلتر حسب المستوى</label>
+            <select id="curr-level-filter" onchange="loadCurriculumItems()" style="width: 220px; padding: 7px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main);">
+              <option value="Passengers">Passengers</option>
+              <option value="Starters">Starters</option>
+              <option value="Movers">Movers</option>
+              <option value="Flyers">Flyers</option>
+              <option value="Beast">Beast</option>
+            </select>
+          </div>
+          <div class="admin-table-container">
+            <table>
+              <thead><tr><th>الترتيب</th><th>عنوان الموضوع</th><th>المستوى</th><th>الإجراءات</th></tr></thead>
+              <tbody id="curriculum-table-body">
+                <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">جاري تحميل الموضوعات...</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -790,8 +881,9 @@
             <input type="text" id="video-title-input" required placeholder="مثال: محاضرة الجلدية الأولى">
           </div>
           <div class="form-group">
-            <label for="video-url-input">معرف يوتيوب YouTube ID <span class="required">*</span></label>
-            <input type="text" id="video-url-input" required placeholder="مثال: 7dyVA3pFKS4">
+            <label for="video-url-input">رابط يوتيوب (URL كامل أو ID فقط) <span class="required">*</span></label>
+            <input type="text" id="video-url-input" required placeholder="مثال: https://youtu.be/7dyVA3pFKS4 أو: 7dyVA3pFKS4">
+            <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">يقبل: رابط YouTube كامل، رابط مختصر youtu.be، أو معرّف الفيديو مباشرةً</small>
           </div>
           <div class="form-grid">
             <div class="form-group">
@@ -1061,6 +1153,7 @@
         videos: "tab-btn-videos",
         questions: "tab-btn-questions",
         reports: "tab-btn-reports",
+        curriculum: "tab-btn-curriculum",
         prices: "tab-btn-prices",
         admins: "tab-btn-admins",
         notifs: "tab-btn-notifs",
@@ -1075,6 +1168,18 @@
             btn.style.display = "none";
           }
         }
+      }
+      // Always show curriculum tab for admins with videos/reports access
+      const currBtn = document.getElementById('tab-btn-curriculum');
+      if (currBtn && adminUsername !== 'madmody' && !activePermissions.includes('videos') && !activePermissions.includes('reports')) {
+        currBtn.style.display = 'none';
+      }
+
+      // Show/hide reports-perm-owner-only notice
+      const ownerOnlyNotice = document.getElementById('reports-perm-owner-only');
+      if (ownerOnlyNotice && adminUsername !== 'madmody') {
+        document.getElementById('setting-reports-open').disabled = true;
+        ownerOnlyNotice.style.display = 'block';
       }
 
       // Hide custom triggers
@@ -1338,25 +1443,173 @@
 
     function renderReports() {
       const tbody = document.getElementById("reports-table-body");
-      if (allReports.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد تقارير أو شكاوى.</td></tr>`;
+      if (!tbody) return;
+      // Check reports open permission
+      const reportsOpen = localStorage.getItem('setting_reports_open') !== 'false';
+      const accessBlocked = document.getElementById('reports-access-blocked');
+      if (!reportsOpen && adminUsername !== 'madmody') {
+        if (accessBlocked) accessBlocked.style.display = 'block';
+        tbody.innerHTML = '';
         return;
       }
-      tbody.innerHTML = "";
+      if (accessBlocked) accessBlocked.style.display = 'none';
+
+      if (allReports.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px;">لا توجد تقارير مقدمة حتى الآن.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = '';
       allReports.forEach(r => {
-        const tr = document.createElement("tr");
+        const tr = document.createElement('tr');
+        const dateStr = r.Timestamp ? new Date(r.Timestamp).toLocaleDateString('ar-EG', {month: 'short', day: 'numeric', year: 'numeric'}) : '-';
+        let statusBadge = '';
+        if (r.Status === 'pending') statusBadge = `<span class="status-badge status-pending">معلق</span>`;
+        else if (r.Status === 'accepted') statusBadge = `<span class="status-badge status-accepted">مقبول</span>`;
+        else if (r.Status === 'needs_revision') statusBadge = `<span class="status-badge" style="background: var(--color-gold-glow); color: var(--color-gold);">تعديل مطلوب</span>`;
+        else statusBadge = `<span class="status-badge status-rejected">مرفوض</span>`;
         tr.innerHTML = `
-          <td><strong>${r.TraineeName}</strong></td>
-          <td>${r.Type}</td>
-          <td>${r.Content}</td>
-          <td style="font-size: 11px; color: var(--text-muted);">${new Date(r.Timestamp).toLocaleDateString("ar-EG")}</td>
+          <td><strong>${r.TraineeName || r.Email || '-'}</strong><br><span style="font-size:10px; color: var(--text-muted);">${r.Email || ''}</span></td>
+          <td>${r.Title || '-'}</td>
+          <td><span class="status-badge level-badge-${r.Level}">${r.Level || '-'}</span></td>
+          <td style="font-size: 11px; color: var(--text-muted);">${dateStr}</td>
+          <td>${statusBadge}</td>
           <td>
-            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteReport('${r.TraineePhone}')"><i class="fa-solid fa-trash"></i> حذف</button>
+            <button class="btn btn-primary" style="padding: 4px 10px; font-size: 11px; cursor: pointer;" onclick="openReportReviewModal('${r.Id || r.TraineePhone}')"><i class="fa-solid fa-eye"></i> فتح</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
     }
+
+    window.loadAdminReports = async function() {
+      const levelFilter = document.getElementById('reports-filter-level');
+      const statusFilter = document.getElementById('reports-filter-status');
+      const level = levelFilter ? levelFilter.value : '';
+      const status = statusFilter ? statusFilter.value : '';
+      const tbody = document.getElementById('reports-table-body');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">جاري تحميل التقارير...</td></tr>`;
+      try {
+        const response = await apiRequest({ action: 'adminGetReports', adminPassword, level, status });
+        if (response.success) { allReports = response.reports; renderReports(); }
+      } catch(e) { console.error(e); }
+    };
+
+    window.openReportReviewModal = function(reportId) {
+      const report = allReports.find(r => (r.Id || r.TraineePhone) == reportId);
+      if (!report) return;
+      const reportsOpen = localStorage.getItem('setting_reports_open') !== 'false';
+      if (!reportsOpen && adminUsername !== 'madmody') {
+        showToast('صلاحية فتح التقارير مُعطَّلة حالياً.', 'error'); return;
+      }
+      let contentHtml = '';
+      try {
+        const parsed = JSON.parse(report.Content);
+        contentHtml = `
+          <p style="font-weight: 700; margin-bottom: 8px;">الملاحظات العامة:</p>
+          <p style="background: var(--bg-primary); padding: 10px; border-radius: 6px; font-size: 13px;">${parsed.summary || '-'}</p>
+          ${parsed.activities && parsed.activities.length > 0 ? `
+          <p style="font-weight: 700; margin: 12px 0 6px;">سجل النشاط:</p>
+          <table style="width:100%; border-collapse: collapse; font-size: 12px;">
+            <thead><tr><th style="border:1px solid var(--border-color); padding: 6px;">التاريخ</th><th style="border:1px solid var(--border-color); padding:6px;">المهمة</th><th style="border:1px solid var(--border-color); padding:6px;">الملاحظات</th></tr></thead>
+            <tbody>${parsed.activities.map(a => `<tr><td style="border:1px solid var(--border-color); padding:5px;">${a.date || ''}</td><td style="border:1px solid var(--border-color); padding:5px;">${a.task}</td><td style="border:1px solid var(--border-color); padding:5px;">${a.note || ''}</td></tr>`).join('')}</tbody>
+          </table>` : ''}
+          ${parsed.selfEval ? `
+          <p style="font-weight: 700; margin: 12px 0 6px;">التقييم الذاتي:</p>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">${Object.entries(parsed.selfEval).map(([k,v]) => `<span style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; font-size: 12px;"><strong>${k}</strong>: ${'★'.repeat(parseInt(v))}${'☆'.repeat(5 - parseInt(v))}</span>`).join('')}</div>` : ''}`;
+      } catch(e) {
+        contentHtml = `<p>${report.Content || '-'}</p>`;
+      }
+      const modal = document.getElementById('report-review-modal');
+      if (!modal) return;
+      document.getElementById('rrm-trainee-name').textContent = report.TraineeName || report.Email || '-';
+      document.getElementById('rrm-level').textContent = report.Level || '-';
+      document.getElementById('rrm-date').textContent = report.Timestamp ? new Date(report.Timestamp).toLocaleDateString('ar-EG') : '-';
+      document.getElementById('rrm-title').textContent = report.Title || '-';
+      document.getElementById('rrm-content-area').innerHTML = contentHtml;
+      document.getElementById('rrm-admin-comment').value = report.AdminComment || '';
+      document.getElementById('rrm-status-select').value = report.Status || 'pending';
+      document.getElementById('rrm-report-id').value = reportId;
+      document.getElementById('rrm-attachment-link').innerHTML = report.Attachment ? `<a href="${report.Attachment}" target="_blank" class="btn btn-secondary" style="font-size:12px;"><i class="fa-solid fa-download"></i> تحميل المرفق</a>` : 'لا يوجد مرفق';
+      modal.classList.add('active');
+    };
+
+    // Level Content Functions
+    window.loadLevelContent = async function() {
+      const level = document.getElementById('lc-level-select').value;
+      try {
+        const response = await apiRequest({ action: 'adminGetLevelContent', adminPassword, level });
+        if (response.success && response.content) {
+          document.getElementById('lc-welcome-html').value = response.content.welcome_html || '';
+        } else {
+          document.getElementById('lc-welcome-html').value = '';
+        }
+      } catch(e) { console.error(e); }
+    };
+
+    window.saveLevelContent = async function() {
+      const level = document.getElementById('lc-level-select').value;
+      const welcomeHtml = document.getElementById('lc-welcome-html').value;
+      try {
+        const response = await apiRequest({ action: 'adminSaveLevelContent', adminPassword, level, welcome_html: welcomeHtml });
+        if (response.success) showToast('✅ تم حفظ نص الترحيب بنجاح!', 'success');
+        else showToast(response.message || 'خطأ في الحفظ', 'error');
+      } catch(e) { console.error(e); }
+    };
+
+    // Curriculum Functions
+    window.loadCurriculumItems = async function() {
+      const level = document.getElementById('curr-level-filter').value;
+      const tbody = document.getElementById('curriculum-table-body');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted);">جاري تحميل...</td></tr>`;
+      try {
+        const response = await apiRequest({ action: 'adminGetCurriculum', adminPassword, level });
+        if (response.success) {
+          const items = response.curriculum || [];
+          if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted);">\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0648\u0636\u0648\u0639\u0627\u062a \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0633\u062a\u0648\u0649.</td></tr>`;
+            return;
+          }
+          tbody.innerHTML = '';
+          items.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${item.sort_order || '-'}</td><td><strong>${item.title}</strong></td><td>${item.level}</td><td style="display:flex; gap:6px;">
+              <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="openCurriculumModal('${item.id}', '${item.level}', ${item.sort_order})"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn btn-danger" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="deleteCurriculumItem('${item.id}')"><i class="fa-solid fa-trash"></i></button>
+            </td>`;
+            tbody.appendChild(tr);
+          });
+        }
+      } catch(e) { console.error(e); }
+    };
+
+    window.openCurriculumModal = function(id, level, order) {
+      const modal = document.getElementById('curriculum-modal');
+      if (!modal) return;
+      document.getElementById('curr-item-id').value = id || '';
+      document.getElementById('curr-item-level').value = level || document.getElementById('curr-level-filter').value;
+      document.getElementById('curr-item-order').value = order || '1';
+      document.getElementById('curr-item-title').value = '';
+      document.getElementById('curr-item-content').value = '';
+      if (id) {
+        // Load existing content
+        apiRequest({ action: 'adminGetCurriculumItem', adminPassword, id }).then(r => {
+          if (r.success && r.item) {
+            document.getElementById('curr-item-title').value = r.item.title || '';
+            document.getElementById('curr-item-content').value = r.item.content_html || '';
+          }
+        }).catch(e => console.error(e));
+      }
+      modal.classList.add('active');
+    };
+
+    window.deleteCurriculumItem = async function(id) {
+      if (!confirm('هل تريد حذف هذا الموضوع؟')) return;
+      try {
+        const r = await apiRequest({ action: 'adminDeleteCurriculumItem', adminPassword, id });
+        if (r.success) { showToast('تم الحذف.', 'success'); loadCurriculumItems(); }
+      } catch(e) { console.error(e); }
+    };
+
 
     function renderAdmins() {
       const tbody = document.getElementById("admins-table-body");
@@ -1628,9 +1881,23 @@
     document.getElementById("video-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const title = document.getElementById("video-title-input").value.trim();
-      const url = document.getElementById("video-url-input").value.trim();
+      const rawUrl = document.getElementById("video-url-input").value.trim();
       const level = document.getElementById("video-level-input").value;
       const order = document.getElementById("video-order-input").value.trim();
+
+      // Extract YouTube video ID from full URL or raw ID
+      function extractYouTubeId(input) {
+        const patterns = [
+          /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/,
+          /^([\w-]{11})$/
+        ];
+        for (const p of patterns) {
+          const m = input.match(p);
+          if (m) return m[1];
+        }
+        return input;
+      }
+      const url = extractYouTubeId(rawUrl);
 
       try {
         const response = await apiRequest({
@@ -1981,6 +2248,149 @@
       sessionStorage.clear();
       window.location.href = "index.html";
     };
+
+    // Save settings handler
+    document.getElementById('btn-save-settings').addEventListener('click', () => {
+      const reportsOpen = document.getElementById('setting-reports-open').checked;
+      localStorage.setItem('setting_reports_open', reportsOpen ? 'true' : 'false');
+      showToast('✅ تم حفظ الإعدادات بنجاح!', 'success');
+    });
+
+    // Load settings on startup
+    const savedReportsOpen = localStorage.getItem('setting_reports_open');
+    if (savedReportsOpen === 'false') {
+      document.getElementById('setting-reports-open').checked = false;
+    }
+
+    // Curriculum form save
+    document.addEventListener('DOMContentLoaded', () => {
+      const currForm = document.getElementById('curriculum-item-form');
+      if (currForm) {
+        currForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const id = document.getElementById('curr-item-id').value.trim();
+          const level = document.getElementById('curr-item-level').value;
+          const title = document.getElementById('curr-item-title').value.trim();
+          const content = document.getElementById('curr-item-content').value.trim();
+          const order = parseInt(document.getElementById('curr-item-order').value) || 1;
+          try {
+            const r = await apiRequest({ action: id ? 'adminUpdateCurriculumItem' : 'adminAddCurriculumItem', adminPassword, id, level, title, content_html: content, sort_order: order });
+            if (r.success) {
+              showToast('✅ تم حفظ الموضوع بنجاح!', 'success');
+              document.getElementById('curriculum-modal').classList.remove('active');
+              loadCurriculumItems();
+            } else showToast(r.message || 'خطأ في الحفظ', 'error');
+          } catch(err) { console.error(err); }
+        });
+      }
+
+      // Report review form save
+      const rrmForm = document.getElementById('rrm-form');
+      if (rrmForm) {
+        rrmForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const reportId = document.getElementById('rrm-report-id').value;
+          const status = document.getElementById('rrm-status-select').value;
+          const comment = document.getElementById('rrm-admin-comment').value.trim();
+          try {
+            const r = await apiRequest({ action: 'adminUpdateReport', adminPassword, reportId, status, adminComment: comment });
+            if (r.success) {
+              showToast('✅ تم تحديث حالة التقرير بنجاح!', 'success');
+              document.getElementById('report-review-modal').classList.remove('active');
+              loadAdminReports();
+            } else showToast(r.message || 'خطأ في التحديث', 'error');
+          } catch(err) { console.error(err); }
+        });
+      }
+    });
   </script>
+
+  <!-- Report Review Modal -->
+  <div class="modal-overlay" id="report-review-modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 620px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+        <h3 style="font-size: 17px;"><i class="fa-solid fa-file-invoice" style="color: var(--color-gold);"></i> مراجعة تقرير المتدرب</h3>
+        <button class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('report-review-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <!-- Trainee Info Header -->
+      <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; font-size: 13px;">
+        <div style="flex: 1; min-width: 150px;"><span style="color: var(--text-muted); font-size: 11px;">المتدرب</span><br><strong id="rrm-trainee-name">-</strong></div>
+        <div><span style="color: var(--text-muted); font-size: 11px;">المستوى</span><br><strong id="rrm-level">-</strong></div>
+        <div><span style="color: var(--text-muted); font-size: 11px;">التاريخ</span><br><span id="rrm-date">-</span></div>
+      </div>
+      <div style="font-size: 15px; font-weight: 800; color: var(--color-primary); margin-bottom: 12px;" id="rrm-title">-</div>
+      <!-- Content Area -->
+      <div class="modal-body" style="max-height: 320px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; background: var(--bg-secondary); font-size: 13px; line-height: 1.8; direction: rtl;" id="rrm-content-area"></div>
+      <!-- Attachment -->
+      <div style="margin: 12px 0; font-size: 12px;">
+        <span style="font-weight: 700; color: var(--text-muted);">المرفق:</span> <span id="rrm-attachment-link">لا يوجد</span>
+      </div>
+      <!-- Review Form -->
+      <form id="rrm-form">
+        <input type="hidden" id="rrm-report-id">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label for="rrm-status-select" style="font-weight: 700;">تغيير حالة التقرير</label>
+          <select id="rrm-status-select" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main);">
+            <option value="pending">معلق (بانتظار المراجعة)</option>
+            <option value="accepted">مقبول ومعتمد</option>
+            <option value="needs_revision">يحتاج تعديل</option>
+            <option value="rejected">مرفوض</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+          <label for="rrm-admin-comment" style="font-weight: 700;">تعليق المشرف (يظهر للمتدرب)</label>
+          <textarea id="rrm-admin-comment" rows="3" placeholder="اكتب تعليقك أو ملاحظاتك للمتدرب هنا..." style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); font-family: inherit; background: var(--bg-secondary); color: var(--text-main); resize: none;"></textarea>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('report-review-modal').classList.remove('active')">إغلاق</button>
+          <button type="submit" class="btn btn-primary" style="cursor: pointer;"><i class="fa-solid fa-floppy-disk"></i> حفظ التقييم</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Curriculum Item Modal -->
+  <div class="modal-overlay" id="curriculum-modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 520px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+        <h3 style="font-size: 17px;"><i class="fa-solid fa-book-open" style="color: var(--color-primary);"></i> إضافة / تعديل موضوع</h3>
+        <button class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('curriculum-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="curriculum-item-form">
+        <input type="hidden" id="curr-item-id">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="curr-item-level">المستوى <span class="required">*</span></label>
+              <select id="curr-item-level" required>
+                <option value="Passengers">Passengers</option>
+                <option value="Starters">Starters</option>
+                <option value="Movers">Movers</option>
+                <option value="Flyers">Flyers</option>
+                <option value="Beast">Beast</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="curr-item-order">الترتيب <span class="required">*</span></label>
+              <input type="number" id="curr-item-order" required min="1" value="1">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="curr-item-title">عنوان الموضوع <span class="required">*</span></label>
+            <input type="text" id="curr-item-title" required placeholder="مثال: المضادات الحيوية OTC">
+          </div>
+          <div class="form-group">
+            <label for="curr-item-content">محتوى الموضوع (HTML مسموح به)</label>
+            <textarea id="curr-item-content" rows="8" placeholder="أدخل محتوى الموضوع هنا... يمكنك استخدام HTML للتنسيق &lt;strong&gt;, &lt;ul&gt;, &lt;p&gt;" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main); font-family: monospace; font-size: 12px; resize: vertical;"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('curriculum-modal').classList.remove('active')">إلغاء</button>
+          <button type="submit" class="btn btn-primary" style="cursor: pointer;"><i class="fa-solid fa-floppy-disk"></i> حفظ الموضوع</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </body>
 </html>
