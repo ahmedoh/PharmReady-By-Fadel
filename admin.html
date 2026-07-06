@@ -1024,37 +1024,8 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=2.1">window.openEditVideoModal = function(id) {
-  const video = allVideos.find(v => (v.Id || v.Url) === id);
-  if (!video) return;
-  
-  // Populate the existing Add/Upload Modal
-  document.getElementById("video-modal-title").textContent = "تعديل بيانات المحاضرة";
-  document.getElementById("video-title-input").value = video.Title;
-  document.getElementById("video-url-input").value = video.Url;
-  document.getElementById("video-level-input").value = video.Level;
-  document.getElementById("video-order-input").value = video.Index;
-  
-  selectedVideoId = id; // Track that we are editing
-  document.getElementById("video-modal").classList.add("active");
+  <script src="config.js?v=2.1"></script>
 };
-window.openEditQuestionModal = function(rowNum) {
-  const q = allQuestions.find(item => (item.rowNum || allQuestions.indexOf(item)) === rowNum);
-  if (!q) return;
-
-  document.getElementById("question-modal-title").textContent = "تعديل السؤال";
-  document.getElementById("q-level").value = q.Level;
-  document.getElementById("q-text-ar").value = q.QuestionAr || "";
-  document.getElementById("q-text-en").value = q.QuestionEn || "";
-  document.getElementById("q-opt1-ar").value = q.Opt1Ar || "";
-  document.getElementById("q-opt2-ar").value = q.Opt2Ar || "";
-  document.getElementById("q-opt3-ar").value = q.Opt3Ar || "";
-  document.getElementById("q-correct").value = q.CorrectIndex;
-
-  selectedQuestionId = rowNum;
-  document.getElementById("question-modal").classList.add("active");
-};</script>
-
   <script>
     const adminUsername    = (sessionStorage.getItem("admin_username") || "").trim().toLowerCase();
     const adminPassword    = (sessionStorage.getItem("admin_password") || "").trim().toLowerCase();
