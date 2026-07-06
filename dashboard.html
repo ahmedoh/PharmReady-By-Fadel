@@ -2679,31 +2679,61 @@
     }, 1000);
 
     
-    function requestPushNotifications() {
-      if (!("Notification" in window)) return;
-      if (Notification.permission === "granted" || Notification.permission === "denied") return;
+    function runFirstLoginOnboarding() {
+      // Check if onboarding was already shown
+      if (localStorage.getItem("onboarding_complete") === "true") return;
 
+      // 1. WhatsApp Community Prompt
       Swal.fire({
-        title: "تفعيل الإشعارات / Enable Notifications",
-        text: "يجب عليك تفعيل الإشعارات لتكون دائماً على اطلاع بآخر التحديثات والمحاضرات الجديدة.",
+        title: "مجتمع PharMReady 🌟",
+        html: `
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+            نرحب بك في منصتنا! لتكون على اطلاع دائم بجميع التحديثات، المحاضرات، والنقاشات الهامة، نرجو منك الانضمام إلى جروب التدريب الرسمي على واتساب.
+          </p>
+          <a href="https://chat.whatsapp.com/BzMU8LJ2pSN8NR6EQbwMSF" target="_blank" onclick="Swal.close()" style="display: inline-block; background: #25D366; color: white; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; margin-bottom: 10px;">
+            <i class="fa-brands fa-whatsapp" style="font-size: 20px; margin-left: 8px; vertical-align: middle;"></i> انضم الآن للجروب
+          </a>
+        `,
         icon: "info",
         showCancelButton: true,
-        confirmButtonText: "تفعيل الآن / Enable",
-        cancelButtonText: "ليس الآن / Not now",
-        confirmButtonColor: "var(--color-primary)",
-      }).then((result) => {
-        if (result.isConfirmed) {
-          Notification.requestPermission().then(permission => {
-            if (permission === "granted") {
-              Swal.fire("تم!", "تم تفعيل الإشعارات بنجاح.", "success");
-            }
-          });
+        cancelButtonText: "لاحقاً",
+        showConfirmButton: false, // The link acts as the confirm button
+        allowOutsideClick: false
+      }).then(() => {
+        
+        // 2. Push Notifications Prompt
+        if (!("Notification" in window) || Notification.permission === "granted" || Notification.permission === "denied") {
+          localStorage.setItem("onboarding_complete", "true");
+          return;
         }
+
+        setTimeout(() => {
+          Swal.fire({
+            title: "تفعيل الإشعارات 🔔",
+            text: "نرجو منك تفعيل الإشعارات ليصلك كل جديد والتنبيهات الهامة.",
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "تفعيل / Enable",
+            cancelButtonText: "ليس الآن / Not now",
+            confirmButtonColor: "var(--color-primary)",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                  Swal.fire("تم!", "تم تفعيل الإشعارات بنجاح.", "success");
+                }
+              });
+            }
+            // Mark onboarding as complete regardless of their choice
+            localStorage.setItem("onboarding_complete", "true");
+          });
+        }, 500);
+
       });
     }
 
     // Hide Preloader on Load
-    window.addEventListener('load', function() { setTimeout(requestPushNotifications, 3000); });
+    window.addEventListener('load', function() { setTimeout(runFirstLoginOnboarding, 2000); });
   </script>
 </body>
 </html>
