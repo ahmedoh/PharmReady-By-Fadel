@@ -36,7 +36,15 @@
   </style>
 </head>
 <body>
-  
+  <!--==================== Preloader Start ====================-->
+  <div id="loading">
+    <div id="loading-center">
+      <div id="loading-center-absolute">
+        <span class="loader"></span>
+      </div>
+    </div>
+  </div>
+  <!--==================== Preloader End ====================-->
 
   <!-- Top Utilities bar -->
   <div class="app-container" style="max-width: 1200px; padding: 20px 20px 0; display: flex; justify-content: flex-end; gap: 10px;">
@@ -50,9 +58,9 @@
       <div class="logo-section" style="display: flex; align-items: center; gap: 8px;">
         <img src="logo_pr.png" alt="PharmReady" class="logo-img" style="height: 40px; width: auto; object-fit: contain;">
         <i class="fa-solid fa-handshake" style="font-size: 18px; color: var(--color-primary); margin: 0 2px;"></i>
-        <img src="logo.png" alt="شعار منصة PharMReady" class="logo-img" style="height: 40px; width: auto; object-fit: contain;">
+        <img src="logo.png" alt="شعار صيدليات آل مغاوري" class="logo-img" style="height: 40px; width: auto; object-fit: contain;">
         <div style="border-right: 1px solid var(--border-color); padding-right: 10px; margin-right: 4px;">
-          <h1 style="font-size: 15px; font-weight: 700; line-height: 1.2;" data-i18n="logo_title">منصة PharMReady &amp; PharmReady</h1>
+          <h1 style="font-size: 15px; font-weight: 700; line-height: 1.2;" data-i18n="logo_title">صيدليات آل مغاوري &amp; PharmReady</h1>
           <p style="font-size: 10px; color: var(--text-muted); margin: 0;" data-i18n="logo_sub">بوابة متابعة طلبات المتدربين</p>
         </div>
       </div>
@@ -84,7 +92,7 @@
           <div class="status-card pending" id="status-pending" style="display: none; padding: 30px; text-align: center; border-radius: 12px; background: rgba(195,159,104,0.05); border: 1px dashed var(--color-primary);">
             <div style="font-size: 40px; color: var(--color-primary); margin-bottom: 15px;"><i class="fa-solid fa-hourglass-half fa-spin"></i></div>
             <h3 data-i18n="pending_status_title">طلبك قيد المراجعة والموافقة ⏳</h3>
-            <p style="margin-top: 10px;"><span data-i18n="welcome_dr">مرحباً يا دكتور</span> <span id="trainee-name-pending" style="font-weight: bold; color: var(--color-primary);">...</span>. <span data-i18n="pending_welcome_msg">تم تسجيل بياناتك بنجاح في نظام المراجعة لمنصة PharMReady.</span></p>
+            <p style="margin-top: 10px;"><span data-i18n="welcome_dr">مرحباً يا دكتور</span> <span id="trainee-name-pending" style="font-weight: bold; color: var(--color-primary);">...</span>. <span data-i18n="pending_welcome_msg">تم تسجيل بياناتك بنجاح في نظام المراجعة لصيدليات آل مغاوري.</span></p>
             <p style="margin-top: 15px; font-size: 12px; color: var(--text-muted);" data-i18n="pending_auto_refresh">نقوم بمراجعة الطلبات والتحقق من فروع التدريب يدوياً. يتم تحديث هذه الصفحة تلقائياً كل 15 ثانية فور اتخاذ المدير قرار القبول.</p>
             <button class="btn btn-secondary" style="margin-top: 20px;" onclick="checkCurrentStatus()"><i class="fa-solid fa-rotate"></i> <span data-i18n="btn_refresh_now">تحديث الحالة الآن</span></button>
           </div>
@@ -93,7 +101,7 @@
           <div class="status-card accepted" id="status-accepted" style="display: none; padding: 30px; text-align: center; border-radius: 12px; background: rgba(16,185,129,0.05); border: 1px dashed #10b981;">
             <div style="font-size: 50px; color: #10b981; margin-bottom: 15px;"><i class="fa-solid fa-circle-check"></i></div>
             <h3 data-i18n="accepted_status_title">تهانينا! تم قبول طلبك بنجاح 🎉</h3>
-            <p style="margin-bottom: 20px; margin-top: 10px;"><span data-i18n="welcome_dr">مرحباً بك يا دكتور</span> <span id="trainee-name-accepted" style="font-weight: bold; color: #10b981;">...</span> <span data-i18n="accepted_welcome_msg">كمتدرب رسمي في منصة PharMReady. إليك بيانات الدخول الخاصة بك:</span></p>
+            <p style="margin-bottom: 20px; margin-top: 10px;"><span data-i18n="welcome_dr">مرحباً بك يا دكتور</span> <span id="trainee-name-accepted" style="font-weight: bold; color: #10b981;">...</span> <span data-i18n="accepted_welcome_msg">كمتدرب رسمي في صيدليات آل مغاوري. إليك بيانات الدخول الخاصة بك:</span></p>
             
             <div class="check-box" style="background: var(--bg-primary); text-align: right; max-width: 450px; margin: 15px auto; padding: 15px; border-radius: 10px; border: 1px dashed var(--border-color);">
               <div style="margin-bottom: 12px;">
@@ -140,9 +148,9 @@
       <div class="bio-section" style="display: flex; flex-direction: column; gap: 20px;">
         <div class="card bio-card">
           <div class="bio-img-placeholder"><i class="fa-solid fa-prescription-bottle-medical"></i></div>
-          <h4 style="font-size: 16px; margin-bottom: 10px;" data-i18n="maghawry_history_title">نبذة عن منصة PharMReady</h4>
+          <h4 style="font-size: 16px; margin-bottom: 10px;" data-i18n="maghawry_history_title">نبذة عن صيدليات آل مغاوري</h4>
           <p style="font-size: 13px; line-height: 1.6; color: var(--text-muted);" data-i18n="maghawry_history_p">
-            تأسست منصة PharMReady كواحدة من الكيانات الصيدلانية الرائدة في محافظة دمياط. ترتكز رؤية المجموعة على تقديم خدمات صيدلانية متكاملة ورعاية صحية متطورة تليق بالمجتمع. وتولي المجموعة اهتماماً بالغاً بتدريب وتأهيل الأجيال الجديدة من خريجي وطلاب كليات الصيدلة، وتزويدهم بالخبرة العملية المطلوبة للانخراط بكفاءة في سوق العمل الدوائي، معتمدين على أحدث الأساليب التعليمية والمعايير المهنية العالمية. المدير التنفيذي للصيدليات هو الدكتور عبد العزيز المغاوري.
+            تأسست صيدليات آل مغاوري كواحدة من الكيانات الصيدلانية الرائدة في محافظة دمياط. ترتكز رؤية المجموعة على تقديم خدمات صيدلانية متكاملة ورعاية صحية متطورة تليق بالمجتمع. وتولي المجموعة اهتماماً بالغاً بتدريب وتأهيل الأجيال الجديدة من خريجي وطلاب كليات الصيدلة، وتزويدهم بالخبرة العملية المطلوبة للانخراط بكفاءة في سوق العمل الدوائي، معتمدين على أحدث الأساليب التعليمية والمعايير المهنية العالمية. المدير التنفيذي للصيدليات هو الدكتور عبد العزيز المغاوري.
           </p>
         </div>
 
@@ -159,7 +167,7 @@
   </main>
 
   <footer class="app-footer" style="text-align: center; padding: 20px 0; margin-top: auto; border-top: 1px solid var(--border-color); background: var(--bg-secondary);">
-    <p data-i18n="footer_text">© 2026 PharMReady | جميع الحقوق محفوظة لمنصة PharMReady - تصميم وتطوير د. أحمد فاضل</p>
+    <p data-i18n="footer_text">برمجة وتطوير د. أحمد فاضل © 2026 | جميع الحقوق محفوظة لصيدليات آل مغاوري</p>
     <p style="font-size: 10px; margin-top: 5px; color: rgba(128,128,128,0.4)">Support: 01107118948</p>
   </footer>
 
@@ -169,7 +177,7 @@
   <script>
     const langData = {
       ar: {
-        logo_title: "منصة PharMReady",
+        logo_title: "صيدليات آل مغاوري",
         logo_sub: "بوابة متابعة طلبات المتدربين",
         btn_login: "تسجيل الدخول",
         status_card_title: "حالة طلب الانضمام للمنصة",
@@ -177,11 +185,11 @@
         btn_verify: "تحقق",
         pending_status_title: "طلبك قيد المراجعة والموافقة ⏳",
         welcome_dr: "مرحباً يا دكتور",
-        pending_welcome_msg: "تم تسجيل بياناتك بنجاح في نظام المراجعة لمنصة PharMReady.",
+        pending_welcome_msg: "تم تسجيل بياناتك بنجاح في نظام المراجعة لصيدليات آل مغاوري.",
         pending_auto_refresh: "نقوم بمراجعة الطلبات والتحقق من فروع التدريب يدوياً. يتم تحديث هذه الصفحة تلقائياً كل 15 ثانية فور اتخاذ المدير قرار القبول.",
         btn_refresh_now: "تحديث الحالة الآن",
         accepted_status_title: "تهانينا! تم قبول طلبك بنجاح 🎉",
-        accepted_welcome_msg: "كمتدرب رسمي في منصة PharMReady. إليك بيانات الدخول الخاصة بك:",
+        accepted_welcome_msg: "كمتدرب رسمي في صيدليات آل مغاوري. إليك بيانات الدخول الخاصة بك:",
         created_email: "البريد الإلكتروني المنشأ:",
         temp_pass: "كلمة المرور المؤقتة:",
         btn_copy: "نسخ",
@@ -192,17 +200,17 @@
         reject_reason_label: "سبب الرفض المسجل من الإدارة:",
         reject_support_msg: "للمزيد من الاستفسارات أو مراجعة الطلب، يرجى التواصل مع رقم الدعم الفني المباشر:",
         btn_re_register: "إعادة التسجيل ببيانات أخرى",
-        maghawry_history_title: "نبذة عن منصة PharMReady",
-        maghawry_history_p: "تأسست منصة PharMReady كواحدة من الكيانات الصيدلانية الرائدة في محافظة دمياط. ترتكز رؤية المجموعة على تقديم خدمات صيدلانية متكاملة ورعاية صحية متطورة تليق بالمجتمع. وتولي المجموعة اهتماماً بالغاً بتدريب وتأهيل الأجيال الجديدة من خريجي وطلاب كليات الصيدلة، وتزويدهم بالخبرة العملية المطلوبة للانخراط بكفاءة في سوق العمل الدوائي، معتمدين على أحدث الأساليب التعليمية والمعايير المهنية العالمية. المدير التنفيذي للصيدليات هو الدكتور عبد العزيز المغاوري.",
+        maghawry_history_title: "نبذة عن صيدليات آل مغاوري",
+        maghawry_history_p: "تأسست صيدليات آل مغاوري كواحدة من الكيانات الصيدلانية الرائدة في محافظة دمياط. ترتكز رؤية المجموعة على تقديم خدمات صيدلانية متكاملة ورعاية صحية متطورة تليق بالمجتمع. وتولي المجموعة اهتماماً بالغاً بتدريب وتأهيل الأجيال الجديدة من خريجي وطلاب كليات الصيدلة، وتزويدهم بالخبرة العملية المطلوبة للانخراط بكفاءة في سوق العمل الدوائي، معتمدين على أحدث الأساليب التعليمية والمعايير المهنية العالمية. المدير التنفيذي للصيدليات هو الدكتور عبد العزيز المغاوري.",
         dev_bio_title: "نبذة عن المطور (أحمد فاضل)",
         dev_bio_p: "أحمد فاضل، هو المهندس والمطور المسؤول عن تصميم وتطوير المنصة الأكاديمية (PharmReady-AlmaghwryBy-Fadel). تم بناء هذا النظام خصيصاً لتسهيل إدارة العملية التدريبية وتأمين المحتوى العلمي المقدم للطلاب. يهدف النظام لتسجيل المتدربين الجدد وإصدار حسابات الدخول الرسمية ومتابعة مستويات التقدم الدراسي إلكترونياً وبطريقة ذكية بدون أي تعقيد تقني أو استهلاك غير مبرر لباقات الإنترنت.",
-        footer_text: "© 2026 PharMReady | جميع الحقوق محفوظة لمنصة PharMReady - تصميم وتطوير د. أحمد فاضل",
+        footer_text: "برمجة وتطوير د. أحمد فاضل © 2026 | جميع الحقوق محفوظة لصيدليات آل مغاوري",
         copied_success: "📋 تم نسخ النص للحافظة بنجاح!",
         copied_fail: "فشل في نسخ النص تلقائياً.",
         invalid_phone_err: "يرجى إدخال رقم هاتف صحيح مكون من 11 رقماً ويبدأ بـ 01."
       },
       en: {
-        logo_title: "PharMReady Platform",
+        logo_title: "El-Maghawry Pharmacies",
         logo_sub: "Trainees Request Tracking Portal",
         btn_login: "Login Gate",
         status_card_title: "Your Subscription Request Status",
@@ -210,11 +218,11 @@
         btn_verify: "Verify",
         pending_status_title: "Your Request is Under Review ⏳",
         welcome_dr: "Welcome, Dr.",
-        pending_welcome_msg: "Your information has been successfully registered in PharMReady Platform review system.",
+        pending_welcome_msg: "Your information has been successfully registered in El-Maghawry Pharmacies review system.",
         pending_auto_refresh: "We review registration requests and verify training branch details manually. This page updates automatically every 15 seconds.",
         btn_refresh_now: "Check Status Now",
         accepted_status_title: "Congratulations! Request Approved 🎉",
-        accepted_welcome_msg: "as an official trainee in PharMReady Platform. Here are your credentials:",
+        accepted_welcome_msg: "as an official trainee in El-Maghawry Pharmacies Group. Here are your credentials:",
         created_email: "Assigned Login Email:",
         temp_pass: "Temporary Passcode:",
         btn_copy: "Copy",
@@ -225,11 +233,11 @@
         reject_reason_label: "Reason for rejection recorded by Admin:",
         reject_support_msg: "For more details or to appeal, please contact our direct support phone number:",
         btn_re_register: "Re-Register with New Information",
-        maghawry_history_title: "About PharMReady Platform",
-        maghawry_history_p: "PharMReady Platform was established as a premier pharmacy group in Damietta. Our vision is centered on delivering comprehensive pharmacy care and advanced healthcare services. The group prioritizes the training and qualification of new pharmacy graduates and students, providing them with real-world clinical and practical experiences to integrate successfully into the job market, guided by modern educational tools. The group's CEO is Dr. Abdel Aziz PharMReady.",
+        maghawry_history_title: "About El-Maghawry Pharmacies Group",
+        maghawry_history_p: "El-Maghawry Pharmacies Group was established as a premier pharmacy group in Damietta. Our vision is centered on delivering comprehensive pharmacy care and advanced healthcare services. The group prioritizes the training and qualification of new pharmacy graduates and students, providing them with real-world clinical and practical experiences to integrate successfully into the job market, guided by modern educational tools. The group's CEO is Dr. Abdel Aziz El-Maghawry.",
         dev_bio_title: "About the Developer (Ahmed Fadel)",
         dev_bio_p: "Ahmed Fadel is the lead software engineer and developer of the PharmReady academy portal (PharmReady-AlmaghwryBy-Fadel). The system is custom-built to organize training workflows, secure scientific video content from recording, and track trainees' academic progress efficiently, operating with zero server subscription fees and minimal internet data consumption.",
-        footer_text: "Engineered by Dr. Ahmed Fadel © 2026 | PharMReady Platform",
+        footer_text: "Engineered by Dr. Ahmed Fadel © 2026 | El-Maghawry Pharmacies Group",
         copied_success: "📋 Copied to clipboard successfully!",
         copied_fail: "Failed to copy text automatically.",
         invalid_phone_err: "Please enter a valid 11-digit mobile number starting with 01."
@@ -348,6 +356,15 @@
     }
 
     // Hide Preloader on Load
-    </script>
+    window.addEventListener('load', function() {
+      const loader = document.getElementById('loading');
+      if (loader) {
+        loader.classList.add('hide');
+        setTimeout(() => {
+          loader.style.display = 'none';
+        }, 500);
+      }
+    });
+  </script>
 </body>
 </html>

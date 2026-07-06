@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>بوابة الدخول | منصة PharMReady</title>
+  <title>بوابة الدخول | PharmReady-AlmaghwryBy-Fadel</title>
   <!-- Google Fonts: Cairo -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,15 @@
   <link rel="stylesheet" href="style.css?v=2.0">
 </head>
 <body>
-  
+  <!--==================== Preloader Start ====================-->
+  <div id="loading">
+    <div id="loading-center">
+      <div id="loading-center-absolute">
+        <span class="loader"></span>
+      </div>
+    </div>
+  </div>
+  <!--==================== Preloader End ====================-->
 
   <!-- Floating background design decorations (for empty spaces) -->
   <div class="bg-decorations-wrapper" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; pointer-events: none; z-index: -1;">
@@ -61,11 +69,11 @@
       <!-- Right Side: Logo & Brand -->
       <div class="logo-section" style="display: flex; align-items: center; gap: 8px;">
         <img src="logo_pr.png" alt="PharmReady" class="logo-img" style="height: 48px; max-height: 48px; width: auto; object-fit: contain;">
-        <i class="fa-solid fa-handshake" style="font-size: 32px; color: var(--color-primary); margin: 0 8px;"></i>
-        <img src="logo.png" alt="شعار منصة PharMReady" class="logo-img" style="height: 48px; max-height: 48px; width: auto; object-fit: contain;">
+        <i class="fa-solid fa-handshake" style="font-size: 20px; color: var(--color-primary); margin: 0 4px;"></i>
+        <img src="logo.png" alt="شعار صيدليات آل مغاوري" class="logo-img" style="height: 48px; max-height: 48px; width: auto; object-fit: contain;">
         <div style="border-right: 1px solid var(--border-color); padding-right: 10px; margin-right: 4px;">
-          <h1 data-i18n="logo_title" style="margin: 0; font-size: 16px; font-weight: 900; line-height: 1.2;">منصة PharMReady للتدريب الصيدلاني</h1>
-          <p data-i18n="logo_sub" style="font-size: 10px; margin: 0; color: var(--text-muted);">تصميم وتطوير: د. أحمد فاضل</p>
+          <h1 data-i18n="logo_title" style="margin: 0; font-size: 16px; font-weight: 900; line-height: 1.2;">صيدليات آل مغاوري &amp; PharmReady</h1>
+          <p data-i18n="logo_sub" style="font-size: 10px; margin: 0; color: var(--text-muted);">منصة تأهيل المتدربين الجدد لسوق العمل</p>
         </div>
       </div>
 
@@ -74,13 +82,13 @@
         <li><a href="#" data-i18n="menu_home">الرئيسية</a></li>
         <li><a href="#levels-catalog" data-i18n="menu_levels">المناهج والمستويات</a></li>
         <li><a href="waiting.html" data-i18n="menu_waiting">صفحة الانتظار</a></li>
+        <li><a href="admin-login.html" data-i18n="menu_admin">لوحة المدير</a></li>
       </ul>
 
       <!-- Left Side: Actions -->
       <div class="header-actions">
         <button class="theme-switch-btn" id="btn-theme" title="تبديل المظهر / Toggle Theme"><i class="fa-solid fa-moon"></i></button>
         <button class="lang-switch-btn" id="btn-lang" title="Toggle Language / تبديل اللغة"><i class="fa-solid fa-globe"></i></button>
-        <a href="admin-login.html" class="theme-switch-btn" title="لوحة الإدارة" style="color: var(--text-main); text-decoration: none; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-user-shield"></i></a>
         <button class="btn btn-olive" id="btn-show-login" style="padding: 8px 18px; font-size: 13px;"><i class="fa-solid fa-right-to-bracket"></i> <span data-i18n="btn_login_nav">تسجيل دخول</span></button>
       </div>
 
@@ -119,8 +127,8 @@
 
         <!-- Right: Motivating Headlines & Action Buttons -->
         <div class="hero-intro-text">
-          <h2 data-i18n="hero_title">مرحباً بكم في منصة <span>PharmReady</span> <span class='rocket-anim' style='display:inline-block;'>🚀</span></h2>
-          <p data-i18n="hero_desc">اكتشف عالماً من المعرفة والمهارات العملية مع منصة PharMReady. انضم إلينا الآن وابدأ رحلتك التدريبية الممتعة والمفيدة لتأهيلك لسوق العمل الصيدلاني.</p>
+          <h2 data-i18n="hero_title">مرحباً بكم في منصة <span>PharmReady</span> 🚀</h2>
+          <p data-i18n="hero_desc">اكتشف عالماً من المعرفة والمهارات العملية مع صيدليات آل مغاوري. انضم إلينا الآن وابدأ رحلتك التدريبية الممتعة والمفيدة لتأهيلك لسوق العمل الصيدلاني.</p>
           
           <!-- Student counter -->
           <div class="trainee-counter-row">
@@ -342,127 +350,6 @@
         </div>
 
       </div>
-
-      <!-- ═══ Syllabus Interactive Slider Board ═══ -->
-      <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 20px; padding: 25px; margin-top: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
-        <p style="text-align: center; color: var(--text-muted); font-size: 14px; margin-bottom: 25px; line-height: 1.6;" data-i18n="syllabus_intro">
-          وحصرياً لتقديم مادة علمية متسلسلة تضمن التدرج في الفهم والتطبيق، يُقدم المحتوى التدريبي عبر نظام المستويات المترابطة، ويشترط اجتياز الاختبار بنهاية كل مستوى للانتقال إلى المرحلة التالية. كل اختبار يمنحك شهادة موثقة ممضية من د. أحمد فاضل.
-        </p>
-
-        <!-- Slider Navigation Tabs -->
-        <div class="slider-tabs-container" style="display: flex; gap: 10px; margin-bottom: 25px; overflow-x: auto; padding-bottom: 8px;">
-          <button class="slider-tab-btn active-tab" onclick="switchSyllabusSlide(0)" style="flex: 1; min-width: 140px; border-radius: 12px; padding: 12px; font-family: Cairo, sans-serif; cursor: pointer; font-weight: bold; transition: all 0.3s;">
-            🟢 تمهيدي: Passengers
-          </button>
-          <button class="slider-tab-btn" onclick="switchSyllabusSlide(1)" style="flex: 1; min-width: 140px; border-radius: 12px; padding: 12px; font-family: Cairo, sans-serif; cursor: pointer; font-weight: bold; transition: all 0.3s;">
-            🔵 المستوى 1: Starters
-          </button>
-          <button class="slider-tab-btn" onclick="switchSyllabusSlide(2)" style="flex: 1; min-width: 140px; border-radius: 12px; padding: 12px; font-family: Cairo, sans-serif; cursor: pointer; font-weight: bold; transition: all 0.3s;">
-            🟡 المستوى 2: Movers
-          </button>
-          <button class="slider-tab-btn" onclick="switchSyllabusSlide(3)" style="flex: 1; min-width: 140px; border-radius: 12px; padding: 12px; font-family: Cairo, sans-serif; cursor: pointer; font-weight: bold; transition: all 0.3s;">
-            🟠 المستوى 3: Flyers
-          </button>
-          <button class="slider-tab-btn" onclick="switchSyllabusSlide(4)" style="flex: 1; min-width: 140px; border-radius: 12px; padding: 12px; font-family: Cairo, sans-serif; cursor: pointer; font-weight: bold; transition: all 0.3s;">
-            🔴 المستوى 4: ليفيل الوحش
-          </button>
-        </div>
-
-        <!-- Slider Content Slides -->
-        <div id="syllabus-slider-content">
-          <!-- Slide 0: Passengers -->
-          <div class="syllabus-slide active-slide" style="display: block; animation: fadeIn 0.4s ease-out;">
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: center; min-height: 250px;">
-              <div style="border-radius: 15px; overflow: hidden; height: 100%;">
-                <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Passengers">
-              </div>
-              <div>
-                <span style="background: rgba(16,185,129,0.15); color: #10b981; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">مرحلة التأسيس المهني — مجانية بالكامل</span>
-                <h4 style="margin: 10px 0; color: var(--text-main); font-size: 20px;">🟢 المستوى الصِفري (Passengers)</h4>
-                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px; line-height: 1.6;">تستهدف هذه المرحلة تزويد الصيدلي ومساعد الصيدلي بالمهارات الجوهرية اللازمة للتعامل اليومي والأساسي داخل الصيدلية:</p>
-                <div style="display: grid; gap: 10px;">
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-book" style="color: #10b981;"></i> <span>أدبيات العمل الصيدلي: التعامل مع المرضى وإدارة الوقت.</span></div>
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-kit-medical" style="color: #10b981;"></i> <span>الإسعافات الأولية (First Aid): المهارات المنقذة للحياة والطوارئ.</span></div>
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-capsules" style="color: #10b981;"></i> <span>أساسيات علم الدواء (Basic Pharma): الأشكال الصيدلانية وطرق التخزين.</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Slide 1: Starters -->
-          <div class="syllabus-slide" style="display: none; animation: fadeIn 0.4s ease-out;">
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: center; min-height: 250px;">
-              <div style="border-radius: 15px; overflow: hidden; height: 100%;">
-                <img src="https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Starters">
-              </div>
-              <div>
-                <span style="background: rgba(59,130,246,0.15); color: #3b82f6; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">الممارسة اليومية المباشرة</span>
-                <h4 style="margin: 10px 0; color: var(--text-main); font-size: 20px;">🔵 المستوى الأول (Starters)</h4>
-                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px; line-height: 1.6;">التركيز على التعامل الفعلي والسريع داخل الصيدلية مع الحالات والتحاليل الأساسية:</p>
-                <div style="display: grid; gap: 10px;">
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-stethoscope" style="color: #3b82f6;"></i> <span>OTC - التشخيص بدون روشتة: التعامل مع الحالات الشائعة (البرد، الألم، الهضم).</span></div>
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-vial" style="color: #3b82f6;"></i> <span>التحاليل الطبية (Medical Analysis): قراءة النتائج الأساسية وفهم دلالاتها.</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Slide 2: Movers -->
-          <div class="syllabus-slide" style="display: none; animation: fadeIn 0.4s ease-out;">
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: center; min-height: 250px;">
-              <div style="border-radius: 15px; overflow: hidden; height: 100%;">
-                <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Movers">
-              </div>
-              <div>
-                <span style="background: rgba(234,179,8,0.15); color: #eab308; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">التعمج والتخصص الدقيق</span>
-                <h4 style="margin: 10px 0; color: var(--text-main); font-size: 20px;">🟡 المستوى الثاني (Movers)</h4>
-                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px; line-height: 1.6;">التعمق في التخصصات الصيدلانية والطبية الأكثر دقة وتفصيلاً:</p>
-                <div style="display: grid; gap: 10px;">
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-virus-slash" style="color: #eab308;"></i> <span>المضادات الحيوية (Antibiotics): قواعد الوصف والترشيد ومقاومة البكتيريا.</span></div>
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-hand-holding-droplet" style="color: #eab308;"></i> <span>الجلدية (Dermatology): التعامل مع الأمراض الجلدية الشائعة.</span></div>
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-dna" style="color: #eab308;"></i> <span>شرح المواد الفعالة (A to Z): دراسة معمقة للمجموعات الدوائية الأكثر استخداماً.</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Slide 3: Flyers -->
-          <div class="syllabus-slide" style="display: none; animation: fadeIn 0.4s ease-out;">
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: center; min-height: 250px;">
-              <div style="border-radius: 15px; overflow: hidden; height: 100%;">
-                <img src="https://images.unsplash.com/photo-1576602976047-174e57a47881?w=400&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Flyers">
-              </div>
-              <div>
-                <span style="background: rgba(249,115,22,0.15); color: #f97316; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">الربط بين العلم والتطبيق التجاري والعملي</span>
-                <h4 style="margin: 10px 0; color: var(--text-main); font-size: 20px;">🟠 المستوى الثالث (Flyers)</h4>
-                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px; line-height: 1.6;">مستوى الاحتراف والتمكن العملي في مجالات الصيدلية الخاصة:</p>
-                <div style="display: grid; gap: 10px;">
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-flask" style="color: #f97316;"></i> <span>صناعة التركيبات التجميلية (Formulation): الجانب التقني لصناعة المستحضرات.</span></div>
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-sparkles" style="color: #f97316;"></i> <span>الكوزمو (Cosmetics): العناية بالبشرة والشعر بناءً على المكونات العلمية.</span></div>
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-droplet" style="color: #f97316;"></i> <span>دبلومة السكر (Diploma Sugar): إدارة مرض السكري ومضاعفاته (تخصص دقيق).</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Slide 4: Beast -->
-          <div class="syllabus-slide" style="display: none; animation: fadeIn 0.4s ease-out;">
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; align-items: center; min-height: 250px;">
-              <div style="border-radius: 15px; overflow: hidden; height: 100%;">
-                <img src="https://images.unsplash.com/photo-1505751172876-fa1923c5c528?w=400&auto=format&fit=crop&q=80" style="width: 100%; height: 100%; object-fit: cover;" alt="Beast">
-              </div>
-              <div>
-                <span style="background: rgba(239,68,68,0.15); color: #ef4444; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">تطبيقات سريرية مكثفة</span>
-                <h4 style="margin: 10px 0; color: var(--text-main); font-size: 20px;">🔴 المستوى الرابع (ليفيل الوحش)</h4>
-                <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 15px; line-height: 1.6;">مستوى الخبراء المطور:</p>
-                <div style="display: grid; gap: 10px;">
-                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px;"><i class="fa-solid fa-crown" style="color: #ef4444;"></i> <span>يُحدد لاحقاً بمحتوى متقدم وتطبيقات سريرية مكثفة.</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </section>
 
     <!-- 4. Most Popular Courses Section (5 Levels Grid) -->
@@ -491,13 +378,13 @@
               <i class="fa-solid fa-chevron-down"></i>
             </div>
             <div class="accordion-body">
-              <p data-i18n="a1">يجب التقديم أولاً من رابط "سجل الآن كمتدرب جديد" وملء استمارة الترشيح. سيقوم مديرو منصة PharMReady بمراجعة طلبك وإرسال البريد الإلكتروني والرمز السري الخاص بك عند قبولك.</p>
+              <p data-i18n="a1">يجب التقديم أولاً من رابط "سجل الآن كمتدرب جديد" وملء استمارة الترشيح. سيقوم مديرو صيدليات آل مغاوري بمراجعة طلبك وإرسال البريد الإلكتروني والرمز السري الخاص بك عند قبولك.</p>
             </div>
           </div>
           <!-- Q2 -->
           <div class="accordion-item">
             <div class="accordion-header">
-              <span data-i18n="q2">ما هي فروع منصة PharMReady؟</span>
+              <span data-i18n="q2">ما هي فروع صيدليات آل مغاوري؟</span>
               <i class="fa-solid fa-chevron-down"></i>
             </div>
             <div class="accordion-body">
@@ -524,7 +411,7 @@
               <i class="fa-solid fa-chevron-down"></i>
             </div>
             <div class="accordion-body">
-              <p data-i18n="a4">نعم، جميع الشهادات الصادرة لكل مرحلة مجانية تماماً للمتدربين المقبولين داخل منصة PharMReady، وتحمل توقيع د. أحمد فاضل وتكون معتمدة وصالحة للطباعة الفورية.</p>
+              <p data-i18n="a4">نعم، جميع الشهادات الصادرة لكل مرحلة مجانية تماماً للمتدربين المقبولين داخل صيدليات آل مغاوري، وتحمل توقيع د. أحمد فاضل وتكون معتمدة وصالحة للطباعة الفورية.</p>
             </div>
           </div>
         </div>
@@ -543,7 +430,7 @@
         
         <!-- Card 1 -->
         <div class="testimonial-card">
-          <p class="quote-text" data-i18n="t1_text">"كان التدريب في منصة PharMReady نقطة تحول هامة في مساري المهني. تنظيم المنهج والمستويات وسهولة متابعة المحاضرات جعلني أمتلك ثقة تامة أثناء التعامل مع الحالات والـ OTC."</p>
+          <p class="quote-text" data-i18n="t1_text">"كان التدريب في صيدليات آل مغاوري نقطة تحول هامة في مساري المهني. تنظيم المنهج والمستويات وسهولة متابعة المحاضرات جعلني أمتلك ثقة تامة أثناء التعامل مع الحالات والـ OTC."</p>
           <div class="client-info">
             <div class="client-thumb">
               <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" alt="Trainee A">
@@ -598,10 +485,10 @@
         <div class="footer-item">
           <div class="logo-normal" style="display: flex; align-items: center; gap: 8px; filter: brightness(0) invert(1);">
             <img src="logo_pr.png" alt="PharmReady" style="height: 45px; max-height: 45px; width: auto; object-fit: contain;">
-            <i class="fa-solid fa-handshake" style="font-size: 32px; margin: 0 8px;"></i>
-            <img src="logo.png" alt="شعار منصة PharMReady" style="height: 45px; max-height: 45px; width: auto; object-fit: contain;">
+            <i class="fa-solid fa-handshake" style="font-size: 20px; margin: 0 4px;"></i>
+            <img src="logo.png" alt="شعار صيدليات آل مغاوري" style="height: 45px; max-height: 45px; width: auto; object-fit: contain;">
           </div>
-          <p data-i18n="foot_bio">منصة PharmReady هي منصة تعليمية وتدريبية مبتكرة تقدم دبلومات ومحاضرات تدريبية مخصصة لصيادلة منصة PharMReady لتهيئة مهاراتهم الميدانية لتقديم أفضل جودة رعاية صحية.</p>
+          <p data-i18n="foot_bio">منصة PharmReady هي منصة تعليمية وتدريبية مبتكرة تقدم دبلومات ومحاضرات تدريبية مخصصة لصيادلة صيدليات آل مغاوري لتهيئة مهاراتهم الميدانية لتقديم أفضل جودة رعاية صحية.</p>
         </div>
 
         <!-- Col 2 -->
@@ -611,6 +498,7 @@
             <li><a href="#" class="footer-menu__link"><i class="fa-solid fa-angles-left"></i> <span data-i18n="menu_home">الرئيسية</span></a></li>
             <li><a href="#levels-catalog" class="footer-menu__link"><i class="fa-solid fa-angles-left"></i> <span data-i18n="menu_levels">المناهج والمستويات</span></a></li>
             <li><a href="waiting.html" class="footer-menu__link"><i class="fa-solid fa-angles-left"></i> <span data-i18n="menu_waiting">صفحة الانتظار</span></a></li>
+            <li><a href="admin-login.html" class="footer-menu__link"><i class="fa-solid fa-angles-left"></i> <span data-i18n="menu_admin">لوحة المدير</span></a></li>
           </ul>
         </div>
 
@@ -623,11 +511,11 @@
           </div>
           <div class="footer-contact-info">
             <i class="fa-regular fa-envelope"></i>
-            <p><a href="mailto:info@pharmready.com">info@pharmready.com</a></p>
+            <p><a href="mailto:info@almaghwry-pharmacies.com">info@almaghwry.com</a></p>
           </div>
           <div class="footer-contact-info">
             <i class="fa-solid fa-location-dot"></i>
-            <p data-i18n="foot_addr">دمياط الجديدة - فروع منصة PharMReady</p>
+            <p data-i18n="foot_addr">دمياط الجديدة - فروع صيدليات آل مغاوري</p>
           </div>
         </div>
 
@@ -636,7 +524,7 @@
           <h5 class="footer-item__title" data-i18n="foot_news_title">النشرة الدورية</h5>
           <p data-i18n="foot_news_desc">اشترك لتصلك أحدث المقررات والتحديثات التدريبية فور صدورها.</p>
           <div class="newsletter-form">
-            <input type="email" placeholder="example@pharmready.com">
+            <input type="email" placeholder="example@maghawry.com">
             <button onclick="showToast('تم الاشتراك بنجاح!', 'success');"><i class="fa-regular fa-paper-plane"></i></button>
           </div>
         </div>
@@ -645,7 +533,7 @@
 
       <!-- Bottom Bar -->
       <div class="footer-bottom">
-        <p data-i18n="footer_text">© 2026 PharMReady | جميع الحقوق محفوظة لمنصة PharMReady - تصميم وتطوير د. أحمد فاضل</p>
+        <p data-i18n="footer_text">برمجة وتطوير د. أحمد فاضل © 2026 | جميع الحقوق محفوظة لصيدليات آل مغاوري</p>
         <p style="color: #4b5563;">Support Call Center: 01107118948</p>
       </div>
 
@@ -680,7 +568,7 @@
           <div class="form-group" style="margin-bottom: 15px;">
             <label for="trainee-email" data-i18n="email_label">البريد الإلكتروني المنشأ لك <span class="required">*</span></label>
             <div style="position: relative;">
-              <input type="email" id="trainee-email" required placeholder="example@pharmready.com" style="padding-right: 40px;">
+              <input type="email" id="trainee-email" required placeholder="example@maghawry.com" style="padding-right: 40px;">
               <i class="fa-regular fa-envelope" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
             </div>
           </div>
@@ -701,21 +589,19 @@
 
       <div class="modal-footer" style="flex-direction: column; align-items: stretch; text-align: right; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
         <p style="font-size: 13px;"><span data-i18n="no_account">متدرب جديد؟</span> <a href="register.html" style="font-weight: bold;"><span data-i18n="join_now">سجل بياناتك لطلب الانضمام</span> <i class="fa-solid fa-arrow-left"></i></a></p>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <p style="margin-top: 5px; font-size: 11px;"><span data-i18n="or_check">أو تحقق من حالة طلبك عبر</span> <a href="waiting.html" data-i18n="waiting_page_link" style="text-decoration: underline;">صفحة الانتظار</a></p>
-          <a href="admin-login.html" title="لوحة الإدارة" style="color: var(--text-muted); font-size: 14px; text-decoration: none;"><i class="fa-solid fa-user-shield"></i></a>
-        </div>
+        <p style="margin-top: 5px; font-size: 11px;"><span data-i18n="or_check">أو تحقق من حالة طلبك عبر</span> <a href="waiting.html" data-i18n="waiting_page_link" style="text-decoration: underline;">صفحة الانتظار</a></p>
+        <p style="margin-top: 5px; font-size: 11px;"><span data-i18n="admin_prompt">هل أنت مدير المنصة؟</span> <a href="admin-login.html" style="font-weight: bold; color: var(--color-primary);"><span data-i18n="menu_admin">لوحة المدير</span> <i class="fa-solid fa-user-gear"></i></a></p>
       </div>
 
     </div>
   </div>
 
   <!-- Floating Social Contact Widgets -->
-  <div class="floating-social">
-    <a href="https://t.me/PharmReady" target="_blank">
+  <div class="social">
+    <a href="https://www.facebook.com/" target="_blank">
       <div class="social-btn color-telegram">
-        <i class="fa-brands fa-telegram"></i>
-        <p class="google-font">Telegram</p>
+        <i class="fa-brands fa-facebook-messenger"></i>
+        <p class="google-font">Messenger</p>
       </div>
     </a>
     <a href="tel:01107118948">
@@ -739,14 +625,14 @@
     // Translation dictionary for Trainee login page
     const langData = {
       ar: {
-        logo_title: "منصة PharMReady",
-        logo_sub: "تصميم وتطوير: د. أحمد فاضل",
+        logo_title: "صيدليات آل مغاوري",
+        logo_sub: "منصة تأهيل المتدربين الجدد لسوق العمل",
         menu_home: "الرئيسية",
         menu_levels: "المناهج والمستويات",
         menu_waiting: "صفحة الانتظار",
         btn_login_nav: "تسجيل دخول",
-        hero_title: "مرحباً بكم في منصة <span>PharmReady</span> <span class='rocket-anim' style='display:inline-block;'>🚀</span>",
-        hero_desc: "اكتشف عالماً من المعرفة والمهارات العملية مع منصة PharMReady. انضم إلينا الآن وابدأ رحلتك التدريبية الممتعة والمفيدة لتأهيلك لسوق العمل الصيدلاني.",
+        hero_title: "مرحباً بكم في منصة <span>PharmReady</span> 🚀",
+        hero_desc: "اكتشف عالماً من المعرفة والمهارات العملية مع صيدليات آل مغاوري. انضم إلينا الآن وابدأ رحلتك التدريبية الممتعة والمفيدة لتأهيلك لسوق العمل الصيدلاني.",
         hero_users: "+150 متدرب نشط",
         btn_register_now: "سجل الآن (طالب جديد)",
         btn_discover_more: "إكتشف أكثر",
@@ -800,16 +686,16 @@
         faq_title: "الأسئلة الشائعة",
         faq_desc: "كل ما تود معرفته عن نظام المناهج والامتحانات وطباعة الشهادات بالمنصة.",
         q1: "كيف أحصل على حساب معتمد في المنصة؟",
-        a1: "يجب التقديم أولاً من رابط 'سجل الآن كمتدرب جديد' وملء استمارة الترشيح. سيقوم مديرو منصة PharMReady بمراجعة طلبك وإرسال البريد الإلكتروني والرمز السري الخاص بك عند قبولك.",
-        q2: "ما هي فروع منصة PharMReady؟",
+        a1: "يجب التقديم أولاً من رابط 'سجل الآن كمتدرب جديد' وملء استمارة الترشيح. سيقوم مديرو صيدليات آل مغاوري بمراجعة طلبك وإرسال البريد الإلكتروني والرمز السري الخاص بك عند قبولك.",
+        q2: "ما هي فروع صيدليات آل مغاوري؟",
         a2: "لدينا فروع متميزة تغطي مدينة دمياط الجديدة بالكامل وهي: فرع ابو الخير، فرع البنك، فرع السبعين، فرع الصعيدي القديم، فرع الازهر، بالإضافة إلى قسم الكول سنتر الموحد.",
         q3: "كيف أنتقل من مستوى إلى آخر؟",
         a3: "بمجرد مشاهدتك لجميع الفيديوهات المطلوبة لمستواك الحالي، سيفتح لك اختبار التقييم التلقائي. بعد اجتياز الامتحان بنجاح، سيتم إرسال طلب الترقية للمشرف لاعتماده وترقيتك فوراً للمستوى التالي.",
         q4: "هل الشهادات الصادرة مجانية ومعتمدة؟",
-        a4: "نعم، جميع الشهادات الصادرة لكل مرحلة مجانية تماماً للمتدربين المقبولين داخل منصة PharMReady، وتحمل توقيع د. أحمد فاضل وتكون معتمدة وصالحة للطباعة الفورية.",
+        a4: "نعم، جميع الشهادات الصادرة لكل مرحلة مجانية تماماً للمتدربين المقبولين داخل صيدليات آل مغاوري، وتحمل توقيع د. أحمد فاضل وتكون معتمدة وصالحة للطباعة الفورية.",
         test_title: "آراؤنا وقصص نجاحنا",
         test_desc: "تجارب وقصص نجاح حقيقية لطلاب الصيدلة الذين أتموا تدريبهم بنجاح داخل الأكاديمية.",
-        t1_text: "\"كان التدريب في منصة PharMReady نقطة تحول هامة في مساري المهني. تنظيم المنهج والمستويات وسهولة متابعة المحاضرات جعلني أمتلك ثقة تامة أثناء التعامل مع الحالات والـ OTC.\"",
+        t1_text: "\"كان التدريب في صيدليات آل مغاوري نقطة تحول هامة في مساري المهني. تنظيم المنهج والمستويات وسهولة متابعة المحاضرات جعلني أمتلك ثقة تامة أثناء التعامل مع الحالات والـ OTC.\"",
         t1_name: "د. آلاء محمود",
         t1_job: "خريجة مستوى Movers | فرع البنك",
         t2_text: "\"المنصة رائعة وتفاعلية جداً، والاختبارات تقيس مدى استيعابنا بدقة. بفضل إرشادات د. أحمد فاضل تمكنت من الارتقاء إلى المستوى الثالث في وقت قياسي.\"",
@@ -818,13 +704,13 @@
         t3_text: "\"ليفل الوحش كان تحدياً كبيراً، ولكن دبلومة السكر وشرح التركيبات التجميلية جعلتني متمكناً للغاية في إعداد التركيبات للمرضى بدقة شديدة.\"",
         t3_name: "د. سارة إبراهيم",
         t3_job: "خريجة ليفل الوحش | فرع أبو الخير",
-        foot_bio: "منصة PharmReady هي منصة تعليمية وتدريبية مبتكرة تقدم دبلومات ومحاضرات تدريبية مخصصة لصيادلة منصة PharMReady لتهيئة مهاراتهم الميدانية لتقديم أفضل جودة رعاية صحية.",
+        foot_bio: "منصة PharmReady هي منصة تعليمية وتدريبية مبتكرة تقدم دبلومات ومحاضرات تدريبية مخصصة لصيادلة صيدليات آل مغاوري لتهيئة مهاراتهم الميدانية لتقديم أفضل جودة رعاية صحية.",
         foot_links_title: "روابط تهمك",
         foot_contact_title: "تواصل معنا",
-        foot_addr: "دمياط الجديدة - فروع منصة PharMReady",
+        foot_addr: "دمياط الجديدة - فروع صيدليات آل مغاوري",
         foot_news_title: "النشرة الدورية",
         foot_news_desc: "اشترك لتصلك أحدث المقررات والتحديثات التدريبية فور صدورها.",
-        footer_text: "© 2026 PharMReady | جميع الحقوق محفوظة لمنصة PharMReady - تصميم وتطوير د. أحمد فاضل",
+        footer_text: "برمجة وتطوير د. أحمد فاضل © 2026 | جميع الحقوق محفوظة لصيدليات آل مغاوري",
         menu_waiting: "صفحة الانتظار",
         menu_admin: "لوحة المدير",
         admin_prompt: "هل أنت مدير المنصة؟",
@@ -842,14 +728,14 @@
         connection_error: "حدث خطأ أثناء الاتصال بقاعدة البيانات السحابية."
       },
       en: {
-        logo_title: "PharMReady Platform",
-        logo_sub: "Engineered by Dr. Ahmed Fadel",
+        logo_title: "El-Maghawry Pharmacies",
+        logo_sub: "Trainee LMS & Preparation Platform",
         menu_home: "Home",
         menu_levels: "Syllabus & Levels",
         menu_waiting: "Waiting List",
         btn_login_nav: "Sign In",
-        hero_title: "Welcome to <span>PharmReady</span> <span class='rocket-anim' style='display:inline-block;'>🚀</span>",
-        hero_desc: "Explore clinical knowledge and practical skills with PharMReady Platform. Join us now and start your interactive training journey to fit perfectly in the pharmaceutical job market.",
+        hero_title: "Welcome to <span>PharmReady</span> 🚀",
+        hero_desc: "Explore clinical knowledge and practical skills with El-Maghawry Pharmacies. Join us now and start your interactive training journey to fit perfectly in the pharmaceutical job market.",
         hero_users: "+150 Active Trainees",
         btn_register_now: "Register Now (New Trainee)",
         btn_discover_more: "Discover More",
@@ -904,7 +790,7 @@
         faq_desc: "Everything you need to know about the curriculum, examinations, and certificates.",
         q1: "How do I get an approved account?",
         a1: "You must first apply from 'Register Now' form. Our admin team will verify your application and issue your official email/passcode.",
-        q2: "What are PharMReady branches?",
+        q2: "What are El-Maghawry branches?",
         a2: "We have multiple state-of-the-art branches in New Damietta city: Abou El-Kheir, Banque, Al-Sabeen, Old Saidi, Al-Azhar, and the centralized Call Center.",
         q3: "How do I transition between levels?",
         a3: "Once you complete watching all videos, the Level Exam unlocks. Upon passing, a promotion request is automatically sent to the manager.",
@@ -912,7 +798,7 @@
         a4: "Yes! All stage certificates are free for our trainees, signed by Dr. Ahmed Fadel, and ready for instant printing.",
         test_title: "Trainee Stories",
         test_desc: "Real experiences and success stories of pharmacy trainees who completed their internship.",
-        t1_text: "\"Training at PharMReady was a game-changer. The structured levels gave me huge confidence during patient dispensing and OTC diagnostics.\"",
+        t1_text: "\"Training at El-Maghawry was a game-changer. The structured levels gave me huge confidence during patient dispensing and OTC diagnostics.\"",
         t1_name: "Dr. Alaa Mahmoud",
         t1_job: "Movers Graduate | Banque Branch",
         t2_text: "\"Excellent interactive LMS! The progress tracking and exams are highly accurate. Thanks to Dr. Ahmed Fadel, I finished Level 2 in record time.\"",
@@ -921,13 +807,13 @@
         t3_text: "\"The Beast level was challenging, but the cosmetics labs and diabetes diplomas made me highly professional in patient care.\"",
         t3_name: "Dr. Sara Ibrahim",
         t3_job: "Beast Level Graduate | Abou El-Kheir Branch",
-        foot_bio: "PharmReady is an innovative LMS designed to empower and evaluate pharmacists at PharMReady Platform to deliver state-of-the-art medical services.",
+        foot_bio: "PharmReady is an innovative LMS designed to empower and evaluate pharmacists at El-Maghawry Group to deliver state-of-the-art medical services.",
         foot_links_title: "Useful Links",
         foot_contact_title: "Contact Us",
-        foot_addr: "New Damietta - PharMReady Platform",
+        foot_addr: "New Damietta - El-Maghawry Pharmacies Group",
         foot_news_title: "Newsletter",
         foot_news_desc: "Subscribe to get updates on newly published clinical tracks.",
-        footer_text: "© 2026 PharMReady | All rights reserved to PharMReady - Engineered by Dr. Ahmed Fadel",
+        footer_text: "Engineered by Dr. Ahmed Fadel © 2026 | El-Maghawry Pharmacies Group",
         menu_waiting: "Waiting List",
         menu_admin: "Admin Control Panel",
         admin_prompt: "Are you an Admin?",
@@ -946,7 +832,9 @@
       }
     };
 
-    // Removed auto-redirect to prevent lagging and mistakes as requested
+    if (localStorage.getItem("trainee_logged_in") === "true") {
+      window.location.href = "dashboard.html";
+    }
 
     let currentLang = localStorage.getItem("app_lang") || "ar";
     let currentTheme = localStorage.getItem("app_theme") || "sand"; // sand, green, dark
@@ -1239,16 +1127,11 @@
         if (response.success) {
           // Save sessions
           sessionStorage.setItem("trainee_logged_in", "true");
-          localStorage.setItem("trainee_email", email);
-          localStorage.setItem("trainee_password", password);
-          localStorage.setItem("trainee_name", response.trainee.name);
-          localStorage.setItem("trainee_branch", response.trainee.branch);
-          localStorage.setItem("trainee_level", response.trainee.level);
-          localStorage.setItem("trainee_nickname", response.trainee.nickname || "");
-          localStorage.setItem("trainee_avatar", response.trainee.avatar || "");
-          localStorage.setItem("trainee_university", response.trainee.university || "");
-          localStorage.setItem("trainee_college", response.trainee.college || "");
-          localStorage.setItem("trainee_whatsapp", response.trainee.whatsapp || "");
+          sessionStorage.setItem("trainee_email", email);
+          sessionStorage.setItem("trainee_password", password);
+          sessionStorage.setItem("trainee_name", response.trainee.name);
+          sessionStorage.setItem("trainee_branch", response.trainee.branch);
+          sessionStorage.setItem("trainee_level", response.trainee.level);
 
           const welcomeMsg = currentLang === "ar" 
             ? `🎉 تم تسجيل الدخول بنجاح! مرحباً دكتور: ${response.trainee.name}` 
@@ -1280,14 +1163,28 @@
       tabBtns.forEach((btn, i) => {
         if (i === index) {
           btn.classList.add("active-tab");
+          btn.style.background = "rgba(16,185,129,0.06)";
+          btn.style.borderColor = "#10b981";
+          btn.style.color = "#10b981";
         } else {
           btn.classList.remove("active-tab");
+          btn.style.background = "var(--bg-primary)";
+          btn.style.borderColor = "var(--border-color)";
+          btn.style.color = "var(--text-main)";
         }
       });
     };
 
     // Hide Preloader on Load
-    </script>
+    window.addEventListener('load', function() {
+      const loader = document.getElementById('loading');
+      if (loader) {
+        loader.classList.add('hide');
+        setTimeout(() => {
+          loader.style.display = 'none';
+        }, 500);
+      }
+    });
+  </script>
 </body>
 </html>
-

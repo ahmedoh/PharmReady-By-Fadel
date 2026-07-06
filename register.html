@@ -74,7 +74,15 @@
   </style>
 </head>
 <body>
-  
+  <!--==================== Preloader Start ====================-->
+  <div id="loading">
+    <div id="loading-center">
+      <div id="loading-center-absolute">
+        <span class="loader"></span>
+      </div>
+    </div>
+  </div>
+  <!--==================== Preloader End ====================-->
 
   <!-- Top Utilities bar -->
   <div class="app-container" style="max-width: 1200px; padding: 20px 20px 0; display: flex; justify-content: flex-end; gap: 10px;">
@@ -89,11 +97,11 @@
       <div class="auth-header" style="text-align: center; margin-bottom: 25px;">
         <div style="display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 20px;">
           <img src="logo_pr.png" alt="PharmReady" class="logo-img" style="height: 48px; max-height: 48px; width: auto; object-fit: contain;">
-          <i class="fa-solid fa-handshake" style="font-size: 32px; color: var(--color-primary); margin: 0 8px;"></i>
-          <img src="logo.png" alt="شعار منصة PharMReady" class="logo-img" style="height: 48px; max-height: 48px; width: auto; object-fit: contain;">
+          <i class="fa-solid fa-handshake" style="font-size: 20px; color: var(--color-primary); margin: 0 4px;"></i>
+          <img src="logo.png" alt="شعار صيدليات آل مغاوري" class="logo-img" style="height: 48px; max-height: 48px; width: auto; object-fit: contain;">
         </div>
         <h2 data-i18n="reg_title">تسجيل متدرب جديد</h2>
-        <p data-i18n="reg_subtitle">يرجى إدخال بياناتك بدقة للانضمام لأكاديمية منصة PharMReady</p>
+        <p data-i18n="reg_subtitle">يرجى إدخال بياناتك بدقة للانضمام لأكاديمية صيدليات آل مغاوري</p>
       </div>
 
       <!-- Registration Wizard Card -->
@@ -134,26 +142,11 @@
             </div>
 
             <div class="form-group">
-              <label for="reg-whatsapp" data-i18n="lbl_whatsapp">هل الرقم مزود بخدمة واتساب؟</label>
+              <label for="reg-whatsapp" data-i18n="lbl_whatsapp">هل رقم الهاتف مسجل عليه حساب واتساب؟</label>
               <select id="reg-whatsapp">
-                <option value="نعم، نفس الرقم" data-i18n="opt_wa_yes">نعم، نفس الرقم (مفضل)</option>
-                <option value="لا، رقم آخر" data-i18n="opt_wa_no">لا، رقم آخر</option>
+                <option value="نعم، هو نفس الرقم" data-i18n="opt_wa_yes">نعم، هو نفس الرقم (موصى به)</option>
+                <option value="لا، لا يوجد واتساب" data-i18n="opt_wa_no">لا، لا يوجد واتساب</option>
               </select>
-            </div>
-
-            <!-- External Form Verification (Dynamically Shown) -->
-            <div id="external-form-section" style="display: none; background: rgba(182, 116, 28, 0.05); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px;">
-              <h4 style="margin-bottom: 10px; color: var(--color-primary); font-size: 14px;"><i class="fa-solid fa-circle-exclamation"></i> تأكيد التسجيل في الاستمارة الخارجية</h4>
-              <p style="font-size: 13px; margin-bottom: 10px;">رجاء التأكد من تسجيل بياناتك في الاستمارة من خلال الرابط التالي: <a href="https://ahmedoh.github.io/Almaghawry-form-/" target="_blank" style="font-weight: bold; text-decoration: underline;">اضغط هنا لفتح الاستمارة</a> أولاً</p>
-              <div style="display: flex; gap: 15px; margin-bottom: 10px;">
-                <label style="cursor: pointer;"><input type="radio" name="ext-form-status" value="نعم"> نعم، قمت بالتسجيل</label>
-                <label style="cursor: pointer;"><input type="radio" name="ext-form-status" value="لا" checked> لا، لم أقم بالتسجيل</label>
-              </div>
-              <div id="ext-form-data-container" style="display: none;">
-                <label style="font-size: 12px; margin-bottom: 5px; display: block;">يرجى كتابة رقم الهاتف أو البريد الإلكتروني الذي سجلت به في الاستمارة:</label>
-                <input type="text" id="reg-ext-data" placeholder="01XXXXXXXXX" style="width: 100%; padding: 8px; border-radius: 5px; border: 1px solid var(--border-color);">
-              </div>
-              <p id="ext-form-warning" style="display: none; color: red; font-size: 12px; margin-top: 5px; font-weight: bold;">يجب عليك تعبئة الاستمارة الخارجية واختيار "نعم" للمتابعة.</p>
             </div>
           </div>
 
@@ -202,11 +195,11 @@
           <!-- STEP 3: Security Question -->
           <div class="wizard-step" id="step-3">
             <h3 class="card-title" style="margin-bottom: 15px;"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="step3_title">التحقق وسؤال الأمان</span></h3>
-            <p style="margin-bottom: 20px; font-size: 14px;" data-i18n="security_verify_desc">لإتمام التسجيل، يرجى الإجابة على السؤال الأمني التالي الخاص بفروع منصة PharMReady:</p>
+            <p style="margin-bottom: 20px; font-size: 14px;" data-i18n="security_verify_desc">لإتمام التسجيل، يرجى الإجابة على السؤال الأمني التالي الخاص بفروع صيدليات آل مغاوري:</p>
 
             <div class="form-group">
               <label style="color: var(--text-main); font-size: 15px; font-weight: bold; margin-bottom: 15px; display: block;" data-i18n="security_question">
-                أين تقع جميع فروع منصة PharMReady؟
+                أين تقع جميع فروع صيدليات آل مغاوري؟
               </label>
               
               <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -251,7 +244,7 @@
   </div>
 
   <footer class="app-footer" style="text-align: center; padding: 20px 0; margin-top: auto; border-top: 1px solid var(--border-color); background: var(--bg-secondary);">
-    <p data-i18n="footer_text">© 2026 PharMReady | جميع الحقوق محفوظة لمنصة PharMReady - تصميم وتطوير د. أحمد فاضل</p>
+    <p data-i18n="footer_text">برمجة وتطوير د. أحمد فاضل © 2026 | جميع الحقوق محفوظة لصيدليات آل مغاوري</p>
     <p style="font-size: 10px; margin-top: 5px; color: rgba(128,128,128,0.4)">Support: 01107118948</p>
   </footer>
 
@@ -262,7 +255,7 @@
     const langData = {
       ar: {
         reg_title: "تسجيل متدرب جديد",
-        reg_subtitle: "يرجى إدخال بياناتك بدقة للانضمام لأكاديمية منصة PharMReady",
+        reg_subtitle: "يرجى إدخال بياناتك بدقة للانضمام لأكاديمية صيدليات آل مغاوري",
         step1_title: "البيانات الشخصية وبيانات الاتصال",
         lbl_name: "الاسم الرباعي",
         lbl_age: "السن الحالي",
@@ -278,8 +271,8 @@
         opt_select_branch: "اختر الفرع...",
         lbl_target_level: "المستوى المطلوب الانضمام له",
         step3_title: "التحقق وسؤال الأمان",
-        security_verify_desc: "لإتمام التسجيل، يرجى الإجابة على السؤال الأمني التالي الخاص بفروع منصة PharMReady:",
-        security_question: "أين تقع جميع فروع منصة PharMReady؟",
+        security_verify_desc: "لإتمام التسجيل، يرجى الإجابة على السؤال الأمني التالي الخاص بفروع صيدليات آل مغاوري:",
+        security_question: "أين تقع جميع فروع صيدليات آل مغاوري؟",
         sec_opt_1: "في مدينة دمياط القديمة فقط.",
         sec_opt_2: "في مدينة دمياط الجديدة فقط.",
         sec_opt_3: "في محافظتي القاهرة والإسكندرية.",
@@ -288,7 +281,7 @@
         btn_submit_request: "تقديم طلب الاشتراك",
         has_account: "لديك حساب بالفعل؟",
         login_back: "اضغط هنا لتسجيل الدخول",
-        footer_text: "© 2026 PharMReady | جميع الحقوق محفوظة لمنصة PharMReady - تصميم وتطوير د. أحمد فاضل",
+        footer_text: "برمجة وتطوير د. أحمد فاضل © 2026 | جميع الحقوق محفوظة لصيدليات آل مغاوري",
         err_name: "يرجى إدخال اسمك الثلاثي أو الرباعي بوضوح.",
         err_age: "الرجاء إدخال سن واقعي للمتدرب (من 17 إلى 40).",
         err_birth: "الرجاء إدخال سنة ميلاد واقعية.",
@@ -303,7 +296,7 @@
       },
       en: {
         reg_title: "Register New Trainee",
-        reg_subtitle: "Please enter your information carefully to join PharMReady Academy",
+        reg_subtitle: "Please enter your information carefully to join El-Maghawry Academy",
         step1_title: "Personal & Contact Information",
         lbl_name: "Full Quadruple Name",
         lbl_age: "Current Age",
@@ -319,8 +312,8 @@
         opt_select_branch: "Select Branch location...",
         lbl_target_level: "Initial Target Training Level",
         step3_title: "Security Verification",
-        security_verify_desc: "To finalize registration, please answer the security check regarding PharMReady branches:",
-        security_question: "Where are all PharMReady Platform branches located?",
+        security_verify_desc: "To finalize registration, please answer the security check regarding El-Maghawry branches:",
+        security_question: "Where are all El-Maghawry Pharmacies branches located?",
         sec_opt_1: "In Old Damietta city only.",
         sec_opt_2: "In New Damietta city only.",
         sec_opt_3: "In Cairo and Alexandria Governorates.",
@@ -468,21 +461,6 @@
         const age = document.getElementById("reg-age").value.trim();
         const birth = document.getElementById("reg-birthyear").value.trim();
         const phone = document.getElementById("reg-phone").value.trim();
-
-      if (requireExternalForm) {
-        const extStatus = document.querySelector('input[name="ext-form-status"]:checked').value;
-        if (extStatus === "لا") {
-          document.getElementById("ext-form-warning").style.display = "block";
-          showToast("يجب عليك التسجيل في الاستمارة الخارجية أولاً", "error");
-          return false;
-        }
-        const extData = document.getElementById("reg-ext-data").value.trim();
-        if (!extData) {
-          showToast("رجاء إدخال بيانات المطابقة للاستمارة", "error");
-          return false;
-        }
-      }
-
         
         if (!name || name.split(" ").length < 3) {
           showToast(langData[currentLang].err_name, "error");
@@ -595,6 +573,15 @@
     });
 
     // Hide Preloader on Load
-    </script>
+    window.addEventListener('load', function() {
+      const loader = document.getElementById('loading');
+      if (loader) {
+        loader.classList.add('hide');
+        setTimeout(() => {
+          loader.style.display = 'none';
+        }, 500);
+      }
+    });
+  </script>
 </body>
 </html>
