@@ -1069,7 +1069,7 @@
         return;
       }
 
-      if (videosData.length > 0 && videosData.every(v => watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id))) {
+      if (videosData.length > 0 && videosData.every(v => watchedVideos.includes(extractYouTubeId(v.VideoId || v.id)))) {
         examBox.style.display = "block";
       } else {
         examBox.style.display = "none";
@@ -1103,7 +1103,8 @@
         vids.forEach(v => {
           const li = document.createElement("li");
           li.className = "video-item";
-          const isWatched = watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id);
+          const cleanId = extractYouTubeId(v.VideoId || v.id);
+          const isWatched = watchedVideos.includes(cleanId);
           const icon = isWatched ? `<i class="fa-solid fa-circle-check" style="color: var(--color-success);"></i>` : `<i class="fa-solid fa-hourglass-half" style="color: var(--color-gold);"></i>`;
           li.innerHTML = `
             <div style="display:flex; align-items:center; gap:10px;">
@@ -1112,8 +1113,8 @@
             </div>
             ${icon}
           `;
-          li.onclick = () => selectVideo(v.VideoId || v.id, v.Title);
-          if (currentVideoId === (v.VideoId || v.id)) li.className += " active";
+          li.onclick = () => selectVideo(cleanId, v.Title);
+          if (currentVideoId === cleanId) li.className += " active";
           container.appendChild(li);
         });
       }
@@ -1168,7 +1169,40 @@
       item.classList.toggle("open");
     }
 
+    // Extracts a plain 11-char YouTube video ID from any input:
+    // a raw ID, a youtu.be link, a youtube.com/watch link, /embed/, /shorts/, etc.
+    // Also strips tracking params like ?si=... that YouTube adds to shared links.
+    function extractYouTubeId(input) {
+      if (!input) return input;
+      const raw = String(input).trim();
+
+      // Already looks like a plain ID (11 chars, no slashes/protocol)
+      if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) return raw;
+
+      try {
+        const url = new URL(raw);
+        if (url.hostname.includes("youtu.be")) {
+          return url.pathname.split("/").filter(Boolean)[0];
+        }
+        if (url.hostname.includes("youtube.com")) {
+          if (url.searchParams.get("v")) return url.searchParams.get("v");
+          const parts = url.pathname.split("/").filter(Boolean);
+          // handles /embed/ID, /shorts/ID, /live/ID
+          const idx = parts.findIndex(p => ["embed", "shorts", "live"].includes(p));
+          if (idx !== -1 && parts[idx + 1]) return parts[idx + 1];
+        }
+      } catch (e) {
+        // Not a valid URL — fall through and try a regex as last resort
+      }
+
+      const match = raw.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/|\/live\/)([a-zA-Z0-9_-]{11})/);
+      if (match) return match[1];
+
+      return raw; // give up, return as-is
+    }
+
     function selectVideo(videoId, title) {
+      videoId = extractYouTubeId(videoId);
       currentVideoId = videoId;
       resetViewport();
 
