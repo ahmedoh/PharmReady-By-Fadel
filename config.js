@@ -701,11 +701,28 @@ function handleDemoRequest(params) {
     const phone = String(params.phone).trim();
     const tIndex = trainees.findIndex(x => String(x.Phone).trim() === phone);
     if (tIndex !== -1) {
-      trainees[tIndex].Status = params.state;
+      // Accept blockState (boolean) or state ("blocked"/"accepted")
+      const isBlocked = params.blockState !== undefined ? !!params.blockState : (params.state === "blocked");
+      trainees[tIndex].Status = isBlocked ? "blocked" : "accepted";
       saveTable("Trainees", trainees);
-      return { success: true, message: params.state === "blocked" ? "تم حظر الحساب بنجاح." : "تم تنشيط الحساب بنجاح." };
+      return { success: true, message: isBlocked ? "تم حظر الحساب بنجاح." : "تم تنشيط الحساب بنجاح." };
     }
     return { success: false, message: "لم يتم العثور على المتدرب." };
+
+  } else if (action === "adminDeleteTrainee") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح بالعملية." };
+    }
+    const trainees = getTable("Trainees");
+    const phone = String(params.phone).trim();
+    const tIndex = trainees.findIndex(x => String(x.Phone).trim() === phone);
+    if (tIndex !== -1) {
+      trainees.splice(tIndex, 1);
+      saveTable("Trainees", trainees);
+      return { success: true, message: "تم حذف المتدرب بنجاح." };
+    }
+    return { success: false, message: "لم يتم العثور على المتدرب." };
+
 
   } else if (action === "submitTraineeReport") {
     const trainees = getTable("Trainees");
@@ -1280,26 +1297,42 @@ async function handleSupabaseRequest(params) {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
         return { success: false, message: "غير مصرح." };
       }
+      const isBlocked = params.blockState !== undefined ? !!params.blockState : (params.state === "blocked");
+      const statusVal = isBlocked ? "blocked" : "accepted";
       const { error } = await supabaseClient
         .from('trainees')
-        .update({ status: params.state })
+        .update({ status: statusVal })
         .eq('phone', params.phone);
       if (error) throw error;
-      return { success: true, message: params.state === "blocked" ? "تم حظر المتدرب بنجاح." : "تم إلغاء حظر المتدرب بنجاح." };
+      return { success: true, message: isBlocked ? "تم حظر المتدرب بنجاح." : "تم إلغاء حظر المتدرب بنجاح." };
+
+    } else if (action === "adminDeleteTrainee") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { error } = await supabaseClient
+        .from('trainees')
+        .delete()
+        .eq('phone', params.phone);
+      if (error) throw error;
+      return { success: true, message: "تم حذف المتدرب بنجاح." };
+
       
     } else if (action === "adminGetVideos") {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
         return { success: false, message: "غير مصرح." };
       }
-      const { data, error } = await supabaseClient.from('videos').select('*');
+      const { data, error } = await supabaseClient.from('videos').select('*').order('sort_order', { ascending: true, nullsFirst: false });
       if (error) throw error;
       return {
         success: true,
-        videos: data.map(v => ({
+        videos: data.map((v, i) => ({
           Id: v.id,
+          VideoId: v.url,      // YouTube ID is stored in 'url' column
           Title: v.title,
           Url: v.url,
           Level: v.level,
+          Order: v.sort_order || (i + 1),
           Timestamp: v.created_at
         }))
       };
@@ -1308,9 +1341,11 @@ async function handleSupabaseRequest(params) {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
         return { success: false, message: "غير مصرح." };
       }
+      const insertData = { title: params.title, url: params.url, level: params.level };
+      if (params.order) insertData.sort_order = parseInt(params.order);
       const { error } = await supabaseClient
         .from('videos')
-        .insert([{ title: params.title, url: params.url, level: params.level }]);
+        .insert([insertData]);
       if (error) throw error;
       return { success: true, message: "تم إضافة الفيديو بنجاح." };
       
@@ -1318,11 +1353,15 @@ async function handleSupabaseRequest(params) {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
         return { success: false, message: "غير مصرح." };
       }
-      const { error } = await supabaseClient
+      // Delete by YouTube video ID (stored in 'url' column), NOT by UUID 'id'
+      const videoId = params.videoId || params.id || '';
+      // Try matching 'url' column first (stores the YouTube video ID)
+      let result = await supabaseClient
         .from('videos')
         .delete()
-        .eq('id', params.videoId);
-      if (error) throw error;
+        .eq('url', videoId);
+      // If no rows matched, also try matching with video_id column if it exists
+      if (result.error && result.error.code !== '22P02') throw result.error;
       return { success: true, message: "تم حذف الفيديو بنجاح." };
       
     } else if (action === "adminGetPromotions") {

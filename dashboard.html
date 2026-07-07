@@ -466,6 +466,9 @@
           <button class="btn btn-secondary" id="btn-sidebar-profile" style="width: 100%; text-align: start; gap: 10px; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; padding: 10px 14px; font-size: 13px;">
             <i class="fa-solid fa-user-gear"></i> ملفي الشخصي
           </button>
+          <button class="btn btn-secondary" id="btn-sidebar-guide" onclick="showAcademicGuideModal(true)" style="width: 100%; text-align: start; gap: 10px; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; padding: 10px 14px; font-size: 13px; border: 1px dashed var(--color-gold); background: rgba(251,191,36,0.02); color: var(--color-gold);">
+            <i class="fa-solid fa-circle-info"></i> الدليل الأكاديمي للمنصة
+          </button>
         </div>
         
         <div style="margin-top: 10px;">
@@ -491,44 +494,52 @@
       <!-- Main Panel: Video Player, Quiz & Certificates Viewport -->
       <div class="card" id="main-panel" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 450px;">
         
-        <!-- 1. Video Player Viewport -> Redirect and Google Drive Concept -->
+        <!-- 1. Video Player Viewport -> Direct Transparent Preview Concept -->
         <div id="player-viewport" style="display: none; flex: 1;">
           <h3 id="playing-video-title" style="font-size: 18px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: var(--text-main);">
             <i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i> Name of Video
           </h3>
 
-          <div class="drive-redirect-card" style="
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
+          <div id="lecture-preview-container" style="
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16/9;
             border-radius: 14px;
-            padding: 30px;
-            text-align: center;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.15);
+            margin-bottom: 15px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            backdrop-filter: blur(8px);
           ">
-            <div style="font-size: 48px; margin-bottom: 15px; color: var(--color-gold);">
-              <i class="fa-brands fa-google-drive"></i>
-            </div>
-            <h4 style="font-size: 16px; margin-bottom: 10px; color: var(--text-main);">رابط المحاضرة المعتمد</h4>
-            <p style="font-size: 13px; color: var(--text-muted); max-width: 500px; margin: 0 auto 20px; line-height: 1.6;">
-              هذه المحاضرة مرفوعة خارجيًا. انقر على الزر أدناه لفتح المحاضرة لمشاهدتها، وبعد الانتهاء من مشاهدتها يرجى حل الاختبار القصير الذي سيظهر بالأسفل لتسجيل حضورك للمحاضرة وتأكيد فهمك.
-            </p>
-            
-            <button id="btn-open-drive-lecture" onclick="openDriveLecture()" class="btn btn-primary" style="
-              font-size: 15px;
-              padding: 12px 30px;
-              border-radius: 30px;
+            <iframe id="lecture-preview-iframe" src="" style="
+              width: 100%;
+              height: 100%;
+              border: none;
+              background: transparent;
+            " allowfullscreen></iframe>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 20px;">
+            <button id="btn-open-drive-lecture" onclick="openDriveLecture()" class="btn btn-secondary" style="
+              font-size: 13px;
+              padding: 8px 24px;
+              border-radius: 20px;
               cursor: pointer;
               display: inline-flex;
               align-items: center;
               gap: 8px;
               font-weight: bold;
-              box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+              box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.15);
+              background: rgba(var(--color-primary-rgb), 0.08);
+              color: var(--color-primary);
+              border: 1px solid rgba(var(--color-primary-rgb), 0.2);
             ">
               <i class="fa-solid fa-up-right-from-square"></i>
-              فتح المحاضرة ومشاهدتها ↗
+              فتح المحاضرة في نافذة خارجية ↗
             </button>
           </div>
+
 
           <!-- Inline AI Quiz Section right in the page! -->
           <div id="inline-quiz-container" style="display: none; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 25px; margin-top: 20px;">
@@ -923,6 +934,56 @@
     </div>
   </div>
 
+  <!-- Academic Guide Modal (Pop-up window) -->
+  <div id="guide-modal" class="modal-overlay" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); z-index: 13000; justify-content: center; align-items: center; padding: 20px;">
+    <div class="card" style="width: 100%; max-width: 650px; padding: 25px; background: var(--bg-secondary); border: 2px solid var(--color-gold); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); position: relative; direction: rtl; display: flex; flex-direction: column; max-height: 90vh;">
+      
+      <h2 style="font-size: 20px; color: var(--color-primary); margin-bottom: 5px; text-align: right; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+        <i class="fa-solid fa-graduation-cap" style="color: var(--color-gold);"></i> الدليل الأكاديمي والتعليمات العامة للمنصة
+      </h2>
+      
+      <!-- Scrollable Text Content -->
+      <div id="guide-text-content" style="overflow-y: auto; flex: 1; margin-bottom: 20px; padding-left: 10px; line-height: 1.8; font-size: 13.5px; text-align: justify; color: var(--text-main); font-family: inherit;">
+        <p style="font-weight: bold; font-size: 14.5px; color: var(--color-gold); margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">مرحباً بكم زملاء المهنة الكرام في رحاب أكاديمية آل مغاوري للتأهيل الميداني 🎓</p>
+        
+        <p><strong>زميلاتي وزملائي الكرام من الصيادلة الجدد،</strong></p>
+        
+        <p>السلام عليكم ورحمة الله وبركاته، إن مهنة الصيدلة ليست صرفٍ للدواء وحسب، بل هي أمانة علمية ورسالة إنسانية نبيلة تسهم في تخفيف آلام البشر وحفظ الأرواح. يسعدني ويشرفني كمدرب ومشرف أكاديمي لكم أن أصحبكم خطوة بخطوة في هذه الرحلة التدريبية المتكاملة لننطلق سوياً من مرحلة الأساسيات حتى نبلغ معاً ليفل الاحتراف والتميز الفعلي في سوق العمل الصيدلي.</p>
+        
+        <p style="font-weight: 700; color: var(--color-primary); margin-top: 15px; font-size: 14px;"><i class="fa-solid fa-circle-info"></i> التعريف بالنظام الأكاديمي وآلية الارتقاء:</p>
+        
+        <ol style="margin-right: 20px; list-style-type: decimal; padding-right: 0;">
+          <li style="margin-bottom: 12px; list-style-position: inside;">
+            <strong>خطة المستويات المتكاملة:</strong> تم تقسيم المنهج تدريجياً لفتح مسارات واضحة:
+            <ul style="list-style-type: none; padding-right: 15px; margin-top: 5px;">
+              <li style="margin-bottom: 4px;"><span style="color: #10b981;">🟢 المستوى الصِفري (Passengers):</span> مرحلة التأسيس المهني (مجانية بالكامل) — تشمل أدبيات العمل الصيدلي، الإسعافات الأولية (First Aid)، وأساسيات علم الدواء (Basic Pharma).</li>
+              <li style="margin-bottom: 4px;"><span style="color: #3b82f6;">🔵 المستوى الأول (Starters):</span> الممارسة اليومية المباشرة — تشمل OTC التشخيص بدون روشتة، وقراءة التحاليل الطبية (Medical Analysis).</li>
+              <li style="margin-bottom: 4px;"><span style="color: #eab308;">🟡 المستوى الثاني (Movers):</span> التعمق والتخصص — تشمل المضادات الحيوية (Antibiotics)، الجلدية الشائعة (Dermatology)، وشرح المواد الفعالة من A to Z.</li>
+              <li style="margin-bottom: 4px;"><span style="color: #f97316;">🟠 المستوى الثالث (Flyers):</span> الربط والتطبيق العملي — تشمل تركيبات التجميل (Formulation)، الكوزمو (Cosmetics)، ودبلومة السكر المعتمدة.</li>
+              <li style="margin-bottom: 4px;"><span style="color: #ef4444;">🔴 المستوى الرابع (ليفيل الوحش):</span> مستوى الخبراء والسريريات المتقدمة (يُحدد لاحقاً).</li>
+            </ul>
+          </li>
+          <li style="margin-bottom: 12px; list-style-position: inside;"><strong>متطلبات فتح الامتحانات:</strong> يلتزم المتدرب بمشاهدة كافة محاضرات المستوى الحالي بشكل كامل لتسجيل حضورهم وتفاعلهم.</li>
+          <li style="margin-bottom: 12px; list-style-position: inside;"><strong>اختبار المرحلة التلقائي:</strong> بمجرد إتمام المحاضرات، سيفتح لكم النظام اختبار الترقية فوراً. ويتطلب الاجتياز تحقيق نسبة 80% أو أكثر.</li>
+          <li style="margin-bottom: 12px; list-style-position: inside;"><strong>الترقية والشهادات:</strong> بعد اجتياز الاختبار بنجاح، يُرسل طلب ترقيتكم للمدير التنفيذي لاعتماده وتصدر لكم شهادة تخرج ممضية من مدير الفرع ود. أحمد فاضل.</li>
+        </ol>
+        
+        <p style="font-style: italic; font-weight: 700; text-align: center; color: var(--color-gold); margin: 20px 0 10px;">"ابدأوا مسيرتكم المباركة الآن باختيار المحاضرة الأولى من القائمة الجانبية. نتمنى لكم التوفيق والسداد!"</p>
+        
+        <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 15px; font-size: 12px; color: var(--text-muted); text-align: left;">
+          <strong>أخوكم ومدربكم الأكاديمي:</strong> د. أحمد فاضل / إدارة صيدليات آل مغاوري
+        </div>
+      </div>
+      
+      <!-- Close Button with Timer -->
+      <button id="btn-close-guide" onclick="closeGuideModal()" disabled class="btn btn-primary" style="width: 100%; padding: 12px; cursor: not-allowed; opacity: 0.6; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <i class="fa-solid fa-clock"></i>
+        <span id="guide-timer-text">يرجى قراءة الدليل بالكامل (متبقي 30 ثانية)</span>
+      </button>
+    </div>
+  </div>
+
+
   <footer class="app-footer">
     <p data-i18n="footer_text">برمجة وتطوير د. أحمد فاضل © 2026 | جميع الحقوق محفوظة لصيدليات آل مغاوري</p>
     <p style="font-size: 10px; margin-top: 5px; color: rgba(128,128,128,0.4)">Support: 01107118948</p>
@@ -1192,6 +1253,12 @@
           applySettings();
           renderCurriculumAccordion(response.curriculum || []);
 
+          // Check for first-time login guide popup
+          const seenKey = "trainee_guide_seen_" + traineeEmail;
+          if (!localStorage.getItem(seenKey)) {
+            showAcademicGuideModal(false);
+          }
+
           // Check if user has a pending promotion request
           if (response.pendingPromotion) {
             showPromoPending();
@@ -1321,6 +1388,31 @@
       item.classList.toggle("open");
     }
 
+    function getEmbedUrl(url) {
+      if (!url) return "";
+      // Check if it is a Google Drive link
+      if (url.includes("drive.google.com")) {
+        let embedUrl = url;
+        if (embedUrl.includes("/view")) {
+          embedUrl = embedUrl.replace("/view", "/preview");
+        } else if (embedUrl.includes("/edit")) {
+          embedUrl = embedUrl.replace("/edit", "/preview");
+        } else if (!embedUrl.includes("/preview")) {
+          embedUrl = embedUrl.replace(/\/$/, "") + "/preview";
+        }
+        return embedUrl;
+      }
+      
+      // Check if it is a YouTube link/ID
+      const ytId = extractYouTubeId(url);
+      if (ytId) {
+        return `https://www.youtube-nocookie.com/embed/${ytId}?rel=0&modestbranding=1`;
+      }
+      
+      // Fallback
+      return url;
+    }
+
     function selectVideo(videoId, title) {
       currentVideoId = videoId;
       resetViewport();
@@ -1329,14 +1421,24 @@
       document.getElementById("player-viewport").style.display = "block";
       document.getElementById("playing-video-title").innerHTML = `<i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i> ${title}`;
 
-      // Reset the inline quiz container upon choosing a new lecture
+      // Set preview iframe source
+      const v = videosData.find(x => x.VideoId === videoId || x.id === videoId);
+      if (v) {
+        const iframe = document.getElementById("lecture-preview-iframe");
+        if (iframe) {
+          iframe.src = getEmbedUrl(v.Url || v.VideoId || "");
+        }
+      }
+
+      // Automatically show and load inline quiz container immediately
       const quizContainer = document.getElementById("inline-quiz-container");
       if (quizContainer) {
-        quizContainer.style.display = "none";
+        quizContainer.style.display = "block";
       }
+      loadInlineVideoQuiz(videoId, title);
+
       renderPlaylist();
     }
-
 
     function resetViewport() {
       const setDisplay = (id, val) => { const el = document.getElementById(id); if (el) el.style.display = val; };
@@ -1347,8 +1449,15 @@
       setDisplay("reports-viewport", "none");
       setDisplay("player-placeholder", "flex");
       
+      // Stop iframe video playback cleanly by clearing src
+      const iframe = document.getElementById("lecture-preview-iframe");
+      if (iframe) {
+        iframe.src = "";
+      }
+      
       checkExamEligibility();
     }
+
 
 
     function extractYouTubeId(input) {
@@ -1372,15 +1481,8 @@
       const url = v.Url || v.VideoId || "";
       const targetUrl = url.startsWith("http") ? url : `https://www.youtube.com/watch?v=${url}`;
       window.open(targetUrl, "_blank");
-
-      // Instantly show the inline quiz container with loading state
-      const quizContainer = document.getElementById("inline-quiz-container");
-      if (quizContainer) {
-        quizContainer.style.display = "block";
-      }
-
-      loadInlineVideoQuiz(currentVideoId, v.Title);
     }
+
 
     async function loadInlineVideoQuiz(videoId, videoTitle) {
       currentQuizVideoId = videoId;
@@ -1782,6 +1884,71 @@
 
       document.getElementById("certificate-viewport").style.display = "block";
     }
+
+    let guideTimerInterval = null;
+
+    window.showAcademicGuideModal = function(isManual = false) {
+      const modal = document.getElementById("guide-modal");
+      const btn = document.getElementById("btn-close-guide");
+      if (!modal || !btn) return;
+
+      // Reset any existing timer interval
+      if (guideTimerInterval) {
+        clearInterval(guideTimerInterval);
+        guideTimerInterval = null;
+      }
+
+      modal.style.display = "flex";
+
+      if (isManual) {
+        // If opened manually, let them close it immediately without a timer
+        btn.disabled = false;
+        btn.style.cursor = "pointer";
+        btn.style.opacity = "1";
+        btn.style.background = "var(--color-primary)";
+        btn.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> إغلاق الدليل الأكاديمي`;
+      } else {
+        // First login popup mode: enforce 30 seconds timer
+        let timeLeft = 30;
+        btn.disabled = true;
+        btn.style.cursor = "not-allowed";
+        btn.style.opacity = "0.6";
+        btn.style.background = "#4b5563"; // gray out
+        btn.innerHTML = `<i class="fa-solid fa-clock"></i> يرجى قراءة الدليل بالكامل (متبقي ${timeLeft} ثانية)`;
+
+        guideTimerInterval = setInterval(() => {
+          timeLeft--;
+          if (timeLeft <= 0) {
+            clearInterval(guideTimerInterval);
+            guideTimerInterval = null;
+            btn.disabled = false;
+            btn.style.cursor = "pointer";
+            btn.style.opacity = "1";
+            btn.style.background = "var(--color-primary)";
+            btn.innerHTML = `<i class="fa-solid fa-graduation-cap"></i> فهمت وقرأت الدليل بالكامل - بدء التدريب`;
+          } else {
+            btn.innerHTML = `<i class="fa-solid fa-clock"></i> يرجى قراءة الدليل بالكامل (متبقي ${timeLeft} ثانية)`;
+          }
+        }, 1000);
+      }
+    };
+
+    window.closeGuideModal = function() {
+      const modal = document.getElementById("guide-modal");
+      if (modal) modal.style.display = "none";
+      
+      // Save in localStorage that they have seen/accepted the guide
+      if (traineeEmail) {
+        const seenKey = "trainee_guide_seen_" + traineeEmail;
+        localStorage.setItem(seenKey, "true");
+      }
+      
+      if (guideTimerInterval) {
+        clearInterval(guideTimerInterval);
+        guideTimerInterval = null;
+      }
+    };
+
 
     // Initialize and load lectures
     document.addEventListener("DOMContentLoaded", () => {
