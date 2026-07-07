@@ -1308,7 +1308,7 @@
           <td><strong>${t.Name}</strong></td>
           <td>${t.Age} / ${t.BirthYear}</td>
           <td>
-            <a href="https://wa.me/2${t.Phone}" target="_blank" style="color: #10b981;"><i class="fa-brands fa-whatsapp"></i> ${t.Phone}</a>
+            <a href="https://wa.me/20${t.Phone.replace(/^0/, '')}" target="_blank" style="color: #10b981;"><i class="fa-brands fa-whatsapp"></i> ${t.Phone}</a>
           </td>
           <td>${t.University}<br><span style="font-size: 11px; color: var(--text-muted);">${t.College} - ${t.Squad}</span></td>
           <td><span class="status-badge level-badge-${t.CurrentLevel || 'Passengers'}">${levelText}</span><br><span style="font-size: 10px; color: var(--text-muted);">${t.TrainingBranch}</span></td>
@@ -1339,7 +1339,7 @@
         
         tr.innerHTML = `
           <td><strong>${t.Name}</strong></td>
-          <td><a href="https://wa.me/2${t.Phone}" target="_blank" style="color: #10b981;"><i class="fa-brands fa-whatsapp"></i> ${t.Phone}</a></td>
+          <td><a href="https://wa.me/20${t.Phone.replace(/^0/, '')}" target="_blank" style="color: #10b981;"><i class="fa-brands fa-whatsapp"></i> ${t.Phone}</a></td>
           <td style="font-family: monospace;">${t.Email}</td>
           <td style="font-family: monospace;">${t.Password}</td>
           <td><span class="status-badge level-badge-${t.CurrentLevel || 'Passengers'}">${levelText}</span></td>
@@ -1786,7 +1786,7 @@
 
         if (response.success) {
           const msg   = buildWhatsAppMessage();
-          const phone = _acceptTraineePhone ? "2" + _acceptTraineePhone.replace(/^0/, "") : "";
+          const phone = _acceptTraineePhone ? "20" + _acceptTraineePhone.replace(/^0/, "") : "";
           const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 
           showToast("🎉 تم قبول واشراك المتدرب! جاري فتح واتساب لإرسال بيانات الدخول...", "success");
