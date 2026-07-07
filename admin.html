@@ -1738,28 +1738,34 @@
       const password = document.getElementById("generated-password")?.value || "";
       const level    = document.getElementById("generated-level")?.value    || "";
       const name     = _acceptTraineeName || "";
-      const siteUrl  = window.location.origin || "https://maghawry.com";
+      const siteUrl  = window.location.origin || "https://ahmedoh.github.io";
+      
+      const whatsappSupport = "01107118948"; // رقم الواتساب الخاص بالدعم
+      const telegramSupport = "https://t.me/PharmReady"; // رابط التليجرام الخاص بالخدمة
+
       
       return [
-        `🎓 مبروك ${name}! تم اعتماد اشتراكك في أكاديمية آل مغاوري ✅`,
+        `مبارك عليك د. ${name} لقد تم قبولك في لوحة التدريب الخاصة بصيدليات آل مغاوري والتي تتم إدارتها من قبل منصة PharmReady 🌸`,
         ``,
-        `📧 بريدك الإلكتروني (اسم المستخدم):`,
-        `${email}`,
+        `يرجى العلم بأن :`,
+        `--------------------------------------------------------`,
+        `البريد الالكتروني الخاص بكم هو : ${email}`,
         ``,
-        `🔑 كلمة المرور الخاصة بك:`,
-        `${password}`,
+        `كلمة المرور هي : ${password}`,
         ``,
-        `📈 المستوى المعتمد البدائي:`,
-        `${level}`,
+        `رابط تسجيل الدخول للمنصة : ${siteUrl}`,
+        `----------------------------------------------------------`,
         ``,
-        `🌐 رابط تسجيل الدخول للمنصة:`,
-        `${siteUrl}`,
+        `المستوى المعتمد هو : ${level}`,
         ``,
-        `⚠️ تنبيه: يُرجى حفظ هذه البيانات جيداً وعدم مشاركتها مع أحد.`,
+        `⚠️ يُرجى حفظ هذه البيانات جيداً وعدم مشاركتها مع أحد.`,
         ``,
-        `📞 للمساعدة تواصل مع إدارة الأكاديمية.`
+        `*********************`,
+        `رقم الواتساب للدعم: ${whatsappSupport}`,
+        `معرف التليجرام للدعم: ${telegramSupport}`
       ].join("\n");
     }
+
 
     document.getElementById("accept-trainee-form").addEventListener("submit", async (e) => {
       e.preventDefault();
