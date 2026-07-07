@@ -1080,7 +1080,11 @@ async function handleSupabaseRequest(params) {
         
       return {
         success: true,
-        videos: (videos || []).map(v => ({
+        videos: [...(videos || [])].sort((a, b) => {
+          const orderA = parseInt(a.sort_order || a.index || a.order || 9999);
+          const orderB = parseInt(b.sort_order || b.index || b.order || 9999);
+          return orderA - orderB;
+        }).map(v => ({
           VideoId: String(v.video_id || v.url || v.id),
           Title: v.title,
           Url: v.url || `https://www.youtube.com/watch?v=${v.video_id}`,
@@ -1322,13 +1326,21 @@ async function handleSupabaseRequest(params) {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
         return { success: false, message: "غير مصرح." };
       }
-      const { data, error } = await supabaseClient.from('videos').select('*').order('sort_order', { ascending: true, nullsFirst: false });
+      const { data, error } = await supabaseClient.from('videos').select('*');
       if (error) throw error;
+
+      // Sort in-memory safely to support order, index or fallback
+      const sortedData = [...(data || [])].sort((a, b) => {
+        const orderA = parseInt(a.sort_order || a.index || a.order || 9999);
+        const orderB = parseInt(b.sort_order || b.index || b.order || 9999);
+        return orderA - orderB;
+      });
+
       return {
         success: true,
-        videos: data.map((v, i) => ({
+        videos: sortedData.map((v, i) => ({
           Id: v.id,
-          VideoId: v.url,      // YouTube ID is stored in 'url' column
+          VideoId: v.url,      // YouTube ID or full URL is stored in 'url' column
           Title: v.title,
           Url: v.url,
           Level: v.level,
@@ -1342,11 +1354,19 @@ async function handleSupabaseRequest(params) {
         return { success: false, message: "غير مصرح." };
       }
       const insertData = { title: params.title, url: params.url, level: params.level };
-      if (params.order) insertData.sort_order = parseInt(params.order);
-      const { error } = await supabaseClient
-        .from('videos')
-        .insert([insertData]);
-      if (error) throw error;
+      const insertWithOrder = { ...insertData };
+      if (params.order) insertWithOrder.sort_order = parseInt(params.order);
+
+      let { error } = await supabaseClient.from('videos').insert([insertWithOrder]);
+      if (error) {
+        // If sort_order column doesn't exist, retry without it
+        if (error.code === 'PGRST204' || error.message.includes('sort_order') || error.code === '42703') {
+          const { error: retryError } = await supabaseClient.from('videos').insert([insertData]);
+          if (retryError) throw retryError;
+        } else {
+          throw error;
+        }
+      }
       return { success: true, message: "تم إضافة الفيديو بنجاح." };
       
     } else if (action === "adminDeleteVideo") {
