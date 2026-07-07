@@ -104,17 +104,16 @@
       .video-player-container { min-height: 640px; }
     }
     #yt-player-placeholder,
-    .video-player-container iframe,
-    .video-player-container > div,           /* YT API wraps iframe in a div */
-    .video-player-container > div > iframe { /* nested iframe from YT API   */
+    .video-player-container iframe {
       position: absolute !important;
       inset: 0 !important;
       top: 0 !important; left: 0 !important;
       width: 100% !important;
       height: 100% !important;
       border: 0 !important;
-      pointer-events: none; /* Prevent direct iframe interaction — overlay handles all clicks */
+      pointer-events: none; /* Prevent direct iframe interaction */
     }
+
     .video-overlay-protection {
       position: absolute;
       inset: 0;
@@ -492,89 +491,60 @@
       <!-- Main Panel: Video Player, Quiz & Certificates Viewport -->
       <div class="card" id="main-panel" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 450px;">
         
-        <!-- 1. Video Player Viewport -->
+        <!-- 1. Video Player Viewport -> Redirect and Google Drive Concept -->
         <div id="player-viewport" style="display: none; flex: 1;">
           <h3 id="playing-video-title" style="font-size: 18px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: var(--text-main);">
             <i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i> Name of Video
           </h3>
 
-          <div class="video-player-container" id="video-wrapper">
-            <!-- Security non-interactive overlay (pointer-events:none in CSS) -->
-            <div class="video-overlay-protection" id="player-click-blocker"></div>
-
-            <!-- Subtle watermark (pointer-events:none in CSS) -->
-            <div class="security-watermark" id="watermark-overlay">
-              <span id="watermark-name">Trainee Name</span>
-              <span id="watermark-email">email@maghawry.com</span>
-              <span id="watermark-phone">010XXXXXXXX</span>
-              <span>PharmReady-Almaghwry ©</span>
+          <div class="drive-redirect-card" style="
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+          ">
+            <div style="font-size: 48px; margin-bottom: 15px; color: var(--color-gold);">
+              <i class="fa-brands fa-google-drive"></i>
             </div>
-
-            <!-- Click-to-play zone: covers middle of video, above controls -->
-            <div id="player-tap-zone" onclick="togglePlayPause()" style="
-              position: absolute;
-              inset: 0;
-              bottom: 58px;   /* leave controls bar uncovered */
-              z-index: 10;
+            <h4 style="font-size: 16px; margin-bottom: 10px; color: var(--text-main);">رابط المحاضرة المعتمد</h4>
+            <p style="font-size: 13px; color: var(--text-muted); max-width: 500px; margin: 0 auto 20px; line-height: 1.6;">
+              هذه المحاضرة مرفوعة خارجيًا. انقر على الزر أدناه لفتح المحاضرة لمشاهدتها، وبعد الانتهاء من مشاهدتها يرجى حل الاختبار القصير الذي سيظهر بالأسفل لتسجيل حضورك للمحاضرة وتأكيد فهمك.
+            </p>
+            
+            <button id="btn-open-drive-lecture" onclick="openDriveLecture()" class="btn btn-primary" style="
+              font-size: 15px;
+              padding: 12px 30px;
+              border-radius: 30px;
               cursor: pointer;
-              background: transparent;
-            "></div>
-
-            <div id="yt-player-placeholder"></div>
-
-            <!-- Custom HTML Player controls bar -->
-            <div class="custom-player-controls" id="custom-controls" style="direction: ltr;">
-              <button class="control-btn" id="ctrl-back10" title="Rewind 10s"><i class="fa-solid fa-rotate-left"></i><span class="skip-label">10</span></button>
-              <button class="control-btn" id="ctrl-play-pause" title="Play/Pause"><i class="fa-solid fa-play"></i></button>
-              <button class="control-btn" id="ctrl-fwd10" title="Forward 10s"><i class="fa-solid fa-rotate-right"></i><span class="skip-label">10</span></button>
-              
-              <div class="ctrl-progress-container" id="ctrl-seekbar-container">
-                <input type="range" id="ctrl-seekbar" min="0" max="100" value="0" step="0.1">
-                <div class="ctrl-progress-bar" id="ctrl-progress-bar"></div>
-              </div>
-
-              <div class="ctrl-time" id="ctrl-time-display">0:00 / 0:00</div>
-
-              <button class="control-btn" id="ctrl-mute" title="Mute/Unmute"><i class="fa-solid fa-volume-high"></i></button>
-              <input type="range" id="ctrl-volume" min="0" max="100" value="100" style="width: 55px;">
-              
-              <!-- Quality Selector -->
-              <div style="position: relative; display: inline-block;">
-                <button class="control-btn" id="ctrl-quality" title="Video Quality" style="font-size: 10px; font-weight: bold; padding: 0 8px; min-width: 46px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.05);">Auto</button>
-                <div class="quality-menu" id="ctrl-quality-menu">
-                  <div class="quality-opt" data-quality="hd1080">1080p</div>
-                  <div class="quality-opt" data-quality="hd720">720p</div>
-                  <div class="quality-opt" data-quality="large">480p</div>
-                  <div class="quality-opt" data-quality="medium">360p</div>
-                  <div class="quality-opt active" data-quality="default">Auto</div>
-                </div>
-              </div>
-
-              <!-- Speed Selector -->
-              <div style="position: relative; display: inline-block;">
-                <button class="control-btn" id="ctrl-speed" title="Playback Speed" style="font-size: 10px; font-weight: bold; padding: 0 8px; min-width: 40px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.05);">1x</button>
-                <div id="ctrl-speed-menu" style="display: none; position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); background: rgba(10,10,10,0.97); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 6px 0; min-width: 65px; z-index: 200; box-shadow: 0 8px 32px rgba(0,0,0,0.6);">
-                  <div class="speed-opt" data-rate="0.5" style="padding: 7px 14px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">0.5x</div>
-                  <div class="speed-opt" data-rate="0.75" style="padding: 7px 14px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">0.75x</div>
-                  <div class="speed-opt active" data-rate="1.0" style="padding: 7px 14px; font-size: 12px; color: var(--color-gold, #fbbf24); font-weight: bold; cursor: pointer; text-align: center; background: rgba(251,191,36,0.12);">1.0x</div>
-                  <div class="speed-opt" data-rate="1.25" style="padding: 7px 14px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">1.25x</div>
-                  <div class="speed-opt" data-rate="1.5" style="padding: 7px 14px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">1.5x</div>
-                  <div class="speed-opt" data-rate="2.0" style="padding: 7px 14px; font-size: 12px; color: #fff; cursor: pointer; text-align: center;">2.0x</div>
-                </div>
-              </div>
-              
-              <button class="control-btn" id="ctrl-fullscreen" title="Fullscreen"><i class="fa-solid fa-expand"></i></button>
-            </div>
+              display: inline-flex;
+              align-items: center;
+              gap: 8px;
+              font-weight: bold;
+              box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+            ">
+              <i class="fa-solid fa-up-right-from-square"></i>
+              فتح المحاضرة ومشاهدتها ↗
+            </button>
           </div>
 
-          <!-- Video URL display removed intentionally for security: the video ID is never shown in DOM -->
-
-          <div class="check-box" style="margin-top: 15px; text-align: inherit; background: rgba(16,185,129,0.02);">
-            <p style="font-size: 12px;" data-i18n="copyright_warning">
-              هذا الفيديو محمي بموجب حقوق الطبع والنشر لصيدليات آل مغاوري. يتم توليد علامات مائية عشوائية باسمك وبيانات حسابك لمنع التسجيل أو النشر غير المصرح به. إتمام مشاهدة الفيديو كاملاً يسجل تلقائياً في ملف تقدمك الدراسي.
-            </p>
+          <!-- Inline AI Quiz Section right in the page! -->
+          <div id="inline-quiz-container" style="display: none; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 25px; margin-top: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
+              <span style="font-size: 24px;">🧠</span>
+              <div>
+                <h4 style="font-size: 15px; margin: 0; color: var(--text-main);">اختبار المحاضرة الذكي لتأكيد حضورك</h4>
+                <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 0;">قم بحل الأسئلة لتسجيل إتمامك المحاضرة بنجاح</p>
+              </div>
+            </div>
+            <div id="inline-quiz-content">
+              <!-- Dynamically populated quiz questions -->
+            </div>
           </div>
         </div>
+
 
         <!-- 2. Exam/Quiz Viewport -->
         <div id="exam-viewport" style="display: none; flex: 1;">
@@ -961,7 +931,6 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=2.1"></script>
-  <script src="https://www.youtube.com/iframe_api"></script>
   <script>
     // Translate data
     const langData = {
@@ -1123,20 +1092,14 @@
     }
     
     // Configure watermark content
-    const fullTraineeDataString = `${traineeName} | ${traineeEmail} | ${traineeBranch}`;
-    document.getElementById("watermark-name").textContent = fullTraineeDataString;
-    document.getElementById("watermark-email").textContent = "PharmReady-Almaghwry Security System";
-    document.getElementById("watermark-phone").textContent = "Do Not Record / Copy - © 2026";
-
     let videosData = [];
     let watchedVideos = [];
     let completedLevelsList = [];
     let examQuestions = []; // Global questions loaded from spreadsheet
     let currentVideoId = null;
-    let ytPlayer = null;
-    let controlsInterval = null;
     let currentLang = localStorage.getItem("app_lang") || "ar";
     let currentTheme = localStorage.getItem("app_theme") || "sand"; // sand, green, dark
+
 
     function applySettings() {
       // Theme cycling
@@ -1366,9 +1329,14 @@
       document.getElementById("player-viewport").style.display = "block";
       document.getElementById("playing-video-title").innerHTML = `<i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i> ${title}`;
 
-      loadYouTubePlayer(videoId);
+      // Reset the inline quiz container upon choosing a new lecture
+      const quizContainer = document.getElementById("inline-quiz-container");
+      if (quizContainer) {
+        quizContainer.style.display = "none";
+      }
       renderPlaylist();
     }
+
 
     function resetViewport() {
       const setDisplay = (id, val) => { const el = document.getElementById(id); if (el) el.style.display = val; };
@@ -1379,13 +1347,9 @@
       setDisplay("reports-viewport", "none");
       setDisplay("player-placeholder", "flex");
       
-      if (controlsInterval) {
-        clearInterval(controlsInterval);
-        controlsInterval = null;
-      }
-      
       checkExamEligibility();
     }
+
 
     function extractYouTubeId(input) {
       if (!input) return "";
@@ -1400,338 +1364,40 @@
       return input;
     }
 
-    // ── Secure YouTube Player ────────────────────────────────────────────────
-    // Uses standard YouTube IFrame API (the 'host' nocookie param causes crashes).
-    // Security is enforced via: pointer-events:none on iframe, custom overlay,
-    // watermark, and no DOM-exposed video IDs.
-    let videoHasBeenPlaying = false; // Guard: prevent quiz on page-load state changes
+    // ── Google Drive Video Redirection & Inline AI Quiz Workflow ────────────────
+    function openDriveLecture() {
+      const v = videosData.find(x => x.VideoId === currentVideoId || x.id === currentVideoId);
+      if (!v) return;
 
-    function loadYouTubePlayer(videoId) {
-      const cleanId = extractYouTubeId(videoId);
-      videoHasBeenPlaying = false; // Reset flag for new video
+      const url = v.Url || v.VideoId || "";
+      const targetUrl = url.startsWith("http") ? url : `https://www.youtube.com/watch?v=${url}`;
+      window.open(targetUrl, "_blank");
 
-      // If player already exists, just swap the video
-      if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
-        ytPlayer.loadVideoById(cleanId);
-        return;
+      // Instantly show the inline quiz container with loading state
+      const quizContainer = document.getElementById("inline-quiz-container");
+      if (quizContainer) {
+        quizContainer.style.display = "block";
       }
 
-      // Destroy any stale player cleanly
-      if (ytPlayer) { try { ytPlayer.destroy(); } catch(e) {} ytPlayer = null; }
-
-      // Reset the placeholder div so YT API can replace it with an iframe
-      const ph = document.getElementById('yt-player-placeholder');
-      if (ph && ph.tagName === 'IFRAME') {
-        const newPh = document.createElement('div');
-        newPh.id = 'yt-player-placeholder';
-        ph.parentNode.replaceChild(newPh, ph);
-      }
-
-      try {
-        ytPlayer = new YT.Player('yt-player-placeholder', {
-          videoId: cleanId,
-          playerVars: {
-            'autoplay'      : 0,
-            'controls'      : 0,   // Hide YouTube UI — our custom controls replace them
-            'rel'           : 0,
-            'showinfo'      : 0,
-            'modestbranding': 1,
-            'enablejsapi'   : 1,
-            'disablekb'     : 1,   // Prevent keyboard shortcuts
-            'fs'            : 0,   // Disable YouTube fullscreen (we have our own)
-            'iv_load_policy': 3,   // No annotations
-            'cc_load_policy': 0,
-            'playsinline'   : 1,
-            'origin'        : window.location.origin || 'https://pharmready.maghawry.com'
-          },
-          events: {
-            'onReady'      : onPlayerReady,
-            'onStateChange': onPlayerStateChange
-          }
-        });
-      } catch (e) {
-        console.error('YT Player init error:', e);
-        // Fallback: direct iframe embed
-        const fallbackPh = document.getElementById('yt-player-placeholder');
-        if (fallbackPh) {
-          const iframe = document.createElement('iframe');
-          iframe.id = 'yt-player-placeholder';
-          iframe.src = `https://www.youtube.com/embed/${cleanId}?enablejsapi=1&rel=0&controls=0&modestbranding=1&playsinline=1`;
-          iframe.setAttribute('allowfullscreen', '');
-          fallbackPh.parentNode.replaceChild(iframe, fallbackPh);
-        }
-      }
-    }
-    function onPlayerReady(event) {
-      updateVolumeControls();
-      updatePlayerControls();
+      loadInlineVideoQuiz(currentVideoId, v.Title);
     }
 
-    function togglePlayPause() {
-      if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
-        const state = ytPlayer.getPlayerState();
-        if (state === YT.PlayerState.PLAYING) {
-          ytPlayer.pauseVideo();
-        } else {
-          ytPlayer.playVideo();
-        }
-      }
-    }
-
-    // Play/Pause button trigger
-    document.getElementById("ctrl-play-pause").addEventListener("click", (e) => { e.stopPropagation(); togglePlayPause(); });
-
-
-    // Rewind / forward 10 seconds
-    function skipSeconds(delta) {
-      if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function' && typeof ytPlayer.getDuration === 'function') {
-        const duration = ytPlayer.getDuration() || 0;
-        const current = ytPlayer.getCurrentTime() || 0;
-        const target = Math.min(Math.max(current + delta, 0), duration);
-        ytPlayer.seekTo(target, true);
-        updatePlayerControls();
-      }
-    }
-    document.getElementById("ctrl-back10").addEventListener("click", () => skipSeconds(-10));
-    document.getElementById("ctrl-fwd10").addEventListener("click", () => skipSeconds(10));
-
-    // Seek bar slide trigger
-    document.getElementById("ctrl-seekbar").addEventListener("input", (e) => {
-      if (ytPlayer && typeof ytPlayer.getDuration === 'function') {
-        const duration = ytPlayer.getDuration() || 0;
-        const targetSec = (parseFloat(e.target.value) / 100) * duration;
-        ytPlayer.seekTo(targetSec, true);
-        updatePlayerControls();
-      }
-    });
-
-    // Mute trigger
-    document.getElementById("ctrl-mute").addEventListener("click", () => {
-      if (ytPlayer && typeof ytPlayer.isMuted === 'function') {
-        if (ytPlayer.isMuted()) {
-          ytPlayer.unMute();
-          document.getElementById("ctrl-mute").innerHTML = '<i class="fa-solid fa-volume-high"></i>';
-        } else {
-          ytPlayer.mute();
-          document.getElementById("ctrl-mute").innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
-        }
-      }
-    });
-
-    // Volume level slider trigger
-    document.getElementById("ctrl-volume").addEventListener("input", (e) => {
-      if (ytPlayer && typeof ytPlayer.setVolume === 'function') {
-        ytPlayer.setVolume(e.target.value);
-        if (e.target.value == 0) {
-          document.getElementById("ctrl-mute").innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
-        } else {
-          document.getElementById("ctrl-mute").innerHTML = '<i class="fa-solid fa-volume-high"></i>';
-        }
-      }
-    });
-
-    function updateVolumeControls() {
-      if (ytPlayer && typeof ytPlayer.getVolume === 'function') {
-        const vol = ytPlayer.getVolume();
-        document.getElementById("ctrl-volume").value = vol;
-      }
-    }
-
-    // Fullscreen toggle
-    function isCurrentlyFullscreen() {
-      return !!(document.fullscreenElement || document.webkitFullscreenElement);
-    }
-    document.getElementById("ctrl-fullscreen").addEventListener("click", () => {
-      const wrap = document.getElementById("video-wrapper");
-      if (!isCurrentlyFullscreen()) {
-        if (wrap.requestFullscreen) {
-          wrap.requestFullscreen().catch(err => console.error("Fullscreen failed:", err));
-        } else if (wrap.webkitRequestFullscreen) {
-          wrap.webkitRequestFullscreen();
-        }
-      } else {
-        if (document.exitFullscreen) {
-          document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          document.webkitExitFullscreen();
-        }
-      }
-    });
-
-    function updateFullscreenIcon() {
-      const btn = document.getElementById("ctrl-fullscreen");
-      if (!btn) return;
-      btn.innerHTML = isCurrentlyFullscreen()
-        ? '<i class="fa-solid fa-compress"></i>'
-        : '<i class="fa-solid fa-expand"></i>';
-    }
-    document.addEventListener("fullscreenchange", updateFullscreenIcon);
-    document.addEventListener("webkitfullscreenchange", updateFullscreenIcon);
-
-    // ── Speed Selector ─────────────────────────────────────────────────────────
-    document.getElementById("ctrl-speed").addEventListener("click", (e) => {
-      e.stopPropagation();
-      const menu = document.getElementById("ctrl-speed-menu");
-      document.getElementById("ctrl-quality-menu").style.display = "none";
-      menu.style.display = menu.style.display === "none" ? "block" : "none";
-    });
-
-    document.addEventListener("click", () => {
-      const sm = document.getElementById("ctrl-speed-menu");
-      const qm = document.getElementById("ctrl-quality-menu");
-      if (sm) sm.style.display = "none";
-      if (qm) qm.style.display = "none";
-    });
-
-    document.querySelectorAll(".speed-opt").forEach(opt => {
-      opt.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const rate = parseFloat(e.currentTarget.getAttribute("data-rate"));
-        if (ytPlayer && typeof ytPlayer.setPlaybackRate === 'function') {
-          ytPlayer.setPlaybackRate(rate);
-          document.getElementById("ctrl-speed").textContent = rate + "x";
-          document.querySelectorAll(".speed-opt").forEach(o => {
-            o.style.fontWeight = "normal";
-            o.style.color = "#fff";
-            o.style.background = "none";
-          });
-          e.currentTarget.style.fontWeight = "bold";
-          e.currentTarget.style.color = "var(--color-gold, #fbbf24)";
-          e.currentTarget.style.background = "rgba(251,191,36,0.12)";
-        }
-        document.getElementById("ctrl-speed-menu").style.display = "none";
-      });
-    });
-
-    // ── Quality Selector ───────────────────────────────────────────────────────
-    document.getElementById("ctrl-quality").addEventListener("click", (e) => {
-      e.stopPropagation();
-      const menu = document.getElementById("ctrl-quality-menu");
-      document.getElementById("ctrl-speed-menu").style.display = "none";
-      menu.style.display = menu.style.display === "none" ? "block" : "none";
-    });
-
-    const qualityLabels = { hd1080: '1080p', hd720: '720p', large: '480p', medium: '360p', default: 'Auto' };
-    document.querySelectorAll(".quality-opt").forEach(opt => {
-      opt.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const q = e.currentTarget.getAttribute("data-quality");
-        if (ytPlayer && typeof ytPlayer.setPlaybackQuality === 'function') {
-          ytPlayer.setPlaybackQuality(q);
-          document.getElementById("ctrl-quality").textContent = qualityLabels[q] || q;
-          document.querySelectorAll(".quality-opt").forEach(o => o.classList.remove("active"));
-          e.currentTarget.classList.add("active");
-        }
-        document.getElementById("ctrl-quality-menu").style.display = "none";
-      });
-    });
-
-    // Inspect element & copy blockers
-    document.addEventListener('contextmenu', event => event.preventDefault());
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'F12') {
-        e.preventDefault();
-        return false;
-      }
-      if (e.ctrlKey && (e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C') || e.key === 'u' || e.key === 'U')) {
-        e.preventDefault();
-        return false;
-      }
-    });
-
-    function startControlsInterval() {
-      if (controlsInterval) clearInterval(controlsInterval);
-      controlsInterval = setInterval(updatePlayerControls, 500);
-    }
-
-    function stopControlsInterval() {
-      if (controlsInterval) {
-        clearInterval(controlsInterval);
-        controlsInterval = null;
-      }
-    }
-
-    function updatePlayerControls() {
-      if (ytPlayer && typeof ytPlayer.getCurrentTime === 'function' && typeof ytPlayer.getDuration === 'function') {
-        const current = ytPlayer.getCurrentTime() || 0;
-        const duration = ytPlayer.getDuration() || 0;
-
-        if (duration > 0) {
-          const percent = (current / duration) * 100;
-          document.getElementById("ctrl-seekbar").value = percent;
-          document.getElementById("ctrl-progress-bar").style.width = percent + "%";
-        }
-
-        const formatTime = (secs) => {
-          const m = Math.floor(secs / 60);
-          const s = Math.floor(secs % 60);
-          return `${m}:${s < 10 ? '0' : ''}${s}`;
-        };
-
-        document.getElementById("ctrl-time-display").textContent = `${formatTime(current)} / ${formatTime(duration)}`;
-      }
-    }
-
-    async function onPlayerStateChange(event) {
-      const btn = document.getElementById("ctrl-play-pause");
-      if (event.data === YT.PlayerState.PLAYING) {
-        btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-        startControlsInterval();
-        videoHasBeenPlaying = true; // ← guard: video was actively played
-      } else {
-        btn.innerHTML = '<i class="fa-solid fa-play"></i>';
-        stopControlsInterval();
-      }
-
-      if (event.data === 0 && currentVideoId && videoHasBeenPlaying) {
-        // Video ENDED and was actually watched — show AI quiz
-        stopControlsInterval();
-        videoHasBeenPlaying = false; // reset so re-watching doesn't double-trigger
-        const currentTitle = document.getElementById("playing-video-title")
-          .textContent.replace(/^[^\w\u0600-\u06FF]+/, '').trim();
-        showVideoQuizModal(currentVideoId, currentTitle);
-      }
-    }
-
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  POST-VIDEO AI QUIZ SYSTEM  (Gemini Flash API)
-    // ═══════════════════════════════════════════════════════════════════════════
-    const GEMINI_API_KEY = 'AQ.Ab8RN6JICjhV0jSI0GEFIh3VKnjVkfULKNP9a0L2zsVpsIIh3g';
-    const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
-
-    let currentQuizVideoId = null;
-    let currentQuizVideoTitle = null;
-    let generatedQuizQuestions = [];
-
-    async function showVideoQuizModal(videoId, videoTitle) {
+    async function loadInlineVideoQuiz(videoId, videoTitle) {
       currentQuizVideoId = videoId;
       currentQuizVideoTitle = videoTitle;
       generatedQuizQuestions = [];
 
-      // Build and show modal with loading state
-      const overlay = document.createElement('div');
-      overlay.className = 'quiz-modal-overlay';
-      overlay.id = 'video-quiz-overlay';
-      overlay.innerHTML = `
-        <div class="quiz-modal-card" id="video-quiz-card">
-          <div class="quiz-modal-header">
-            <div class="quiz-icon">🎓</div>
-            <h2>اختبار سريع بعد المحاضرة</h2>
-            <p>أجب على الأسئلة التالية المتعلقة بمحتوى هذه المحاضرة</p>
-          </div>
-          <div id="quiz-content-area">
-            <div class="quiz-generating-spinner">
-              <span class="spin-icon">⚡</span>
-              <div style="font-size:16px; font-weight:700; color:var(--color-gold,#d97706); margin-bottom:8px;">جاري توليد الأسئلة بالذكاء الاصطناعي...</div>
-              <div style="font-size:13px;">يتم تحليل محتوى الفيديو وإنشاء أسئلة مخصصة له</div>
-            </div>
-          </div>
+      const quizContent = document.getElementById('inline-quiz-content');
+      if (!quizContent) return;
+
+      quizContent.innerHTML = `
+        <div style="text-align:center; padding:30px; direction: rtl;">
+          <i class="fa-solid fa-spinner fa-spin" style="font-size:28px; color:var(--color-primary); margin-bottom:12px;"></i>
+          <div style="font-size:14px; font-weight:700; color:var(--color-gold);">جاري توليد أسئلة الذكاء الاصطناعي (Gemini)...</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">نحلل موضوع المحاضرة لإنشاء أسئلة اختبار مخصصة</div>
         </div>
       `;
-      document.body.appendChild(overlay);
 
-      // Generate questions
       try {
         generatedQuizQuestions = await generateQuizWithGemini(videoTitle);
       } catch (err) {
@@ -1739,8 +1405,52 @@
         generatedQuizQuestions = generateFallbackQuiz(videoTitle);
       }
 
-      renderQuizQuestions(generatedQuizQuestions);
+      renderInlineQuizQuestions(generatedQuizQuestions);
     }
+
+    function renderInlineQuizQuestions(questions) {
+      const contentArea = document.getElementById('inline-quiz-content');
+      if (!contentArea) return;
+
+      if (!questions || questions.length === 0) {
+        contentArea.innerHTML = `
+          <div style="text-align:center; padding:20px; color:var(--text-muted); direction: rtl;">⚠️ تعذّر توليد الأسئلة حالياً. سيتم تسجيل مشاهدة الفيديو مباشرة.</div>
+          <button class="quiz-submit-btn" onclick="skipQuizAndMarkWatched()" style="margin-top: 10px;">متابعة وتسجيل الحضور ←</button>`;
+        return;
+      }
+
+      let html = '<div style="direction: rtl; text-align: right;">';
+      questions.forEach((q, idx) => {
+        const optHtml = q.options.map((opt, oi) => `
+          <label class="quiz-option" id="qopt-${idx}-${oi}" style="display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: 0.2s;">
+            <input type="radio" name="vq-${idx}" value="${oi}" onchange="highlightSelected(${idx},${oi},${q.options.length})" style="cursor: pointer;">
+            <span>${opt}</span>
+          </label>`).join('');
+
+        html += `
+          <div class="quiz-question-box" id="qqbox-${idx}" style="margin-bottom: 20px;">
+            <div class="quiz-question-text" style="font-weight: 700; font-size: 14px; margin-bottom: 10px; color: var(--text-main);">${idx + 1}. ${q.q}</div>
+            <div>${optHtml}</div>
+          </div>`;
+      });
+
+      html += `<button class="quiz-submit-btn" id="quiz-submit-btn" onclick="submitVideoQuiz()" style="
+        background: var(--color-primary);
+        color: #fff;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 15px;
+      "><i class="fa-solid fa-paper-plane"></i> إرسال الإجابات وتسجيل حضور المحاضرة</button></div>`;
+      contentArea.innerHTML = html;
+    }
+
 
     async function generateQuizWithGemini(videoTitle) {
       const prompt = `أنت نظام توليد أسئلة صيدلانية لطلاب الصيدلة.
@@ -1872,12 +1582,13 @@
 
       if (unanswered > 0) {
         if (btn) btn.disabled = false;
-        const overlay = document.getElementById('video-quiz-overlay');
-        if (overlay) {
-          overlay.style.border = '2px solid red';
-          setTimeout(() => { if (overlay) overlay.style.border = ''; }, 1000);
+        const container = document.getElementById('inline-quiz-container');
+        if (container) {
+          container.style.border = '2px solid red';
+          setTimeout(() => { if (container) container.style.border = ''; }, 1000);
         }
-        // Show gentle warning, don't block
+        showToast("⚠️ يرجى الإجابة على جميع الأسئلة لتسجيل الحضور.", "error");
+        return;
       }
 
       // Calculate score
@@ -1908,22 +1619,23 @@
       // Mark video as watched
       await markVideoWatched(currentQuizVideoId);
 
-      // Close modal and show result
-      const overlay = document.getElementById('video-quiz-overlay');
-      if (overlay) overlay.remove();
+      // Hide quiz container
+      const quizContainer = document.getElementById('inline-quiz-container');
+      if (quizContainer) quizContainer.style.display = 'none';
 
       const emoji = scorePercent >= 80 ? '🌟' : scorePercent >= 60 ? '👍' : '📚';
       showToast(
-        `${emoji} انتهيت من المحاضرة! نتيجتك: ${correct}/${generatedQuizQuestions.length} (${scorePercent}%)\nسيراجع المشرف الأكاديمي أسئلتك قريباً.`,
+        `${emoji} أحسنت! تم تسجيل حضور المحاضرة بنجاح. نتيجتك: ${correct}/${generatedQuizQuestions.length} (${scorePercent}%)\nيمكنك الآن الانتقال للمحاضرة التالية.`,
         scorePercent >= 80 ? 'success' : 'info'
       );
     }
 
     async function skipQuizAndMarkWatched() {
-      const overlay = document.getElementById('video-quiz-overlay');
-      if (overlay) overlay.remove();
+      const quizContainer = document.getElementById('inline-quiz-container');
+      if (quizContainer) quizContainer.style.display = 'none';
       await markVideoWatched(currentQuizVideoId);
     }
+
 
     async function markVideoWatched(videoId) {
       if (!videoId || watchedVideos.includes(videoId)) return;
@@ -2071,13 +1783,11 @@
       document.getElementById("certificate-viewport").style.display = "block";
     }
 
-    // YT Player API Init
-    window.onYouTubeIframeAPIReady = () => {
+    // Initialize and load lectures
+    document.addEventListener("DOMContentLoaded", () => {
       loadVideos();
-    };
-    setTimeout(() => {
-      if (videosData.length === 0) loadVideos();
-    }, 1500);
+    });
+
 
     // Logout
     function logout() {
@@ -2175,10 +1885,7 @@
       if (dateEl) dateEl.textContent = new Date().toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
       if (branchEl) branchEl.textContent = traineeBranch;
       
-      if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
-        ytPlayer.pauseVideo();
-      }
-      
+
       loadTraineeReports();
     });
 

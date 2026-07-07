@@ -347,39 +347,7 @@
           <button class="btn btn-primary" onclick="openAddVideoModal()"><i class="fa-solid fa-plus"></i> رفع فيديو جديد</button>
         </div>
 
-        <!-- Split Grid Layout for Player Preview (Like Trainee Dashboard) -->
-        <div class="dashboard-grid" style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px; margin-bottom: 25px;">
-          <!-- Left: Player Viewport -->
-          <div class="card" style="padding: 15px; background: var(--bg-secondary); border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between; min-height: 380px;">
-            <h3 id="admin-playing-title" style="font-size: 15px; margin-bottom: 10px; color: var(--text-main); text-align: right;">
-              <i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i> لم يتم اختيار محاضرة لعرضها حالياً.
-            </h3>
-            
-            <div class="video-player-container" id="admin-video-wrapper" style="position: relative; background: #000; aspect-ratio: 16/9; border-radius: 8px; overflow: hidden; height: 300px; width: 100%;">
-              <!-- Watermark -->
-              <div class="security-watermark" id="admin-watermark-overlay" style="position: absolute; inset: 0; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: center; color: rgba(255,255,255,0.15); font-size: 12px; font-weight: bold; line-height: 1.5; text-align: center; z-index: 5;">
-                <span>المطور العام - لوحة الإدارة</span>
-                <span>PharMReady Security SYSTEM</span>
-              </div>
-              
-              <!-- Player Placeholder -->
-              <div id="admin-yt-placeholder" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 13px;">
-                اضغط على زر "عرض ومعاينة" أدناه لتشغيل المحاضرة هنا
-              </div>
-            </div>
-          </div>
 
-          <!-- Right: Quick Playlist -->
-          <div class="card sidebar-card" style="max-height: 380px; overflow-y: auto; padding: 15px; background: var(--bg-secondary); border: 1px solid var(--border-color);">
-            <h3 style="font-size: 14px; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; text-align: right; color: var(--color-primary);">
-              <i class="fa-solid fa-play"></i> قائمة التشغيل السريعة المعاينة
-            </h3>
-            <ul class="video-list" id="admin-playlist-container" style="display: flex; flex-direction: column; gap: 8px; list-style: none; padding: 0;">
-              <!-- Dynamically populated same as trainee dashboard -->
-              <li style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px;">لا توجد محاضرات.</li>
-            </ul>
-          </div>
-        </div>
 
         <div class="admin-table-container">
           <table>
@@ -907,9 +875,9 @@
             <input type="text" id="video-title-input" required placeholder="مثال: محاضرة الجلدية الأولى">
           </div>
           <div class="form-group">
-            <label for="video-url-input">رابط يوتيوب (URL كامل أو ID فقط) <span class="required">*</span></label>
-            <input type="text" id="video-url-input" required placeholder="مثال: https://youtu.be/7dyVA3pFKS4 أو: 7dyVA3pFKS4">
-            <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">يقبل: رابط YouTube كامل، رابط مختصر youtu.be، أو معرّف الفيديو مباشرةً</small>
+            <label for="video-url-input">رابط المحاضرة (Google Drive أو YouTube) <span class="required">*</span></label>
+            <input type="text" id="video-url-input" required placeholder="مثال: https://drive.google.com/file/d/... أو رابط يوتيوب">
+            <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">انسخ رابط المشاركة للمحاضرة من Google Drive وضعه هنا مباشرةً.</small>
           </div>
           <div class="form-grid">
             <div class="form-group">
@@ -1996,6 +1964,12 @@
         } else { showToast(response.message || 'خطأ في الحذف', 'error'); }
       } catch (err) { console.error(err); }
     };
+
+    window.adminPlayVideo = function(videoId, title) {
+      const url = videoId.startsWith("http") ? videoId : `https://www.youtube.com/watch?v=${videoId}`;
+      window.open(url, "_blank");
+    };
+
 
     // Questions
     window.openAddQuestionModal = function() {
