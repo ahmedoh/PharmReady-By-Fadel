@@ -1075,9 +1075,14 @@ async function handleSupabaseRequest(params) {
       const { data: curr } = await supabaseClient
         .from('curriculum')
         .select('*')
-        .eq('level', currentLevel)
-        .order('sort_order', { ascending: true });
+        .eq('level', currentLevel);
         
+      const sortedCurr = [...(curr || [])].sort((a, b) => {
+        const orderA = parseInt(a.sort_order || a.index || a.order || 9999);
+        const orderB = parseInt(b.sort_order || b.index || b.order || 9999);
+        return orderA - orderB;
+      });
+
       return {
         success: true,
         videos: [...(videos || [])].sort((a, b) => {
@@ -1110,7 +1115,7 @@ async function handleSupabaseRequest(params) {
           correct_index: parseInt(vq.correct_index) || 0,
           id: String(vq.id)
         })),
-        curriculum: (curr || []).map(c => ({
+        curriculum: sortedCurr.map(c => ({
           id: String(c.id),
           title: c.title,
           content_html: c.content_html || '',
