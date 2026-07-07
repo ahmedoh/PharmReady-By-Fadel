@@ -349,6 +349,20 @@ function handleDemoRequest(params) {
       id: String(vq.id)
     }));
 
+    // Fetch Demo Curriculum
+    const allCurr = getTable("Curriculum") || [];
+    const filteredCurr = allCurr.filter(x => String(x.Level || "Passengers").trim() === currentLevel);
+    const sortedCurr = [...filteredCurr].sort((a, b) => {
+      const orderA = parseInt(a.SortOrder || a.Index || a.Order || a.sort_order || 9999);
+      const orderB = parseInt(b.SortOrder || b.Index || b.Order || b.sort_order || 9999);
+      return orderA - orderB;
+    });
+
+    // Fetch Demo Welcome Content
+    const allWelcome = getTable("LevelsContent") || [];
+    const foundWelcome = allWelcome.find(x => x.level === currentLevel);
+    const welcomeHtml = foundWelcome ? foundWelcome.welcome_html : '';
+
     return {
       success: true,
       videos: filteredVideos,
@@ -357,7 +371,15 @@ function handleDemoRequest(params) {
       completedLevels: completedLevels,
       pendingPromotion: pendingPromotion,
       questions: levelQuestions,
-      videoQuestions: videoQuestions
+      videoQuestions: videoQuestions,
+      curriculum: sortedCurr.map(c => ({
+        id: String(c.Id || c.id || ''),
+        title: c.Title || c.title || '',
+        content_html: c.ContentHtml || c.content_html || c.content || '',
+        level: c.Level || c.level || '',
+        sort_order: c.SortOrder || c.sort_order || 1
+      })),
+      welcomeHtml: welcomeHtml
     };
     
   } else if (action === "updateProgress") {
@@ -922,6 +944,86 @@ function handleDemoRequest(params) {
     saveTable("Questions", questions);
     return { success: true, message: "تم إضافة السؤال لبنك الأسئلة بنجاح!" };
 
+  } else if (action === "adminGetLevelContent") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    const list = getTable("LevelsContent") || [];
+    const found = list.find(x => x.level === params.level);
+    return { success: true, content: found || { level: params.level, welcome_html: "" } };
+
+  } else if (action === "adminSaveLevelContent") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    const list = getTable("LevelsContent") || [];
+    const idx = list.findIndex(x => x.level === params.level);
+    if (idx !== -1) {
+      list[idx].welcome_html = params.welcome_html;
+    } else {
+      list.push({ level: params.level, welcome_html: params.welcome_html });
+    }
+    saveTable("LevelsContent", list);
+    return { success: true, message: "تم حفظ المحتوى بنجاح." };
+
+  } else if (action === "adminGetCurriculum") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    const list = getTable("Curriculum") || [];
+    const filtered = list.filter(x => String(x.Level || x.level).trim() === String(params.level).trim());
+    return { success: true, curriculum: filtered };
+
+  } else if (action === "adminGetCurriculumItem") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    const list = getTable("Curriculum") || [];
+    const found = list.find(x => String(x.id) === String(params.id) || String(x.Id) === String(params.id));
+    return { success: true, item: found };
+
+  } else if (action === "adminDeleteCurriculumItem") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    const list = getTable("Curriculum") || [];
+    const filtered = list.filter(x => String(x.id) !== String(params.id) && String(x.Id) !== String(params.id));
+    saveTable("Curriculum", filtered);
+    return { success: true, message: "تم حذف الموضوع بنجاح." };
+
+  } else if (action === "adminAddCurriculumItem") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    const list = getTable("Curriculum") || [];
+    const newItem = {
+      id: String(Date.now()),
+      Id: String(Date.now()),
+      Level: params.level,
+      Title: params.title,
+      ContentHtml: params.content_html,
+      SortOrder: parseInt(params.sort_order) || 1
+    };
+    list.push(newItem);
+    saveTable("Curriculum", list);
+    return { success: true, message: "تم إضافة الموضوع بنجاح." };
+
+  } else if (action === "adminUpdateCurriculumItem") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    const list = getTable("Curriculum") || [];
+    const idx = list.findIndex(x => String(x.id) === String(params.id) || String(x.Id) === String(params.id));
+    if (idx !== -1) {
+      list[idx].Level = params.level;
+      list[idx].Title = params.title;
+      list[idx].ContentHtml = params.content_html;
+      list[idx].SortOrder = parseInt(params.sort_order) || 1;
+      saveTable("Curriculum", list);
+      return { success: true, message: "تم تحديث الموضوع بنجاح." };
+    }
+    return { success: false, message: "الموضوع غير موجود." };
+
   }
 
   return { success: false, message: "Unknown action" };
@@ -1151,6 +1253,14 @@ async function handleSupabaseRequest(params) {
         return orderA - orderB;
       });
 
+      // Fetch level welcome content
+      const { data: lvlCont } = await supabaseClient
+        .from('level_content')
+        .select('*')
+        .eq('level', currentLevel)
+        .maybeSingle();
+      const welcomeHtml = lvlCont ? lvlCont.welcome_html : '';
+
       return {
         success: true,
         videos: [...(videos || [])].sort((a, b) => {
@@ -1189,7 +1299,8 @@ async function handleSupabaseRequest(params) {
           content_html: c.content_html || '',
           level: c.level,
           sort_order: c.sort_order
-        }))
+        })),
+        welcomeHtml: welcomeHtml
       };
 
     } else if (action === "checkStatus") {
@@ -2002,6 +2113,107 @@ async function handleSupabaseRequest(params) {
       }]);
       if (error) throw error;
       return { success: true, message: "تم إضافة السؤال لبنك الأسئلة بنجاح!" };
+    }
+
+    else if (action === "adminGetLevelContent") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { data, error } = await supabaseClient
+        .from('level_content')
+        .select('*')
+        .eq('level', params.level)
+        .maybeSingle();
+      if (error) throw error;
+      return { success: true, content: data };
+
+    } else if (action === "adminSaveLevelContent") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { data, error } = await supabaseClient
+        .from('level_content')
+        .select('*')
+        .eq('level', params.level)
+        .maybeSingle();
+      if (error) throw error;
+      
+      if (data) {
+        const { error: updErr } = await supabaseClient
+          .from('level_content')
+          .update({ welcome_html: params.welcome_html })
+          .eq('level', params.level);
+        if (updErr) throw updErr;
+      } else {
+        const { error: insErr } = await supabaseClient
+          .from('level_content')
+          .insert([{ level: params.level, welcome_html: params.welcome_html }]);
+        if (insErr) throw insErr;
+      }
+      return { success: true, message: "تم حفظ المحتوى بنجاح." };
+
+    } else if (action === "adminGetCurriculum") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { data, error } = await supabaseClient
+        .from('curriculum')
+        .select('*')
+        .eq('level', params.level);
+      if (error) throw error;
+      return { success: true, curriculum: data };
+
+    } else if (action === "adminGetCurriculumItem") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { data, error } = await supabaseClient
+        .from('curriculum')
+        .select('*')
+        .eq('id', params.id)
+        .maybeSingle();
+      if (error) throw error;
+      return { success: true, item: data };
+
+    } else if (action === "adminDeleteCurriculumItem") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { error } = await supabaseClient
+        .from('curriculum')
+        .delete()
+        .eq('id', params.id);
+      if (error) throw error;
+      return { success: true, message: "تم حذف الموضوع بنجاح." };
+
+    } else if (action === "adminAddCurriculumItem") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { error } = await supabaseClient.from('curriculum').insert([{
+        level: params.level,
+        title: params.title,
+        content_html: params.content_html,
+        sort_order: parseInt(params.sort_order) || 1
+      }]);
+      if (error) throw error;
+      return { success: true, message: "تم إضافة الموضوع بنجاح." };
+
+    } else if (action === "adminUpdateCurriculumItem") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { error } = await supabaseClient
+        .from('curriculum')
+        .update({
+          level: params.level,
+          title: params.title,
+          content_html: params.content_html,
+          sort_order: parseInt(params.sort_order) || 1
+        })
+        .eq('id', params.id);
+      if (error) throw error;
+      return { success: true, message: "تم تحديث الموضوع بنجاح." };
     }
     
     return { success: false, message: "الإجراء غير متوفر حالياً على خادم Supabase." };
