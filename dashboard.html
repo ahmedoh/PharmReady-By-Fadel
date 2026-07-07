@@ -1226,11 +1226,7 @@
           applySettings();
           renderCurriculumAccordion(response.curriculum || []);
 
-          // Check for first-time login guide popup
-          const seenKey = "trainee_guide_seen_" + traineeEmail;
-          if (!localStorage.getItem(seenKey)) {
-            showAcademicGuideModal(false);
-          }
+          // First-time login guide popup disabled (manually accessible from sidebar only)
 
           // Check if user has a pending promotion request
           if (response.pendingPromotion) {
