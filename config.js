@@ -1124,6 +1124,28 @@ async function handleSupabaseRequest(params) {
         }))
       };
 
+    } else if (action === "checkStatus") {
+      const phone = String(params.phone).trim();
+      const { data: t, error } = await supabaseClient
+        .from('trainees')
+        .select('*')
+        .eq('phone', phone)
+        .maybeSingle();
+      
+      if (error) throw error;
+      if (t) {
+        return {
+          success: true,
+          status: t.status,
+          email: t.email,
+          password: t.password,
+          rejectReason: t.reject_reason || "",
+          name: t.name,
+          currentLevel: t.current_level
+        };
+      }
+      return { success: false, message: "رقم الهاتف هذا غير مسجل في النظام." };
+
     } else if (action === "updateProgress") {
       const email = String(params.email).trim().toLowerCase();
       const password = String(params.password).trim();
