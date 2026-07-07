@@ -338,6 +338,17 @@ function handleDemoRequest(params) {
       };
     });
 
+    const allVidQuestions = getTable("VideoQuestions") || [];
+    const videoQuestions = allVidQuestions.map(vq => ({
+      video_id: String(vq.video_id),
+      question_ar: vq.question_ar,
+      option1_ar: vq.option1_ar,
+      option2_ar: vq.option2_ar,
+      option3_ar: vq.option3_ar,
+      correct_index: parseInt(vq.correct_index) || 0,
+      id: String(vq.id)
+    }));
+
     return {
       success: true,
       videos: filteredVideos,
@@ -345,7 +356,8 @@ function handleDemoRequest(params) {
       currentLevel: currentLevel,
       completedLevels: completedLevels,
       pendingPromotion: pendingPromotion,
-      questions: levelQuestions
+      questions: levelQuestions,
+      videoQuestions: videoQuestions
     };
     
   } else if (action === "updateProgress") {
@@ -369,6 +381,31 @@ function handleDemoRequest(params) {
       saveTable("Progress", progress);
     }
     return { success: true, message: "تم تسجيل إتمام المشاهدة بنجاح." };
+
+  } else if (action === "saveVideoQuestions") {
+    const videoId = String(params.videoId).trim();
+    const questions = params.questions || [];
+    
+    let allVidQ = getTable("VideoQuestions") || [];
+    const existing = allVidQ.some(x => String(x.video_id).trim() === videoId);
+    if (existing) {
+      return { success: true, message: "الأسئلة موجودة بالفعل." };
+    }
+    
+    questions.forEach(q => {
+      allVidQ.push({
+        id: "vq-" + Math.random().toString(36).substr(2, 9),
+        video_id: videoId,
+        question_ar: q.q,
+        option1_ar: q.options[0],
+        option2_ar: q.options[1],
+        option3_ar: q.options[2],
+        correct_index: parseInt(q.correct) || 0
+      });
+    });
+    
+    saveTable("VideoQuestions", allVidQ);
+    return { success: true, message: "تم حفظ الأسئلة تلقائياً بنجاح (وضع التجربة)!" };
     
   } else if (action === "submitPromotionRequest") {
     const trainees = getTable("Trainees");
@@ -498,6 +535,37 @@ function handleDemoRequest(params) {
       return { success: true, message: "تم حذف الفيديو بنجاح." };
     }
     return { success: false, message: "لم يتم العثور على الفيديو (ID: " + videoId + ")" };
+    
+  } else if (action === "adminSaveVideoQuestions") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح بالعملية." };
+    }
+    const videoId = String(params.videoId).trim();
+    const questions = params.questions || [];
+    
+    let allVidQ = getTable("VideoQuestions") || [];
+    allVidQ = allVidQ.filter(x => String(x.video_id).trim() !== videoId);
+    
+    questions.forEach(q => {
+      allVidQ.push({
+        id: "vq-" + Math.random().toString(36).substr(2, 9),
+        video_id: videoId,
+        question_ar: q.q || q.question_ar,
+        option1_ar: q.options ? q.options[0] : q.option1_ar,
+        option2_ar: q.options ? q.options[1] : q.option2_ar,
+        option3_ar: q.options ? q.options[2] : q.option3_ar,
+        correct_index: q.correct !== undefined ? parseInt(q.correct) : (parseInt(q.correct_index) || 0)
+      });
+    });
+    
+    saveTable("VideoQuestions", allVidQ);
+    return { success: true, message: "تم حفظ أسئلة المحاضرة بنجاح (وضع التجربة)!" };
+    
+  } else if (action === "adminGetProgress") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح بالعملية." };
+    }
+    return { success: true, progress: getTable("Progress") };
     
   } else if (action === "adminGetNotifications") {
     if (!verifyLocalAdmin(params.adminPassword)) {
@@ -1233,6 +1301,39 @@ async function handleSupabaseRequest(params) {
         
       if (error) throw error;
       return { success: true, message: "تم إرسال طلب الاشتراك بنجاح! يرجى الانتظار لتفعيل الحساب." };
+
+    } else if (action === "saveVideoQuestions") {
+      const videoId = String(params.videoId).trim();
+      const questions = params.questions || [];
+      
+      // Only insert if there are no existing questions for this video
+      const { data: existing } = await supabaseClient
+        .from('video_questions')
+        .select('id')
+        .eq('video_id', videoId)
+        .limit(1);
+        
+      if (existing && existing.length > 0) {
+        return { success: true, message: "الأسئلة موجودة بالفعل." };
+      }
+      
+      if (questions.length > 0) {
+        const rows = questions.map(q => ({
+          video_id: videoId,
+          question_ar: q.q,
+          option1_ar: q.options[0],
+          option2_ar: q.options[1],
+          option3_ar: q.options[2],
+          correct_index: parseInt(q.correct) || 0
+        }));
+        
+        const { error } = await supabaseClient
+          .from('video_questions')
+          .insert(rows);
+          
+        if (error) throw error;
+      }
+      return { success: true, message: "تم حفظ الأسئلة تلقائياً بنجاح!" };
       
     } else if (action === "adminLogin") {
       const user = String(params.username || "").trim().toLowerCase();
@@ -1348,6 +1449,20 @@ async function handleSupabaseRequest(params) {
       if (error) throw error;
       return { success: true, message: "تم حذف المتدرب بنجاح." };
 
+    } else if (action === "adminGetProgress") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { data, error } = await supabaseClient.from('progress').select('*');
+      if (error) throw error;
+      return {
+        success: true,
+        progress: data.map(p => ({
+          Email: p.email,
+          Level: p.level,
+          WatchedVideos: p.watched_videos
+        }))
+      };
       
     } else if (action === "adminGetVideos") {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
@@ -1410,6 +1525,40 @@ async function handleSupabaseRequest(params) {
       // If no rows matched, also try matching with video_id column if it exists
       if (result.error && result.error.code !== '22P02') throw result.error;
       return { success: true, message: "تم حذف الفيديو بنجاح." };
+      
+    } else if (action === "adminSaveVideoQuestions") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const videoId = String(params.videoId).trim();
+      const questions = params.questions || [];
+      
+      // Delete existing
+      const { error: delErr } = await supabaseClient
+        .from('video_questions')
+        .delete()
+        .eq('video_id', videoId);
+        
+      if (delErr) throw delErr;
+      
+      if (questions.length > 0) {
+        const rows = questions.map(q => ({
+          video_id: videoId,
+          question_ar: q.q || q.question_ar,
+          option1_ar: q.options ? q.options[0] : q.option1_ar,
+          option2_ar: q.options ? q.options[1] : q.option2_ar,
+          option3_ar: q.options ? q.options[2] : q.option3_ar,
+          correct_index: q.correct !== undefined ? parseInt(q.correct) : (parseInt(q.correct_index) || 0)
+        }));
+        
+        const { error: insErr } = await supabaseClient
+          .from('video_questions')
+          .insert(rows);
+          
+        if (insErr) throw insErr;
+      }
+      
+      return { success: true, message: "تم حفظ أسئلة المحاضرة بنجاح!" };
       
     } else if (action === "adminGetPromotions") {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {

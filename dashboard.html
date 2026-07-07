@@ -1158,6 +1158,7 @@
     let watchedVideos = [];
     let completedLevelsList = [];
     let examQuestions = []; // Global questions loaded from spreadsheet
+    let allVideoQuestions = []; // AI-generated video questions loaded from DB
     let currentVideoId = null;
     let currentLang = localStorage.getItem("app_lang") || "ar";
     let currentTheme = localStorage.getItem("app_theme") || "sand"; // sand, green, dark
@@ -1250,6 +1251,7 @@
           sessionStorage.setItem("trainee_level", traineeLevel);
           completedLevelsList = response.completedLevels || [];
           examQuestions = response.questions || []; // Save dynamically loaded questions from Google Sheets
+          allVideoQuestions = response.videoQuestions || [];
           
           applySettings();
           renderCurriculumAccordion(response.curriculum || []);
@@ -1494,18 +1496,50 @@
       const quizContent = document.getElementById('inline-quiz-content');
       if (!quizContent) return;
 
+      // Check if we have pre-saved questions in our loaded list
+      const saved = allVideoQuestions.filter(x => String(x.video_id).trim() === String(videoId).trim());
+      if (saved && saved.length > 0) {
+        generatedQuizQuestions = saved.map(s => ({
+          q: s.question_ar,
+          options: [s.option1_ar, s.option2_ar, s.option3_ar].filter(Boolean),
+          correct: s.correct_index,
+          id: s.id
+        }));
+        renderInlineQuizQuestions(generatedQuizQuestions);
+        return;
+      }
+
       quizContent.innerHTML = `
         <div style="text-align:center; padding:30px; direction: rtl;">
           <i class="fa-solid fa-spinner fa-spin" style="font-size:28px; color:var(--color-primary); margin-bottom:12px;"></i>
           <div style="font-size:14px; font-weight:700; color:var(--color-gold);">جاري توليد أسئلة الذكاء الاصطناعي (Gemini)...</div>
-          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">نحلل موضوع المحاضرة لإنشاء أسئلة اختبار مخصصة</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">نحلل موضوع المحاضرة لإنشاء أسئلة اختبار مخصصة وحفظها للمنصة</div>
         </div>
       `;
 
       try {
         generatedQuizQuestions = await generateQuizWithGemini(videoTitle);
+        
+        // Auto-save generated questions to DB for future students
+        await apiRequest({
+          action: "saveVideoQuestions",
+          videoId: videoId,
+          questions: generatedQuizQuestions
+        });
+        
+        // Push to local list to cache for this session
+        generatedQuizQuestions.forEach(q => {
+          allVideoQuestions.push({
+            video_id: videoId,
+            question_ar: q.q,
+            option1_ar: q.options[0],
+            option2_ar: q.options[1],
+            option3_ar: q.options[2],
+            correct_index: q.correct
+          });
+        });
       } catch (err) {
-        console.warn('Gemini quiz generation failed, using fallback:', err);
+        console.warn('Gemini quiz generation or auto-save failed, using fallback:', err);
         generatedQuizQuestions = generateFallbackQuiz(videoTitle);
       }
 
