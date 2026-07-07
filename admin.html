@@ -1649,9 +1649,9 @@
           <td><strong>${p.TraineeName}</strong></td>
           <td>${p.CurrentLevel}</td>
           <td>${p.TargetLevel}</td>
-          <td>${p.Score}% (اجتياز)</td>
+          <td><span style="color:#10b981; font-weight:700;">${p.Score}%</span></td>
           <td style="display: flex; gap: 8px;">
-            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 11px;" onclick="approvePromotion('${p.TraineePhone}', '${p.TargetLevel}')">اعتماد وترقية</button>
+            <button class="btn btn-gold" style="padding: 6px 12px; font-size: 11px; cursor: pointer;" onclick="openPromotionReviewModal('${p.Email}')"><i class="fa-solid fa-graduation-cap"></i> مراجعة واعتماد</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -3283,7 +3283,6 @@
       textarea.parentNode.insertBefore(editor, textarea);
     };
 
-
     // Trainee Statistics & Exam Quiz Answers fetcher for Report Review Modal
     window.loadTraineeStatsForReportReview = async function(email, level) {
       const statsArea = document.getElementById("rrm-stats-area");
@@ -3450,6 +3449,300 @@
         }
       }
     };
+
+    // Promotions Approval & Certificate Generation Functions
+    window.openPromotionReviewModal = async function(traineeEmail) {
+      const promo = allPromotions.find(p => String(p.Email).trim().toLowerCase() === String(traineeEmail).trim().toLowerCase() && p.Status === "pending");
+      if (!promo) return;
+
+      const modal = document.getElementById("promotion-review-modal");
+      if (!modal) return;
+
+      // Populate text labels
+      document.getElementById("prm-trainee-name").textContent = promo.TraineeName || "-";
+      document.getElementById("prm-email").textContent = promo.Email || "-";
+      document.getElementById("prm-phone").textContent = promo.TraineePhone || "-";
+      document.getElementById("prm-from-level").textContent = promo.CurrentLevel || "-";
+      document.getElementById("prm-to-level").textContent = promo.TargetLevel || "-";
+      document.getElementById("prm-score").textContent = (promo.Score || 0) + "%";
+      
+      const mins = Math.floor((promo.DurationSeconds || 0) / 60);
+      const secs = (promo.DurationSeconds || 0) % 60;
+      document.getElementById("prm-duration").textContent = mins > 0 ? `${mins} دقيقة و ${secs} ثانية` : `${secs} ثانية`;
+
+      // Populate hidden form inputs
+      document.getElementById("prm-target-email").value = promo.Email || "";
+      document.getElementById("prm-target-from").value = promo.CurrentLevel || "";
+      document.getElementById("prm-target-to").value = promo.TargetLevel || "";
+      document.getElementById("prm-target-name").value = promo.TraineeName || "";
+      document.getElementById("prm-target-phone").value = promo.TraineePhone || "";
+      document.getElementById("prm-target-score").value = promo.Score || 0;
+
+      // Render student detailed answers list
+      const answersContainer = document.getElementById("prm-answers-list");
+      answersContainer.innerHTML = "";
+      
+      let answersList = [];
+      try {
+        answersList = promo.ExamAnswers ? JSON.parse(promo.ExamAnswers) : [];
+      } catch(e) { console.warn("Failed parse exam answers", e); }
+
+      const levelQuestions = allQuestions.filter(q => String(q.Level || q.level).trim() === String(promo.CurrentLevel).trim());
+      
+      if (levelQuestions.length === 0) {
+        answersContainer.innerHTML = `<div style="color: var(--text-muted); font-size:12px;">لا توجد أسئلة مسجلة في بنك أسئلة هذا المستوى حالياً لمقارنتها.</div>`;
+      } else {
+        levelQuestions.forEach((q, idx) => {
+          const studentAnsIdx = answersList[idx];
+          const correctAnsIdx = parseInt(q.CorrectIndex || q.correct) || 0;
+          const options = [q.Option1Ar, q.Option2Ar, q.Option3Ar].filter(Boolean);
+
+          const qDiv = document.createElement("div");
+          qDiv.style.cssText = "margin-bottom: 12px; border-bottom: 1px dashed rgba(255,255,255,0.05); padding-bottom: 6px; font-size:11.5px;";
+          
+          let optionsHtml = "";
+          options.forEach((opt, optIdx) => {
+            let style = "color: var(--text-muted);";
+            let icon = '<i class="fa-regular fa-circle" style="font-size: 10px; margin-left: 5px;"></i>';
+
+            if (optIdx === correctAnsIdx) {
+              style = "color: #10b981; font-weight: 700; background: rgba(16,185,129,0.05); padding: 2px 6px; border-radius: 4px;";
+               icon = '<i class="fa-solid fa-circle-check" style="color: #10b981; margin-left: 5px;"></i>';
+            } else if (optIdx === studentAnsIdx) {
+              style = "color: #ef4444; font-weight: 700; background: rgba(239,68,68,0.05); padding: 2px 6px; border-radius: 4px;";
+              icon = '<i class="fa-solid fa-circle-xmark" style="color: #ef4444; margin-left: 5px;"></i>';
+            }
+
+            optionsHtml += `
+              <div style="display: flex; align-items: center; margin-top: 4px; ${style}">
+                ${icon} ${opt}
+                ${optIdx === studentAnsIdx ? ' <span style="font-size: 9px; margin-right: 5px; opacity: 0.8;">(إجابة الطالب)</span>' : ''}
+                ${optIdx === correctAnsIdx && studentAnsIdx !== correctAnsIdx ? ' <span style="font-size: 9px; margin-right: 5px; opacity: 0.8;">(الإجابة الصحيحة)</span>' : ''}
+              </div>
+            `;
+          });
+
+          qDiv.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 4px;">س${idx + 1}: ${q.QuestionAr || q.q}</div>
+            <div style="margin-right: 12px;">${optionsHtml}</div>
+          `;
+          answersContainer.appendChild(qDiv);
+        });
+      }
+
+      // Fetch trainee watch progress and reports count in background
+      const journeyContainer = document.getElementById("prm-journey-details");
+      journeyContainer.innerHTML = `<div style="font-size:12px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> جاري تحميل تفاصيل مسيرة الطالب...</div>`;
+
+      try {
+        const progResp = await apiRequest({
+          action: "getTraineeProgress",
+          email: promo.Email,
+          level: promo.CurrentLevel
+        });
+
+        const levelVideos = allVideos.filter(v => String(v.Level || "Passengers").trim() === String(promo.CurrentLevel).trim());
+        const totalVids = levelVideos.length;
+        
+        let watchedList = [];
+        if (progResp.success && progResp.progress && progResp.progress.WatchedVideos) {
+          watchedList = String(progResp.progress.WatchedVideos).split(",").map(x => x.trim()).filter(Boolean);
+        }
+        
+        const levelVidIds = levelVideos.map(v => String(v.VideoId || v.id).trim());
+        const watchedCount = watchedList.filter(id => levelVidIds.includes(id)).length;
+        const watchPct = totalVids > 0 ? Math.round((watchedCount / totalVids) * 100) : 0;
+
+        const levelReportsCount = allReports.filter(r => 
+          String(r.Email || r.email).trim().toLowerCase() === String(promo.Email).trim().toLowerCase() && 
+          String(r.Level || r.level).trim() === String(promo.CurrentLevel).trim()
+        ).length;
+
+        journeyContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11.5px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>شاهد محاضرات المستوى:</span>
+              <strong style="color: var(--color-primary);">${watchedCount} من ${totalVids} محاضرات (${watchPct}%)</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>تقارير الأنشطة المرفوعة في هذا المستوى:</span>
+              <strong style="color: var(--color-gold);">${levelReportsCount} تقارير</strong>
+            </div>
+          </div>
+        `;
+      } catch(err) {
+        console.error(err);
+        journeyContainer.innerHTML = `<span style="color: var(--color-danger); font-size:11.5px;">فشل تحميل تفاصيل مسيرة الطالب.</span>`;
+      }
+
+      modal.classList.add("active");
+    };
+
+    window.submitApprovePromotionWithCert = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById("prm-target-email").value;
+      const fromLevel = document.getElementById("prm-target-from").value;
+      const toLevel = document.getElementById("prm-target-to").value;
+      const name = document.getElementById("prm-target-name").value;
+      const phone = document.getElementById("prm-target-phone").value;
+      const score = document.getElementById("prm-target-score").value;
+      const template = document.getElementById("prm-cert-template").value;
+
+      const btn = e.target.querySelector("button[type='submit']");
+      if (btn) btn.disabled = true;
+      showToast("جاري توليد الشهادة وتثبيت الترقية...", "info");
+
+      try {
+        // Generate base64 Certificate Image using HTML5 Canvas
+        const certBase64 = generateCertificateBase64(name, fromLevel, score, template);
+
+        // Call backend approval
+        const response = await apiRequest({
+          action: "adminApprovePromotion",
+          adminPassword: adminPassword,
+          adminUsername: adminUsername,
+          email: email,
+          phone: phone,
+          fromLevel: fromLevel,
+          toLevel: toLevel,
+          certificateTemplate: template,
+          certificateUrl: certBase64
+        });
+
+        if (response.success) {
+          showToast("🎉 تم اعتماد الترقية وإصدار الشهادة بنجاح!", "success");
+          document.getElementById("promotion-review-modal").classList.remove("active");
+          loadAdminDashboardData(); // Refresh UI
+
+          // Open WhatsApp to notify trainee
+          const msg = `أهلاً بك دكتور/ة *${name}*، يسعدنا في أكاديمية آل مغاوري لتأهيل الصيادلة الجدد تهنئتك باجتياز مرحلة *${fromLevel}* بنجاح باهر وبنسبة تفوق *${score}%* 🎓. لقد تم اعتماد ترقيتك وإصدار شهادتك الفاخرة بنجاح وتفعيل المستوى التالي لحسابك! يمكنك عرض وتحميل شهادتك الآن من حسابك بالمنصة.`;
+          const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`;
+          window.open(whatsappUrl, "_blank");
+        } else {
+          showToast(response.message, "error");
+        }
+      } catch(err) {
+        console.error(err);
+        showToast("خطأ أثناء معالجة اعتماد الترقية.", "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    };
+
+    function generateCertificateBase64(studentName, levelName, gradePercent, styleName) {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1200;
+      canvas.height = 800;
+      const ctx = canvas.getContext("2d");
+      
+      const nextLevels = {
+        "Passengers": "المستوى الصِفري (Passengers)",
+        "Starters": "المستوى الأول (Starters)",
+        "Movers": "المستوى الثاني (Movers)",
+        "Flyers": "المستوى الثالث (Flyers)",
+        "Beast": "المستوى الاحترافي (Beast)"
+      };
+      const resolvedLevel = nextLevels[levelName] || levelName;
+
+      // Background & Borders
+      if (styleName === "gold") {
+        ctx.fillStyle = "#0d1b2a";
+        ctx.fillRect(0, 0, 1200, 800);
+        
+        ctx.strokeStyle = "#cfa146";
+        ctx.lineWidth = 15;
+        ctx.strokeRect(20, 20, 1160, 760);
+        
+        ctx.strokeStyle = "#cfa146";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(35, 35, 1130, 730);
+        
+        ctx.fillStyle = "#cfa146";
+      } else if (styleName === "classic") {
+        ctx.fillStyle = "#faf6ed";
+        ctx.fillRect(0, 0, 1200, 800);
+        
+        ctx.strokeStyle = "#8b6508";
+        ctx.lineWidth = 15;
+        ctx.strokeRect(20, 20, 1160, 760);
+        
+        ctx.strokeStyle = "#8b6508";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(35, 35, 1130, 730);
+        
+        ctx.fillStyle = "#8b6508";
+      } else {
+        ctx.fillStyle = "#0c1713";
+        ctx.fillRect(0, 0, 1200, 800);
+        
+        ctx.strokeStyle = "#10b981";
+        ctx.lineWidth = 15;
+        ctx.strokeRect(20, 20, 1160, 760);
+        
+        ctx.strokeStyle = "#10b981";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(35, 35, 1130, 730);
+        
+        ctx.fillStyle = "#10b981";
+      }
+      
+      // Draw Certificate Text
+      ctx.textAlign = "center";
+      ctx.direction = "rtl";
+      
+      // Academy Header
+      ctx.font = "bold 26px Cairo, 'Segoe UI', Arial";
+      ctx.fillText("أكاديمية آل مغاوري لتأهيل الصيادلة الجدد", 600, 110);
+      
+      ctx.font = "16px Cairo, 'Segoe UI', Arial";
+      ctx.fillStyle = styleName === "classic" ? "#555" : "#8ba3b8";
+      ctx.fillText("PharmReady Training Academy", 600, 145);
+      
+      // Certificate Title
+      ctx.font = "bold 45px Cairo, 'Segoe UI', Arial";
+      ctx.fillStyle = styleName === "classic" ? "#8b6508" : "#cfa146";
+      ctx.fillText("شـهـادة اجـتـيـاز وتـفـوّق", 600, 240);
+      
+      ctx.font = "20px Cairo, 'Segoe UI', Arial";
+      ctx.fillStyle = styleName === "classic" ? "#333" : "#e2e8f0";
+      ctx.fillText("تشهد إدارة الأكاديمية بأن الصيدلي / الصيدلانية:", 600, 315);
+      
+      // Student Name
+      ctx.font = "bold 36px Cairo, 'Segoe UI', Arial";
+      ctx.fillStyle = styleName === "classic" ? "#000" : "#ffffff";
+      ctx.fillText(studentName, 600, 385);
+      
+      // Description
+      ctx.font = "20px Cairo, 'Segoe UI', Arial";
+      ctx.fillStyle = styleName === "classic" ? "#333" : "#e2e8f0";
+      ctx.fillText("قد أكمل بنجاح وتفوق متطلبات التدريب المقررة واجتياز مستوى:", 600, 450);
+      
+      // Level Name
+      ctx.font = "bold 30px Cairo, 'Segoe UI', Arial";
+      ctx.fillStyle = styleName === "classic" ? "#8b6508" : "#cfa146";
+      ctx.fillText(resolvedLevel, 600, 510);
+      
+      // Grade
+      ctx.font = "bold 22px Cairo, 'Segoe UI', Arial";
+      ctx.fillStyle = styleName === "classic" ? "#10b981" : "#10b981";
+      ctx.fillText(`بمعدل تفوق عام بلغ: ${gradePercent}%`, 600, 570);
+      
+      // Date
+      ctx.font = "16px Cairo, 'Segoe UI', Arial";
+      ctx.fillStyle = styleName === "classic" ? "#666" : "#64748b";
+      ctx.fillText(`تاريخ الإصدار: ${new Date().toLocaleDateString('ar-EG')}`, 600, 640);
+      
+      // Signatures
+      ctx.font = "bold 18px Cairo, 'Segoe UI', Arial";
+      ctx.fillStyle = styleName === "classic" ? "#333" : "#ffffff";
+      ctx.fillText("المشرف الأكاديمي", 250, 690);
+      ctx.fillText("د. أحمد مغاوري", 250, 720);
+      
+      ctx.fillText("المدير العام للأكاديمية", 950, 690);
+      ctx.fillText("أ.د. عبد العزيز المغاوري", 950, 720);
+      
+      return canvas.toDataURL("image/png");
+    }
   </script>
 
   <!-- Report Review Modal -->
@@ -3494,6 +3787,77 @@
         <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px;">
           <button type="button" class="btn btn-secondary" onclick="document.getElementById('report-review-modal').classList.remove('active')">إغلاق</button>
           <button type="submit" class="btn btn-primary" style="cursor: pointer;"><i class="fa-solid fa-floppy-disk"></i> حفظ التقييم</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Promotion Review & Approval Modal -->
+  <div class="modal-overlay" id="promotion-review-modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
+        <h3 style="font-size: 17px;"><i class="fa-solid fa-graduation-cap" style="color: var(--color-gold);"></i> مراجعة طلب الترقية وإصدار الشهادة</h3>
+        <button class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('promotion-review-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <!-- Trainee Info Header -->
+      <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; font-size: 12.5px; background: rgba(0,0,0,0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); direction: rtl;">
+        <div style="flex: 1; min-width: 140px;">الاسم:<br><strong id="prm-trainee-name">-</strong></div>
+        <div style="flex: 1; min-width: 140px;">البريد الإلكتروني:<br><span id="prm-email">-</span></div>
+        <div>الهاتف:<br><span id="prm-phone">-</span></div>
+      </div>
+      
+      <!-- Level Transition Details -->
+      <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; font-size: 12.5px; direction: rtl;">
+        <div>من مستوى:<br><strong id="prm-from-level" style="color: var(--color-gold);">-</strong></div>
+        <div style="font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 0 10px;">←</div>
+        <div>إلى مستوى:<br><strong id="prm-to-level" style="color: var(--color-primary);">-</strong></div>
+        <div style="margin-right: auto; text-align: left;">
+          درجة الامتحان النهائي:<br><strong id="prm-score" style="color: #10b981; font-size: 16px;">-</strong>
+        </div>
+        <div style="text-align: left; margin-right: 15px;">
+          زمن الحل:<br><strong id="prm-duration" style="color: var(--color-primary); font-size: 14px;">-</strong>
+        </div>
+      </div>
+
+      <div style="max-height: 380px; overflow-y: auto; padding-right: 5px; direction: rtl;">
+        <!-- Student Study Journey Summary -->
+        <h4 style="color: var(--color-gold); border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px; font-size: 13px;">
+          <i class="fa-solid fa-chart-line"></i> مسيرة الطالب في هذا المستوى
+        </h4>
+        <div id="prm-journey-details" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+        </div>
+
+        <!-- Exam Detailed Answers -->
+        <h4 style="color: var(--color-gold); border-bottom: 1px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px; font-size: 13px;">
+          <i class="fa-solid fa-list-check"></i> تفاصيل إجابات الطالب بالامتحان النهائي
+        </h4>
+        <div id="prm-answers-list" style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+        </div>
+      </div>
+
+      <!-- Approval Form -->
+      <form id="prm-approve-form" onsubmit="submitApprovePromotionWithCert(event)">
+        <!-- Hidden Inputs for passing params -->
+        <input type="hidden" id="prm-target-email">
+        <input type="hidden" id="prm-target-from">
+        <input type="hidden" id="prm-target-to">
+        <input type="hidden" id="prm-target-name">
+        <input type="hidden" id="prm-target-phone">
+        <input type="hidden" id="prm-target-score">
+
+        <div class="form-group" style="margin-top: 15px; margin-bottom: 15px; direction: rtl;">
+          <label for="prm-cert-template" style="font-weight: 700; font-size: 13px;">اختر تصميم الشهادة المعتمدة:</label>
+          <select id="prm-cert-template" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main); font-size: 13px;">
+            <option value="gold" selected>الشكل الذهبي الفاخر (Gold Premium)</option>
+            <option value="classic">الشكل الكلاسيكي الورقي (Classic Ivory)</option>
+            <option value="modern">الشكل الحديث المعاصر (Modern Emerald)</option>
+          </select>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('promotion-review-modal').classList.remove('active')">إلغاء</button>
+          <button type="submit" class="btn btn-gold" style="cursor: pointer;"><i class="fa-solid fa-award"></i> اعتماد وترقية وتوليد الشهادة</button>
         </div>
       </form>
     </div>

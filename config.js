@@ -372,6 +372,12 @@ function handleDemoRequest(params) {
     const foundWelcome = allWelcome.find(x => x.level === currentLevel);
     const welcomeHtml = foundWelcome ? foundWelcome.welcome_html : '';
 
+    const lpList = getTable("TraineeLevelProgress") || [];
+    const lp = lpList.find(x => String(x.Email).trim().toLowerCase() === email && x.Level === currentLevel) || {
+      ExamAttempts: 0,
+      LockoutUntil: null
+    };
+
     return {
       success: true,
       videos: filteredVideos,
@@ -388,7 +394,16 @@ function handleDemoRequest(params) {
         level: c.Level || c.level || '',
         sort_order: c.SortOrder || c.sort_order || 1
       })),
-      welcomeHtml: welcomeHtml
+      welcomeHtml: welcomeHtml,
+      examAttempts: lp.ExamAttempts || 0,
+      lockoutUntil: lp.LockoutUntil || null,
+      completedPromotions: promotions.filter(x => String(x.Email).trim().toLowerCase() === email && x.Status === "approved").map(x => ({
+        FromLevel: x.FromLevel,
+        ToLevel: x.ToLevel,
+        Score: x.Score || 0,
+        CertificateTemplate: x.CertificateTemplate || "",
+        CertificateUrl: x.CertificateUrl || ""
+      }))
     };
     
   } else if (action === "updateProgress") {
@@ -412,6 +427,27 @@ function handleDemoRequest(params) {
       saveTable("Progress", progress);
     }
     return { success: true, message: "تم تسجيل إتمام المشاهدة بنجاح." };
+
+  } else if (action === "saveTraineeProgress") {
+    const email = String(params.email).trim().toLowerCase();
+    const level = params.level;
+    const levelProgress = getTable("TraineeLevelProgress") || [];
+    const idx = levelProgress.findIndex(x => String(x.Email).trim().toLowerCase() === email && x.Level === level);
+    
+    const lpData = {
+      Email: email,
+      Level: level,
+      ExamAttempts: parseInt(params.examAttempts) || 0,
+      LockoutUntil: params.lockoutUntil || null
+    };
+    
+    if (idx !== -1) {
+      levelProgress[idx] = lpData;
+    } else {
+      levelProgress.push(lpData);
+    }
+    saveTable("TraineeLevelProgress", levelProgress);
+    return { success: true };
 
   } else if (action === "saveVideoQuestions") {
     const videoId = String(params.videoId).trim();
@@ -466,7 +502,12 @@ function handleDemoRequest(params) {
       Email: email,
       FromLevel: fromLevel,
       ToLevel: toLevel,
-      Status: "pending"
+      Status: "pending",
+      Score: parseInt(params.score) || 0,
+      DurationSeconds: parseInt(params.durationSeconds) || 0,
+      ExamAnswers: params.examAnswers || "",
+      CertificateTemplate: "",
+      CertificateUrl: ""
     });
     saveTable("Promotions", promotions);
     return { success: true, message: "تم إرسال طلب الترقية وإصدار الشهادة بنجاح للمدير." };
@@ -613,8 +654,20 @@ function handleDemoRequest(params) {
     
     const enhanced = promotions.map(p => {
       const t = trainees.find(x => String(x.Email).trim().toLowerCase() === String(p.Email).trim().toLowerCase());
-      p.StudentName = t ? t.Name : "متدرب مجهول";
-      return p;
+      return {
+        Email: p.Email || p.email,
+        TraineeName: t ? t.Name : (p.Email || "متدرب مجهول"),
+        TraineePhone: t ? t.Phone : (p.Email || ""),
+        CurrentLevel: p.FromLevel || p.from_level,
+        TargetLevel: p.ToLevel || p.to_level,
+        Status: p.Status || p.status,
+        Timestamp: p.Timestamp || p.created_at,
+        Score: p.Score || p.score || 0,
+        DurationSeconds: p.DurationSeconds || p.duration_seconds || 0,
+        ExamAnswers: p.ExamAnswers || p.exam_answers || "",
+        CertificateTemplate: p.CertificateTemplate || p.certificate_template || "",
+        CertificateUrl: p.CertificateUrl || p.certificate_url || ""
+      };
     });
     return { success: true, promotions: enhanced };
     
@@ -622,21 +675,23 @@ function handleDemoRequest(params) {
     if (!verifyLocalAdmin(params.adminPassword)) {
       return { success: false, message: "غير مصرح بالعملية." };
     }
-    const email = String(params.email).trim().toLowerCase();
-    const fromLevel = String(params.fromLevel).trim();
-    const toLevel = String(params.toLevel).trim();
+    const phone = String(params.phone || "").trim();
+    const toLevel = String(params.toLevel || params.targetLevel || "").trim();
     
     const trainees = getTable("Trainees");
     const promotions = getTable("Promotions");
     
-    const tIndex = trainees.findIndex(x => String(x.Email).trim().toLowerCase() === email);
+    const tIndex = trainees.findIndex(x => String(x.Phone).trim() === phone || String(x.Email).trim().toLowerCase() === phone.toLowerCase());
     if (tIndex !== -1) {
+      const email = trainees[tIndex].Email;
       trainees[tIndex].CurrentLevel = toLevel;
       saveTable("Trainees", trainees);
       
-      const pIndex = promotions.findIndex(x => String(x.Email).trim().toLowerCase() === email && String(x.FromLevel).trim() === fromLevel && String(x.ToLevel).trim() === toLevel);
+      const pIndex = promotions.findIndex(x => String(x.Email).trim().toLowerCase() === email.toLowerCase() && String(x.ToLevel).trim() === toLevel);
       if (pIndex !== -1) {
         promotions[pIndex].Status = "approved";
+        promotions[pIndex].CertificateTemplate = params.certificateTemplate || "";
+        promotions[pIndex].CertificateUrl = params.certificateUrl || "";
         saveTable("Promotions", promotions);
       }
       return { success: true, message: "تمت الموافقة على الترقية وإصدار الشهادة بنجاح." };
@@ -1226,8 +1281,14 @@ async function handleSupabaseRequest(params) {
         .maybeSingle();
         
       let watched = [];
-      if (prog && prog.watched_videos) {
-        watched = prog.watched_videos.split(',').map(x => x.trim()).filter(Boolean);
+      let examAttempts = 0;
+      let lockoutUntil = null;
+      if (prog) {
+        if (prog.watched_videos) {
+          watched = prog.watched_videos.split(',').map(x => x.trim()).filter(Boolean);
+        }
+        examAttempts = prog.exam_attempts || 0;
+        lockoutUntil = prog.lockout_until || null;
       }
       
       // Fetch promotions
@@ -1237,7 +1298,14 @@ async function handleSupabaseRequest(params) {
         .ilike('email', email);
         
       const completedLevels = (promotions || []).filter(p => p.status === 'approved').map(p => String(p.from_level));
-      const pendingPromotion = (promotions || []).some(p => p.status === 'pending');
+      const completedPromotions = (promotions || []).filter(p => p.status === 'approved').map(p => ({
+         FromLevel: p.from_level,
+         ToLevel: p.to_level,
+         Score: p.score || 0,
+         CertificateTemplate: p.certificate_template || "",
+         CertificateUrl: p.certificate_url || ""
+       }));
+       const pendingPromotion = (promotions || []).some(p => p.status === 'pending');
       
       // Fetch questions
       const { data: levelQuestions } = await supabaseClient
@@ -1309,7 +1377,10 @@ async function handleSupabaseRequest(params) {
           level: c.level,
           sort_order: c.sort_order
         })),
-        welcomeHtml: welcomeHtml
+        welcomeHtml: welcomeHtml,
+        examAttempts: examAttempts,
+        lockoutUntil: lockoutUntil,
+        completedPromotions: completedPromotions
       };
 
     } else if (action === "checkStatus") {
@@ -1686,15 +1757,30 @@ async function handleSupabaseRequest(params) {
       }
       const { data, error } = await supabaseClient.from('promotions').select('*').order('created_at', { ascending: false });
       if (error) throw error;
+
+      // Fetch all trainees to resolve student names and phone numbers
+      const { data: trainees, error: tErr } = await supabaseClient.from('trainees').select('name, email, phone');
+      if (tErr) throw tErr;
+
       return {
         success: true,
-        promotions: data.map(p => ({
-          Email: p.email,
-          FromLevel: p.from_level,
-          ToLevel: p.to_level,
-          Status: p.status,
-          Timestamp: p.created_at
-        }))
+        promotions: data.map(p => {
+          const t = (trainees || []).find(x => String(x.email).trim().toLowerCase() === String(p.email).trim().toLowerCase());
+          return {
+            Email: p.email,
+            TraineeName: t ? t.name : p.email,
+            TraineePhone: t ? t.phone : p.email,
+            CurrentLevel: p.from_level,
+            TargetLevel: p.to_level,
+            Status: p.status,
+            Timestamp: p.created_at,
+            Score: p.score || 0,
+            DurationSeconds: p.duration_seconds || 0,
+            ExamAnswers: p.exam_answers || "",
+            CertificateTemplate: p.certificate_template || "",
+            CertificateUrl: p.certificate_url || ""
+          };
+        })
       };
       
     } else if (action === "submitPromotionRequest") {
@@ -1718,28 +1804,80 @@ async function handleSupabaseRequest(params) {
         }
       }
       
-      const { error } = await supabaseClient
-        .from('promotions')
-        .insert([{ email, from_level: fromLevel, to_level: toLevel, status: "pending" }]);
-      if (error) throw error;
+      try {
+        const { error } = await supabaseClient
+          .from('promotions')
+          .insert([{
+            email: email,
+            from_level: fromLevel,
+            to_level: toLevel,
+            status: "pending",
+            score: parseInt(params.score) || 0,
+            duration_seconds: parseInt(params.durationSeconds) || 0,
+            exam_answers: params.examAnswers || "",
+            certificate_template: "",
+            certificate_url: ""
+          }]);
+        if (error) throw error;
+      } catch (err) {
+        console.warn("Supabase promotions schema missing columns, falling back to simple insert", err);
+        const { error } = await supabaseClient
+          .from('promotions')
+          .insert([{ email, from_level: fromLevel, to_level: toLevel, status: "pending" }]);
+        if (error) throw error;
+      }
       return { success: true, message: "تم إرسال طلب الترقية وإصدار الشهادة بنجاح للمدير." };
       
     } else if (action === "adminApprovePromotion") {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
         return { success: false, message: "غير مصرح." };
       }
-      const { error: promoErr } = await supabaseClient
-        .from('promotions')
-        .update({ status: "approved" })
-        .ilike('email', params.email)
-        .eq('from_level', params.fromLevel)
-        .eq('to_level', params.toLevel);
-      if (promoErr) throw promoErr;
+      let email = String(params.email || "").trim().toLowerCase();
+      const phone = String(params.phone || "").trim();
+      const toLevel = String(params.toLevel || params.targetLevel || "").trim();
+      
+      if (!email && phone) {
+        const { data: t } = await supabaseClient
+          .from('trainees')
+          .select('email')
+          .eq('phone', phone)
+          .maybeSingle();
+        if (t) {
+          email = String(t.email).trim().toLowerCase();
+        } else {
+          email = phone.toLowerCase();
+        }
+      }
+
+      if (!email) {
+        return { success: false, message: "لم يتم العثور على حساب الطالب." };
+      }
+
+      try {
+        const { error: promoErr } = await supabaseClient
+          .from('promotions')
+          .update({
+            status: "approved",
+            certificate_template: params.certificateTemplate || "",
+            certificate_url: params.certificateUrl || ""
+          })
+          .ilike('email', email)
+          .eq('to_level', toLevel);
+        if (promoErr) throw promoErr;
+      } catch (err) {
+        console.warn("Supabase promotions schema missing certificate columns, falling back to simple status update", err);
+        const { error: promoErr } = await supabaseClient
+          .from('promotions')
+          .update({ status: "approved" })
+          .ilike('email', email)
+          .eq('to_level', toLevel);
+        if (promoErr) throw promoErr;
+      }
       
       const { error: trErr } = await supabaseClient
         .from('trainees')
-        .update({ current_level: params.toLevel })
-        .ilike('email', params.email);
+        .update({ current_level: toLevel })
+        .ilike('email', email);
       if (trErr) throw trErr;
       
       return { success: true, message: "تم اعتماد الترقية وإصدار الشهادة للمتدرب بنجاح!" };

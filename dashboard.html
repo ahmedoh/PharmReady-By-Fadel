@@ -584,6 +584,11 @@
 
         <!-- 4. Certificate Viewport -->
         <div id="certificate-viewport" style="display: none; flex: 1; text-align: center;">
+          <!-- Dynamic Canvas Certificate Image -->
+          <div id="cert-img-container" style="display: none; max-width: 800px; margin: 0 auto 20px; border: 3px solid var(--color-gold); border-radius: 14px; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,0.3); background: #000;">
+            <img id="cert-generated-image" style="width: 100%; height: auto; display: block;" src="" alt="Certificate">
+          </div>
+          
           <div class="certificate-wrapper" id="print-area">
             <div class="certificate-watermark">MAGHAWRY</div>
             <div class="certificate-content">
@@ -824,19 +829,29 @@
         <div class="welcome-overlay" id="player-placeholder">
           <i class="fa-solid fa-graduation-cap"></i>
           <h2 data-i18n="main_title" style="color: var(--color-primary); font-weight: 900;">أكاديمية آل مغاوري لتأهيل الصيادلة الجدد</h2>
+          
+          <!-- Game-like Level Progress Map -->
+          <div id="game-level-map" style="margin: 25px 0; background: rgba(0,0,0,0.1); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; direction: rtl; text-align: center; backdrop-filter: blur(5px);">
+          </div>
+
           <div style="max-width: 800px; margin: 20px auto; text-align: justify; line-height: 1.8; font-size: 14px; color: var(--text-muted)" id="dashboard-welcome-desc">
             <!-- Will be dynamically translated by data-i18n under applySettings using innerHTML to render rich text greeting -->
           </div>
 
-          <!-- Action button to unlock exam (if watched all) -->
-          <div id="exam-unlock-box" style="margin-top: 30px; display: none; text-align: center; border: 2px dashed var(--color-gold); padding: 20px 30px; border-radius: 16px; background: var(--color-gold-glow);">
-            <h3 style="color: var(--color-gold);" data-i18n="exam_ready_title">🎉 مبارك! أتممت مشاهدة كافة محاضرات هذا المستوى</h3>
-            <p style="font-size: 13px; margin: 8px 0 15px;" data-i18n="exam_ready_desc">أصبحت مؤهلاً الآن لدخول امتحان تقييم المرحلة للحصول على شهادتك المعتمدة وفتح المستوى التدريبي التالي.</p>
-            <button class="btn btn-gold" id="btn-start-exam" style="padding: 12px 25px; cursor: pointer;"><i class="fa-solid fa-file-signature"></i> <span data-i18n="btn_start_exam">ابدأ امتحان المستوى الآن</span></button>
+          <!-- Action button to unlock exam (Always visible at the bottom, locked by default) -->
+          <div id="exam-unlock-box" style="margin-top: 35px; text-align: center; border: 2px dashed var(--border-color); padding: 25px 30px; border-radius: 18px; background: var(--bg-secondary); direction: rtl; transition: all 0.3s ease;">
+            <div id="exam-lock-status-details">
+              <!-- Dynamically populated checklist -->
+            </div>
+            
+            <button class="btn btn-secondary" id="btn-start-exam" style="padding: 14px 35px; cursor: pointer; font-size: 15px; font-weight: 800; border-radius: 10px; margin-top: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;" disabled>
+              <i class="fa-solid fa-lock" id="btn-start-exam-icon"></i>
+              <span id="btn-start-exam-text">الانتقال إلى اختبار المرحلة (مغلق)</span>
+            </button>
           </div>
 
           <!-- Curriculum Accordion Slider -->
-          <div id="curriculum-accordion-section" style="margin-top: 30px; width: 100%; text-align: right;">
+          <div id="curriculum-accordion-section" style="margin-top: 35px; width: 100%; text-align: right;">
             <!-- Populated by JS from curriculum data -->
           </div>
         </div>
@@ -1132,6 +1147,8 @@
     let currentVideoId = null;
     let currentLang = localStorage.getItem("app_lang") || "ar";
     let currentTheme = localStorage.getItem("app_theme") || "sand"; // sand, green, dark
+    let traineeProgress = { ExamAttempts: 0, LockoutUntil: null };
+    let traineeReports = []; // Cached reports to check exam eligibility requirements
 
 
     function applySettings() {
@@ -1222,11 +1239,16 @@
           completedLevelsList = response.completedLevels || [];
           examQuestions = response.questions || []; // Save dynamically loaded questions from Google Sheets
           allVideoQuestions = response.videoQuestions || [];
+          window.completedPromotions = response.completedPromotions || [];
+          traineeProgress = {
+            ExamAttempts: response.examAttempts || 0,
+            LockoutUntil: response.lockoutUntil || null
+          };
           
           applySettings();
+          renderGameLevelMap();
           renderCurriculumAccordion(response.curriculum || []);
-
-          // First-time login guide popup disabled (manually accessible from sidebar only)
+          await loadTraineeReports(); // Ensure reports are cached to check checklist
 
           // Check if user has a pending promotion request
           if (response.pendingPromotion) {
@@ -1248,22 +1270,180 @@
       }
     }
 
-    // Check if watched all to unlock exam
+    // Check if watched all lectures, solved quizzes, and submitted at least 1 report to unlock stage exam
     function checkExamEligibility() {
       const examBox = document.getElementById("exam-unlock-box");
-      if (!examBox) return;
+      const detailsContainer = document.getElementById("exam-lock-status-details");
+      const startBtn = document.getElementById("btn-start-exam");
+      const btnIcon = document.getElementById("btn-start-exam-icon");
+      const btnText = document.getElementById("btn-start-exam-text");
+      if (!examBox || !detailsContainer || !startBtn) return;
       
       // If trainee level is already Beast and completed, no higher level to go
       if (traineeLevel === "Beast" && completedLevelsList.includes("Beast")) {
         examBox.style.display = "none";
         return;
       }
+      
+      const totalVids = videosData.length;
+      const watchedCount = videosData.filter(v => watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id)).length;
+      const allVideosWatched = totalVids > 0 && watchedCount === totalVids;
+      const allQuizzesAnswered = allVideosWatched; // Answered inline video quiz is required to mark video as watched
+      
+      // Check if student submitted at least one training report in this level
+      const submittedReportsCount = (traineeReports || []).filter(r => String(r.Level || r.level).trim() === String(traineeLevel).trim()).length;
+      const reportSubmitted = submittedReportsCount > 0;
+      
+      const isEligible = allVideosWatched && allQuizzesAnswered && reportSubmitted;
 
-      if (videosData.length > 0 && videosData.every(v => watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id))) {
-        examBox.style.display = "block";
-      } else {
-        examBox.style.display = "none";
+      // Lockout check
+      let isLockedOut = false;
+      let remainingMinutes = 0;
+      if (traineeProgress && traineeProgress.LockoutUntil) {
+        const lockoutTime = new Date(traineeProgress.LockoutUntil).getTime();
+        const diff = lockoutTime - Date.now();
+        if (diff > 0) {
+          isLockedOut = true;
+          remainingMinutes = Math.ceil(diff / 60000);
+        }
       }
+
+      const attempts = traineeProgress ? (traineeProgress.ExamAttempts || 0) : 0;
+      
+      let html = `
+        <h3 style="color: var(--color-gold); font-size: 16px; font-weight: bold; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <i class="fa-solid fa-shield-halved"></i> شروط دخول الامتحان النهائي واجتياز المرحلة
+        </h3>
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">لتتمكن من الانتقال للاختبار، يرجى إتمام متطلبات المرحلة التالية:</p>
+        
+        <div style="display: flex; flex-direction: column; gap: 10px; max-width: 450px; margin: 0 auto; text-align: right; background: rgba(0,0,0,0.15); padding: 12px 18px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 12.5px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>1. مشاهدة جميع فيديوهات المحاضرات (${watchedCount} / ${totalVids}):</span>
+            <span>${allVideosWatched ? '<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> مكتمل' : '<i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> غير مكتمل'}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>2. الإجابة على جميع اختبارات المحاضرات المخصصة:</span>
+            <span>${allQuizzesAnswered ? '<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> مكتمل' : '<i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> غير مكتمل'}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>3. تقديم تقرير تدريب ميداني واحد على الأقل للمرحلة الحالية:</span>
+            <span>${reportSubmitted ? '<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> مكتمل' : '<i class="fa-solid fa-circle-xmark" style="color: #ef4444;"></i> غير مكتمل'}</span>
+          </div>
+        </div>
+      `;
+
+      if (isLockedOut) {
+        examBox.style.borderColor = "#ef4444";
+        examBox.style.background = "rgba(239, 68, 68, 0.03)";
+        html += `
+          <div style="color: #ef4444; font-weight: 700; margin-top: 15px; font-size: 13px;">
+            <i class="fa-solid fa-hourglass-half fa-spin"></i> الامتحان مقفل حالياً. لقد استنفدت محاولاتك الثلاث. يرجى الانتظار لمدة <strong>${remainingMinutes} دقيقة</strong> للمحاولة مجدداً.
+          </div>
+        `;
+        startBtn.disabled = true;
+        startBtn.className = "btn btn-secondary";
+        btnIcon.className = "fa-solid fa-hourglass-half";
+        btnText.textContent = `مغلق مؤقتاً (متبقي ${remainingMinutes} دقيقة)`;
+      } else if (isEligible) {
+        examBox.style.borderColor = "var(--color-gold)";
+        examBox.style.background = "var(--color-gold-glow)";
+        html += `
+          <div style="color: #10b981; font-weight: 700; margin-top: 15px; font-size: 13px;">
+            <i class="fa-solid fa-circle-check"></i> مبارك! لقد أتممت جميع المهام والمشاهدات وأصبحت مؤهلاً لدخول الامتحان النهائي للمرحلة!
+          </div>
+          <div style="font-size: 11.5px; color: var(--color-gold); margin-top: 5px;">
+            عدد المحاولات المتبقية لك: <strong>${3 - attempts} من 3 محاولات</strong> (الرسوب 3 مرات يقفل الامتحان لمدة ساعتين).
+          </div>
+        `;
+        startBtn.removeAttribute("disabled");
+        startBtn.className = "btn btn-gold";
+        btnIcon.className = "fa-solid fa-file-signature";
+        btnText.textContent = "ابدأ الامتحان النهائي للمرحلة الآن";
+      } else {
+        examBox.style.borderColor = "var(--border-color)";
+        examBox.style.background = "var(--bg-secondary)";
+        startBtn.disabled = true;
+        startBtn.className = "btn btn-secondary";
+        btnIcon.className = "fa-solid fa-lock";
+        btnText.textContent = "الانتقال إلى اختبار المرحلة (مغلق)";
+      }
+
+      detailsContainer.innerHTML = html;
+    }
+
+    function renderGameLevelMap() {
+      const mapContainer = document.getElementById("game-level-map");
+      if (!mapContainer) return;
+      
+      const levelsOrder = ["Passengers", "Starters", "Movers", "Flyers", "Beast"];
+      const levelNamesAr = {
+        "Passengers": " passengers (المستوى 0)",
+        "Starters": " Starters (المستوى 1)",
+        "Movers": " Movers (المستوى 2)",
+        "Flyers": " Flyers (المستوى 3)",
+        "Beast": " Beast (المستوى 4)"
+      };
+      
+      const levelIcons = {
+        "Passengers": "fa-seedling",
+        "Starters": "fa-star-of-life",
+        "Movers": "fa-rocket",
+        "Flyers": "fa-dragon",
+        "Beast": "fa-fire"
+      };
+
+      const currentIdx = levelsOrder.indexOf(traineeLevel || "Passengers");
+      
+      let html = `
+        <h3 style="color: var(--color-gold); margin-bottom: 20px; font-size: 15px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <i class="fa-solid fa-map-marked-alt fa-pulse" style="color: var(--color-primary);"></i> مسار المستويات والارتقاء الأكاديمي
+        </h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; position: relative; margin: 20px auto; max-width: 900px; flex-wrap: wrap; gap: 20px; direction: rtl;">
+          <!-- Progress Line Background -->
+          <div style="position: absolute; top: 30px; left: 5%; right: 5%; height: 6px; background: rgba(255,255,255,0.05); z-index: 1; border-radius: 3px;"></div>
+          <!-- Active Progress Line -->
+          <div style="position: absolute; top: 30px; right: 5%; width: ${Math.max(0, (currentIdx / 4) * 90)}%; height: 6px; background: linear-gradient(90deg, var(--color-gold), var(--color-primary)); z-index: 1; transition: width 0.5s ease; border-radius: 3px;"></div>
+      `;
+      
+      levelsOrder.forEach((lvl, idx) => {
+        let stateIcon = "";
+        let badgeStyle = "";
+        let labelColor = "var(--text-muted)";
+        
+        if (idx < currentIdx) {
+          // Completed level
+          stateIcon = '<i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 15px; position: absolute; top: -5px; right: -5px; background: var(--bg-primary); border-radius: 50%;"></i>';
+          badgeStyle = "background: rgba(16,185,129,0.1); border: 2px solid #10b981; color: #10b981; box-shadow: 0 0 15px rgba(16,185,129,0.2);";
+          labelColor = "#10b981";
+        } else if (idx === currentIdx) {
+          // Active level
+          stateIcon = '<i class="fa-solid fa-star fa-bounce" style="color: var(--color-gold); font-size: 15px; position: absolute; top: -5px; right: -5px; background: var(--bg-primary); border-radius: 50%;"></i>';
+          badgeStyle = "background: rgba(251,191,36,0.15); border: 2px solid var(--color-gold); color: var(--color-gold); box-shadow: 0 0 25px rgba(251,191,36,0.3); transform: scale(1.15); font-weight: bold;";
+          labelColor = "var(--color-gold)";
+        } else {
+          // Locked level
+          stateIcon = '<i class="fa-solid fa-lock" style="color: var(--text-muted); font-size: 11px; position: absolute; top: -5px; right: -5px; background: var(--bg-secondary); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color);"></i>';
+          badgeStyle = "background: var(--bg-secondary); border: 2px solid var(--border-color); color: var(--text-muted); opacity: 0.55;";
+        }
+        
+        html += `
+          <div style="display: flex; flex-direction: column; align-items: center; width: 120px; position: relative; z-index: 2; cursor: default;">
+            <div style="position: relative; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: all 0.3s ease; ${badgeStyle}">
+              <i class="fa-solid ${levelIcons[lvl]}"></i>
+              ${stateIcon}
+            </div>
+            <span style="font-size: 11.5px; margin-top: 10px; font-weight: 700; text-align: center; color: ${labelColor}; display: block;">
+              ${levelNamesAr[lvl]}
+            </span>
+          </div>
+        `;
+      });
+      
+      html += `
+        </div>
+      `;
+      
+      mapContainer.innerHTML = html;
     }
 
     function renderPlaylist() {
@@ -1766,6 +1946,16 @@
 
     // EXAMS WORKFLOW
     document.getElementById("btn-start-exam").addEventListener("click", () => {
+      // Check lockout status before letting trainee open the exam
+      if (traineeProgress && traineeProgress.LockoutUntil) {
+        const lockoutTime = new Date(traineeProgress.LockoutUntil).getTime();
+        if (lockoutTime - Date.now() > 0) {
+          showToast("⚠️ الامتحان مقفل حالياً للاستراحة. يرجى مراجعة شروط الدخول بالأسفل.", "error");
+          return;
+        }
+      }
+      
+      window.examStartTime = Date.now();
       document.getElementById("player-placeholder").style.display = "none";
       document.getElementById("exam-viewport").style.display = "block";
       renderExamQuestions();
@@ -1811,29 +2001,84 @@
     document.getElementById("quiz-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const questions = examQuestions && examQuestions.length > 0 ? examQuestions : [];
-      
       if (questions.length === 0) return;
       
+      const btn = e.target.querySelector("button[type='submit']");
+      if (btn) btn.disabled = true;
+      
       let score = 0;
+      const answers = [];
       questions.forEach((q, idx) => {
         const selected = document.querySelector(`input[name="question-${idx}"]:checked`);
-        if (selected && parseInt(selected.value) === q.correct) {
+        const selVal = selected ? parseInt(selected.value) : -1;
+        answers.push(selVal);
+        if (selVal === q.correct) {
           score++;
         }
       });
 
-      const percentage = (score / questions.length) * 100;
+      const percentage = Math.round((score / questions.length) * 100);
+      const durationSeconds = Math.round((Date.now() - (window.examStartTime || Date.now())) / 1000);
       
-      if (percentage >= 80) {
-        showToast(langData[currentLang].toast_exam_pass, "success");
-        submitPromotion(percentage);
-      } else {
-        const msg = langData[currentLang].toast_exam_fail.replace("{score}", score).replace("{total}", questions.length);
-        showToast(msg, "error");
+      let attempts = traineeProgress ? (traineeProgress.ExamAttempts || 0) : 0;
+      let newAttempts = attempts + 1;
+      let lockoutTime = null;
+
+      try {
+        if (percentage >= 80) {
+          showToast(langData[currentLang].toast_exam_pass, "success");
+          
+          // 1. Save progress success in database
+          await apiRequest({
+            action: "saveTraineeProgress",
+            email: traineeEmail,
+            level: traineeLevel,
+            examPassed: true,
+            examAttempts: 0,
+            lockoutUntil: null,
+            watchedVideos: watchedVideos.join(",")
+          });
+          
+          // 2. Submit promotion request to CEO panel
+          await submitPromotion(percentage, durationSeconds, answers);
+        } else {
+          // Failed
+          if (newAttempts >= 3) {
+            lockoutTime = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(); // 2 hours lockout
+            newAttempts = 0; // Reset attempts count
+            showToast("⚠️ لقد استنفدت محاولاتك الثلاث المتاحة. تم قفل الامتحان لمدة ساعتين لمراجعة المنهج.", "error");
+          } else {
+            showToast(`❌ لم تجتز الامتحان. نتيجتك: ${score} من ${questions.length} (${percentage}%). المحاولة ${newAttempts} من 3. النسبة المطلوبة: 80%`, "error");
+          }
+
+          // Save progress failure in database
+          await apiRequest({
+            action: "saveTraineeProgress",
+            email: traineeEmail,
+            level: traineeLevel,
+            examPassed: false,
+            examAttempts: newAttempts,
+            lockoutUntil: lockoutTime,
+            watchedVideos: watchedVideos.join(",")
+          });
+
+          // Update UI state and return to dashboard
+          traineeProgress.ExamAttempts = newAttempts;
+          traineeProgress.LockoutUntil = lockoutTime;
+          checkExamEligibility();
+
+          document.getElementById("exam-viewport").style.display = "none";
+          document.getElementById("player-placeholder").style.display = "block";
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("حدث خطأ أثناء حفظ نتائج الامتحان.", "error");
+      } finally {
+        if (btn) btn.disabled = false;
       }
     });
 
-    async function submitPromotion(score) {
+    async function submitPromotion(score, durationSeconds, examAnswers) {
       const nextLevels = {
         "Passengers": "Starters",
         "Starters": "Movers",
@@ -1843,7 +2088,6 @@
       };
 
       const toLevel = nextLevels[traineeLevel];
-
       showToast(langData[currentLang].exam_submitting, "info");
 
       try {
@@ -1852,7 +2096,10 @@
           email: traineeEmail,
           password: traineePassword,
           fromLevel: traineeLevel,
-          toLevel: toLevel
+          toLevel: toLevel,
+          score: score,
+          durationSeconds: durationSeconds,
+          examAnswers: JSON.stringify(examAnswers)
         });
 
         if (response.success) {
@@ -1881,12 +2128,21 @@
       document.getElementById("exam-viewport").style.display = "none";
       document.getElementById("promo-pending-viewport").style.display = "none";
       
-      document.getElementById("cert-trainee-name").textContent = traineeName;
-      document.getElementById("cert-level-name").textContent = langData[currentLang][`level_${level}`] || level;
-      
-      // Generate a unique printable verification hash
-      const hash = "CERT-" + level.toUpperCase() + "-" + traineeName.split(" ").slice(0,2).join("").toUpperCase() + "-" + Math.floor(1000 + Math.random() * 9000);
-      document.getElementById("cert-hash-code").textContent = hash;
+      const promo = (window.completedPromotions || []).find(p => String(p.FromLevel).trim() === String(level).trim());
+      if (promo && promo.CertificateUrl) {
+        document.getElementById("print-area").style.display = "none";
+        document.getElementById("cert-img-container").style.display = "block";
+        document.getElementById("cert-generated-image").src = promo.CertificateUrl;
+      } else {
+        document.getElementById("print-area").style.display = "block";
+        document.getElementById("cert-img-container").style.display = "none";
+        
+        document.getElementById("cert-trainee-name").textContent = traineeName;
+        document.getElementById("cert-level-name").textContent = langData[currentLang][`level_${level}`] || level;
+        
+        const hash = "CERT-" + level.toUpperCase() + "-" + traineeName.split(" ").slice(0,2).join("").toUpperCase() + "-" + Math.floor(1000 + Math.random() * 9000);
+        document.getElementById("cert-hash-code").textContent = hash;
+      }
 
       document.getElementById("certificate-viewport").style.display = "block";
     }
@@ -2170,7 +2426,6 @@
       }
     });
 
-    let traineeReports = [];
     async function loadTraineeReports() {
       try {
         const response = await apiRequest({
@@ -2181,6 +2436,7 @@
         if (response.success) {
           traineeReports = response.reports || [];
           renderTraineeReportsList();
+          checkExamEligibility();
         }
       } catch (err) {
         console.error(err);
