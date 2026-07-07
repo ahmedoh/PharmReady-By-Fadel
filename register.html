@@ -417,6 +417,28 @@
       applySettings();
     });
 
+    // Auto-calculate birthyear / age based on current year 2026
+    const ageInput = document.getElementById("reg-age");
+    const birthyearInput = document.getElementById("reg-birthyear");
+
+    ageInput.addEventListener("input", () => {
+      const ageVal = parseInt(ageInput.value);
+      if (ageVal) {
+        birthyearInput.value = 2026 - ageVal;
+      } else {
+        birthyearInput.value = "";
+      }
+    });
+
+    birthyearInput.addEventListener("input", () => {
+      const birthVal = parseInt(birthyearInput.value);
+      if (birthVal && String(birthVal).length === 4) {
+        ageInput.value = 2026 - birthVal;
+      } else if (!birthVal) {
+        ageInput.value = "";
+      }
+    });
+
     applySettings();
 
     function updateWizard() {
