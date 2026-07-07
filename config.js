@@ -25,6 +25,15 @@ if (SUPABASE_URL && SUPABASE_KEY && window.supabase) {
 
 console.log(SUPABASE_URL && SUPABASE_KEY ? "🚀 Running in SUPABASE MODE" : (isDemoMode ? "🚀 Running in DEMO MODE (using LocalStorage)" : "🌐 Running in CLOUD MODE (connected to Google Sheets)"));
 
+// Gemini API Configuration
+function updateGeminiConfig() {
+  const key = localStorage.getItem("maghawry_gemini_key") || "";
+  window.GEMINI_API_KEY = key;
+  window.GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+}
+updateGeminiConfig();
+window.updateGeminiConfig = updateGeminiConfig;
+
 /**
  * API Request Wrapper
  */
@@ -1935,15 +1944,30 @@ async function handleSupabaseRequest(params) {
       };
       
     } else if (action === "submitTraineeReport") {
+      const email = String(params.email).trim().toLowerCase();
+      const { data: t, error: tErr } = await supabaseClient
+        .from('trainees')
+        .select('name, branch, current_level')
+        .ilike('email', email)
+        .maybeSingle();
+      if (tErr) throw tErr;
+      if (!t) {
+        return { success: false, message: "لم يتم العثور على حساب الطالب." };
+      }
+
       const { error } = await supabaseClient
         .from('reports')
         .insert([{
-          email: params.email,
-          name: params.name,
-          branch: params.branch,
-          level: params.level,
-          report_text: params.reportText,
-          status: "pending"
+          email: email,
+          name: t.name,
+          branch: t.branch || "",
+          level: t.current_level || "Passengers",
+          title: params.title || "تقرير تدريب بدون عنوان",
+          report_text: params.content || "",
+          attachment_url: params.attachment || "",
+          attachment_name: params.attachmentName || "",
+          status: "pending",
+          admin_comment: ""
         }]);
       if (error) throw error;
       return { success: true, message: "تم تقديم التقرير بنجاح للمراجعة!" };

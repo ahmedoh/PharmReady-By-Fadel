@@ -1584,7 +1584,11 @@
         generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
       };
 
-      const resp = await fetch(GEMINI_API_URL, {
+      if (!window.GEMINI_API_KEY) {
+        throw new Error("Gemini API Key is not configured");
+      }
+
+      const resp = await fetch(window.GEMINI_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)

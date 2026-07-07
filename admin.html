@@ -12,6 +12,61 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
   <style>
+    .visual-editor {
+      min-height: 120px;
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 0 0 8px 8px;
+      padding: 12px;
+      background: var(--bg-primary);
+      color: var(--text-main);
+      outline: none;
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: right;
+      direction: rtl;
+    }
+    .visual-editor:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px var(--color-primary-glow);
+    }
+    .visual-editor h2 {
+      font-size: 16px;
+      color: var(--color-primary);
+      font-weight: 800;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+    .visual-editor h3 {
+      font-size: 14px;
+      color: var(--color-gold);
+      font-weight: 700;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+    .visual-editor p {
+      margin-bottom: 8px;
+    }
+    .visual-editor ul {
+      margin-right: 20px;
+      margin-bottom: 10px;
+      list-style-type: disc;
+    }
+    .visual-editor ol {
+      margin-right: 20px;
+      margin-bottom: 10px;
+      list-style-type: decimal;
+    }
+    .visual-editor li {
+      margin-bottom: 4px;
+    }
+    .visual-editor hr {
+      border: 0;
+      border-top: 1px dashed var(--border-color);
+      margin: 15px 0;
+    }
     .admin-wrapper {
       display: flex;
       min-height: 100vh;
@@ -245,6 +300,50 @@
     }
     .slider-backdrop.active {
       display: block;
+    }
+
+    /* Rich Text Formatting Toolbar */
+    .editor-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      padding: 8px 12px;
+      align-items: center;
+      direction: rtl;
+    }
+    .editor-toolbar button {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+    .editor-toolbar button:hover {
+      background: var(--color-primary-glow);
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+    .editor-toolbar select {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: 6px;
+      padding: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: inherit;
     }
   </style>
 </head>
@@ -704,6 +803,15 @@
               <input type="file" id="import-backup-file" accept=".json" style="display: none;" onchange="handleBackupRestoreUpload(event)">
               <button class="btn btn-gold" onclick="document.getElementById('import-backup-file').click()"><i class="fa-solid fa-upload"></i> رفع ملف واستعادة</button>
             </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 25px; padding: 20px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--bg-secondary);">
+          <h4 style="color: var(--color-gold); margin-bottom: 8px;"><i class="fa-solid fa-key"></i> إعدادات مفتاح الذكاء الاصطناعي (Gemini API Key)</h4>
+          <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">مطلوب لتوليد الأسئلة التلقائية للمحاضرات بالذكاء الاصطناعي.</p>
+          <div class="form-group" style="display: flex; gap: 10px; align-items: center; margin-bottom: 0;">
+            <input type="password" id="settings-gemini-key" placeholder="أدخل مفتاح Gemini API Key هنا..." style="flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-main);">
+            <button class="btn btn-primary" onclick="saveGeminiKeySetting()" style="cursor: pointer;"><i class="fa-solid fa-floppy-disk"></i> حفظ المفتاح</button>
           </div>
         </div>
       </section>
@@ -1283,6 +1391,9 @@
       if (tabName === 'videoquizzes') {
         loadVideoQuizzes();
       }
+      if (tabName === 'curriculum') {
+        attachTextareaToolbar("lc-welcome-html");
+      }
     };
 
     // Database Loaders
@@ -1499,7 +1610,7 @@
           <td>${q.Level}</td>
           <td>الخيار ${parseInt(q.CorrectIndex) + 1}</td>
           <td>
-            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteQuestion(${q.rowNum || idx})"><i class="fa-solid fa-trash"></i> حذف</button>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="deleteQuestion(${idx})"><i class="fa-solid fa-trash"></i> حذف</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -1637,6 +1748,9 @@
       document.getElementById('rrm-report-id').value = reportId;
       document.getElementById('rrm-attachment-link').innerHTML = report.Attachment ? `<a href="${report.Attachment}" target="_blank" class="btn btn-secondary" style="font-size:12px;"><i class="fa-solid fa-download"></i> تحميل المرفق</a>` : 'لا يوجد مرفق';
       modal.classList.add('active');
+
+      // Load trainee statistics and quiz results dynamically
+      loadTraineeStatsForReportReview(report.Email || report.email || '', report.Level || 'Passengers');
     };
 
     // Level Content Functions
@@ -1705,6 +1819,7 @@
           }
         }).catch(e => console.error(e));
       }
+      attachTextareaToolbar("curr-item-content");
       modal.classList.add('active');
     };
 
@@ -2082,7 +2197,16 @@
         const response = await apiRequest({
           action: "adminAddQuestion",
           adminPassword,
-          level, textAr, textEn, opt1Ar, opt1En, opt2Ar, opt2En, opt3Ar, opt3En, correct
+          level: level,
+          questionAr: textAr,
+          questionEn: textEn,
+          option1Ar: opt1Ar,
+          option1En: opt1En,
+          option2Ar: opt2Ar,
+          option2En: opt2En,
+          option3Ar: opt3Ar,
+          option3En: opt3En,
+          correctIndex: correct
         });
         if (response.success) {
           showToast("تم إضافة السؤال بنجاح!", "success");
@@ -2092,10 +2216,20 @@
       } catch (err) { console.error(err); }
     });
 
-    window.deleteQuestion = async function(rowNum) {
+    window.deleteQuestion = async function(idx) {
       if (!confirm("هل أنت متأكد من حذف هذا السؤال؟")) return;
+      const q = allQuestions[idx];
+      if (!q) return;
+
       try {
-        const response = await apiRequest({ action: "adminDeleteQuestion", adminPassword, rowNum });
+        const response = await apiRequest({
+          action: "adminDeleteQuestion",
+          adminPassword,
+          index: idx,
+          rowNum: q.rowNum || idx,
+          questionAr: q.QuestionAr || q.question_ar,
+          level: q.Level || q.level
+        });
         if (response.success) {
           showToast("تم حذف السؤال بنجاح.", "success");
           loadAdminDashboardData();
@@ -2393,6 +2527,19 @@
     if (savedReportsOpen === 'false') {
       document.getElementById('setting-reports-open').checked = false;
     }
+
+    const geminiKeyInput = document.getElementById("settings-gemini-key");
+    if (geminiKeyInput) {
+      geminiKeyInput.value = localStorage.getItem("maghawry_gemini_key") || "";
+    }
+
+    window.saveGeminiKeySetting = function() {
+      const val = document.getElementById("settings-gemini-key").value.trim();
+      localStorage.setItem("maghawry_gemini_key", val);
+      showToast("✅ تم حفظ مفتاح Gemini API Key بنجاح في المتصفح!", "success");
+      // Update config if updated
+      if (typeof updateGeminiConfig === "function") updateGeminiConfig();
+    };
 
     // Curriculum form save
     document.addEventListener('DOMContentLoaded', () => {
@@ -2827,21 +2974,28 @@
           <div style="text-align:center; padding:40px 20px; color:var(--text-muted);" id="vqm-empty-prompt">
             <i class="fa-solid fa-circle-question" style="font-size:36px; margin-bottom:12px; opacity:0.3;"></i>
             <div style="font-size:14px; font-weight:700; margin-bottom:8px;">لا توجد أسئلة مخصصة لهذه المحاضرة حتى الآن</div>
-            <div style="font-size:12px; margin-bottom:15px;">يمكنك توليد 4 أسئلة علمية تلقائياً بالذكاء الاصطناعي بناءً على عنوان المحاضرة أو إضافة أسئلة يدوية.</div>
-            <button class="btn" style="background: var(--color-primary-glow); color: var(--color-primary); border: 1px solid var(--border-color); padding: 8px 16px; cursor:pointer;" onclick="adminAutoGenerateVideoQuestions()"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد بالذكاء الاصطناعي الآن</button>
+            <div style="font-size:12px; margin-bottom:15px;">يمكنك توليد 4 أسئلة علمية تلقائياً بالذكاء الاصطناعي بناءً على عنوان المحاضرة أو إضافة أسئلة يدوياً.</div>
+            <div style="display:flex; justify-content:center; gap:10px;">
+              <button type="button" class="btn btn-primary" style="padding: 8px 16px; cursor:pointer;" onclick="adminAutoGenerateVideoQuestions()"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد بالذكاء الاصطناعي</button>
+              <button type="button" class="btn" style="background: rgba(251,191,36,0.1); color: var(--color-gold); border: 1px solid rgba(251,191,36,0.3); padding: 8px 16px; cursor:pointer;" onclick="addNewVqmQuestion()"><i class="fa-solid fa-plus"></i> إضافة سؤال يدوياً</button>
+            </div>
           </div>
         `;
         return;
       }
 
-      listContainer.innerHTML = currentVqmQuestions.map((q, idx) => {
+      let html = currentVqmQuestions.map((q, idx) => {
         return `
           <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 12px; position:relative;">
             <div style="position:absolute; top:12px; left:12px; font-size:12px; font-weight:800; color:var(--color-gold); background:rgba(251,191,36,0.1); width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center;">${idx + 1}</div>
             
+            <button type="button" onclick="deleteVqmQuestion(${idx})" style="position:absolute; top:12px; left:45px; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#ef4444; width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer;" title="حذف السؤال">
+              <i class="fa-solid fa-trash-can" style="font-size:11px;"></i>
+            </button>
+            
             <div class="form-group" style="margin-bottom:10px; width:90%;">
               <label style="font-weight:700; font-size:12px; display:block; margin-bottom:4px;">السؤال بالعربية</label>
-              <input type="text" value="${q.q || ''}" oninput="updateVqmQuestionText(${idx}, this.value)" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color);">
+              <textarea id="vqm-q-text-${idx}" oninput="updateVqmQuestionText(${idx}, this.value)" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border-color); height:55px; font-family:inherit; font-size:13px; resize:none;">${q.q || ''}</textarea>
             </div>
             
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
@@ -2862,15 +3016,46 @@
             <div class="form-group" style="margin-bottom:0;">
               <label style="font-size:12px; font-weight:700; display:block; margin-bottom:4px;">الخيار الصحيح</label>
               <select onchange="updateVqmCorrectIndex(${idx}, this.value)" style="width:180px; padding:6px; font-size:12px; border-radius:4px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-main);">
-                <option value="0" ${q.correct === 0 ? 'selected' : ''}>الخيار الأول</option>
-                <option value="1" ${q.correct === 1 ? 'selected' : ''}>الخيار الثاني</option>
-                <option value="2" ${q.correct === 2 ? 'selected' : ''}>الخيار الثالث</option>
+                <option value="0" ${parseInt(q.correct) === 0 ? 'selected' : ''}>الخيار الأول</option>
+                <option value="1" ${parseInt(q.correct) === 1 ? 'selected' : ''}>الخيار الثاني</option>
+                <option value="2" ${parseInt(q.correct) === 2 ? 'selected' : ''}>الخيار الثالث</option>
               </select>
             </div>
           </div>
         `;
       }).join('');
+
+      html += `
+        <div style="text-align: center; margin-top: 15px;">
+          <button type="button" class="btn" style="background: rgba(251,191,36,0.05); color: var(--color-gold); border: 1px dashed rgba(251,191,36,0.4); padding: 10px 20px; font-size: 13px; font-weight: 700; width: 100%; cursor: pointer;" onclick="addNewVqmQuestion()">
+            <i class="fa-solid fa-plus"></i> إضافة سؤال جديد يدوياً
+          </button>
+        </div>
+      `;
+
+      listContainer.innerHTML = html;
+
+      // Attach text formatting toolbar to each question textarea
+      for (let i = 0; i < currentVqmQuestions.length; i++) {
+        attachTextareaToolbar(`vqm-q-text-${i}`);
+      }
     }
+
+    window.addNewVqmQuestion = function() {
+      currentVqmQuestions.push({
+        q: "",
+        options: ["", "", ""],
+        correct: 0
+      });
+      renderVqmQuestionsForm();
+    };
+
+    window.deleteVqmQuestion = function(idx) {
+      if (confirm("هل أنت متأكد من حذف هذا السؤال؟")) {
+        currentVqmQuestions.splice(idx, 1);
+        renderVqmQuestionsForm();
+      }
+    };
 
     window.updateVqmQuestionText = function(idx, val) {
       if (currentVqmQuestions[idx]) currentVqmQuestions[idx].q = val;
@@ -2887,6 +3072,12 @@
       const titleText = document.getElementById("vqm-lecture-title").textContent.replace("المحاضرة: ", "");
       
       const originalHtml = listContainer.innerHTML;
+      
+      if (!window.GEMINI_API_KEY) {
+        showToast("⚠️ يرجى ضبط مفتاح Gemini API Key أولاً في إعدادات النسخ الاحتياطي.", "error");
+        return;
+      }
+
       listContainer.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin fa-3x" style="color:var(--color-primary); margin-bottom:15px;"></i><br><strong style="font-size:14px; color:var(--color-gold);">جاري التواصل مع ذكاء اصطناعي Gemini لتوليد 4 أسئلة علمية...</strong></div>';
 
       try {
@@ -2904,7 +3095,7 @@
   }
 ]`;
         
-        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + GEMINI_API_KEY, {
+        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + window.GEMINI_API_KEY, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -2972,7 +3163,293 @@
       }
     };
 
+    // Visual WYSIWYG Editor Toolbar helper for Content editors (no raw HTML required!)
+    window.attachTextareaToolbar = function(textareaId) {
+      const textarea = document.getElementById(textareaId);
+      if (!textarea) return;
+      
+      // Check if toolbar already exists
+      if (textarea.previousElementSibling && textarea.previousElementSibling.classList.contains("editor-toolbar")) {
+        return;
+      }
+      
+      // Hide original textarea
+      textarea.style.display = "none";
+      
+      // Create visual editor container
+      const editor = document.createElement("div");
+      editor.className = "visual-editor";
+      editor.contentEditable = "true";
+      editor.innerHTML = textarea.value || "";
+      
+      // Setup bidirectional bindings:
+      // 1. Changes in visual editor update the hidden textarea
+      editor.addEventListener("input", () => {
+        textarea.value = editor.innerHTML;
+        textarea.dispatchEvent(new Event("input"));
+      });
+      
+      // 2. Programmatic changes to textarea.value update the visual editor
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value");
+      Object.defineProperty(textarea, "value", {
+        get: function() {
+          return descriptor.get.call(this);
+        },
+        set: function(val) {
+          descriptor.set.call(this, val);
+          if (editor.innerHTML !== val) {
+            editor.innerHTML = val || "";
+          }
+        }
+      });
+      
+      // Create toolbar
+      const toolbar = document.createElement("div");
+      toolbar.className = "editor-toolbar";
+      
+      // Formats configurations
+      const formats = [
+        { label: "عريض", title: "خط عريض (Bold)", icon: "fa-bold", cmd: "bold" },
+        { label: "مائل", title: "خط مائل (Italic)", icon: "fa-italic", cmd: "italic" },
+        { label: "نقاط", title: "قائمة نقطية (Bullets)", icon: "fa-list-ul", cmd: "insertUnorderedList" },
+        { label: "رقمية", title: "قائمة رقمية (Numbers)", icon: "fa-list-ol", cmd: "insertOrderedList" },
+        { label: "خط فاصل", title: "إضافة خط فاصل", icon: "fa-minus", cmd: "insertHorizontalRule" }
+      ];
+      
+      // Color Dropdown
+      const colorSelect = document.createElement("select");
+      colorSelect.title = "تغيير لون النص";
+      colorSelect.innerHTML = `
+        <option value="" disabled selected>لون النص...</option>
+        <option value="var(--color-primary)">اللون الأساسي (أخضر)</option>
+        <option value="var(--color-gold)">اللون الذهبي</option>
+        <option value="var(--text-muted)">الرمادي الباهت</option>
+        <option value="#ef4444">اللون الأحمر (تنبيه)</option>
+        <option value="#10b981">اللون الأخضر (نجاح)</option>
+        <option value="#ffffff">اللون الأبيض</option>
+      `;
+      colorSelect.addEventListener("change", () => {
+        if (!colorSelect.value) return;
+        document.execCommand("styleWithCSS", false, true);
+        document.execCommand("foreColor", false, colorSelect.value);
+        colorSelect.value = ""; // Reset
+        textarea.value = editor.innerHTML;
+        textarea.dispatchEvent(new Event("input"));
+      });
 
+      // Size Dropdown
+      const sizeSelect = document.createElement("select");
+      sizeSelect.title = "حجم ونوع الخط";
+      sizeSelect.innerHTML = `
+        <option value="" disabled selected>حجم الخط...</option>
+        <option value="header">عنوان رئيسي كبير</option>
+        <option value="subheader">عنوان فرعي متوسط</option>
+        <option value="normal">حجم طبيعي</option>
+      `;
+      sizeSelect.addEventListener("change", () => {
+        if (!sizeSelect.value) return;
+        if (sizeSelect.value === "header") {
+          document.execCommand("formatBlock", false, "<h2>");
+        } else if (sizeSelect.value === "subheader") {
+          document.execCommand("formatBlock", false, "<h3>");
+        } else if (sizeSelect.value === "normal") {
+          document.execCommand("formatBlock", false, "<p>");
+        }
+        sizeSelect.value = ""; // Reset
+        textarea.value = editor.innerHTML;
+        textarea.dispatchEvent(new Event("input"));
+      });
+
+      // Append standard format buttons
+      formats.forEach(f => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.title = f.title;
+        btn.innerHTML = `<i class="fa-solid ${f.icon}"></i> ${f.label}`;
+        btn.addEventListener("click", () => {
+          document.execCommand(f.cmd, false, null);
+          textarea.value = editor.innerHTML;
+          textarea.dispatchEvent(new Event("input"));
+        });
+        toolbar.appendChild(btn);
+      });
+      
+      // Append selects
+      toolbar.appendChild(colorSelect);
+      toolbar.appendChild(sizeSelect);
+      
+      // Insert in DOM
+      textarea.parentNode.insertBefore(toolbar, textarea);
+      textarea.parentNode.insertBefore(editor, textarea);
+    };
+
+
+    // Trainee Statistics & Exam Quiz Answers fetcher for Report Review Modal
+    window.loadTraineeStatsForReportReview = async function(email, level) {
+      const statsArea = document.getElementById("rrm-stats-area");
+      if (!statsArea) return;
+      
+      statsArea.innerHTML = `
+        <div style="text-align: center; color: var(--text-muted); padding: 15px;">
+          <i class="fa-solid fa-spinner fa-spin" style="color: var(--color-primary); margin-bottom: 8px;"></i>
+          <div>جاري تحميل إحصائيات المتدرب وإجابات الاختبارات...</div>
+        </div>
+      `;
+
+      try {
+        // 1. Get Trainee Progress
+        const progResp = await apiRequest({
+          action: "getTraineeProgress",
+          email: email,
+          level: level
+        });
+
+        // 2. Get Video Quizzes Submissions
+        const quizzesResp = await apiRequest({
+          action: "adminGetVideoQuizzes",
+          adminPassword: adminPassword,
+          adminUsername: adminUsername
+        });
+
+        // Calculate watched percentage
+        const levelVideos = allVideos.filter(v => String(v.Level || "Passengers").trim() === String(level).trim());
+        const totalVids = levelVideos.length;
+        
+        let watchedList = [];
+        if (progResp.success && progResp.progress && progResp.progress.WatchedVideos) {
+          watchedList = String(progResp.progress.WatchedVideos).split(",").map(x => x.trim()).filter(Boolean);
+        }
+        
+        // Count how many of the level's videos were watched
+        const levelVidIds = levelVideos.map(v => String(v.VideoId || v.id).trim());
+        const watchedCount = watchedList.filter(id => levelVidIds.includes(id)).length;
+        const watchPct = totalVids > 0 ? Math.round((watchedCount / totalVids) * 100) : 0;
+
+        // Filter quizzes by trainee's email and level
+        let traineeQuizzes = [];
+        if (quizzesResp.success && quizzesResp.quizzes) {
+          traineeQuizzes = quizzesResp.quizzes.filter(q => 
+            String(q.Email || q.email).trim().toLowerCase() === String(email).trim().toLowerCase() && 
+            String(q.Level || q.level).trim() === String(level).trim()
+          );
+        }
+
+        // Render HTML
+        let statsHtml = `
+          <h4 style="color: var(--color-gold); margin-top: 5px; margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px; display: flex; align-items: center; gap: 8px; font-size: 13px;">
+            <i class="fa-solid fa-chart-line"></i> حالة التدريب والمشاهدة لهذا المستوى
+          </h4>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: var(--bg-secondary); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 11px;">
+            <div>معدل مشاهدة محاضرات المستوى: <strong>${watchedCount} / ${totalVids}</strong></div>
+            <div style="width: 120px; background: rgba(255,255,255,0.05); height: 8px; border-radius: 4px; overflow: hidden; position: relative;">
+              <div style="width: ${watchPct}%; background: var(--color-primary); height: 100%;"></div>
+            </div>
+            <div style="font-weight: 800; color: var(--color-primary);">${watchPct}%</div>
+          </div>
+          
+          <h4 style="color: var(--color-gold); margin-bottom: 8px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-list-check"></i> إجابات أسئلة المحاضرات المخصصة (${traineeQuizzes.length})
+          </h4>
+        `;
+
+        if (traineeQuizzes.length === 0) {
+          statsHtml += `
+            <div style="text-align: center; color: var(--text-muted); padding: 15px; border: 1px dashed var(--border-color); border-radius: 8px; font-size: 11px;">
+              لا توجد اختبارات محاضرات مُجابة في هذا المستوى حتى الآن.
+            </div>
+          `;
+        } else {
+          statsHtml += `<div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding-left: 5px;">`;
+          traineeQuizzes.forEach((q, qIdx) => {
+            let questionsList = [];
+            let answersList = [];
+            try {
+              questionsList = typeof q.questions === "string" ? JSON.parse(q.questions) : (q.Questions || q.questions || []);
+              answersList = typeof q.answers === "string" ? JSON.parse(q.answers) : (q.Answers || q.answers || []);
+            } catch(e) { console.warn("Failed parse quiz json", e); }
+
+            statsHtml += `
+              <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-size: 11px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <strong style="color: var(--color-primary); font-size: 11.5px;">${q.video_title || q.VideoTitle || "اختبار محاضرة"}</strong>
+                  <span style="font-weight: 800; color: var(--color-gold);">النتيجة: ${q.score || q.Score || 0} / ${questionsList.length}</span>
+                </div>
+                
+                <button type="button" class="btn" style="padding: 4px 8px; font-size: 10px; background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--border-color); cursor: pointer;" onclick="toggleRrmQuizDetails(${qIdx})">
+                  <i class="fa-solid fa-eye"></i> عرض إجابات الطالب بالتفصيل
+                </button>
+                
+                <div id="rrm-quiz-details-${qIdx}" style="display: none; margin-top: 8px; border-top: 1px dashed var(--border-color); padding-top: 8px; font-size: 11px;">
+            `;
+
+            questionsList.forEach((question, idx) => {
+              const studentAnswerIdx = answersList[idx];
+              const correctAnswerIdx = parseInt(question.correct) || 0;
+              const options = question.options || [];
+
+              statsHtml += `
+                <div style="margin-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.02); padding-bottom: 4px;">
+                  <div style="font-weight: 700; margin-bottom: 4px;">س${idx + 1}: ${question.q}</div>
+                  <div style="margin-right: 10px; display: flex; flex-direction: column; gap: 3px;">
+              `;
+
+              options.forEach((opt, optIdx) => {
+                let badgeStyle = "color: var(--text-muted);";
+                let icon = '<i class="fa-regular fa-circle" style="font-size: 10px; margin-left: 5px;"></i>';
+
+                if (optIdx === correctAnswerIdx) {
+                  badgeStyle = "color: #10b981; font-weight: 700; background: rgba(16,185,129,0.05); padding: 2px 6px; border-radius: 4px;";
+                  icon = '<i class="fa-solid fa-circle-check" style="font-size: 10px; margin-left: 5px; color: #10b981;"></i>';
+                } else if (optIdx === studentAnswerIdx) {
+                  badgeStyle = "color: #ef4444; font-weight: 700; background: rgba(239,68,68,0.05); padding: 2px 6px; border-radius: 4px;";
+                  icon = '<i class="fa-solid fa-circle-xmark" style="font-size: 10px; margin-left: 5px; color: #ef4444;"></i>';
+                }
+
+                statsHtml += `
+                  <div style="display: flex; align-items: center; ${badgeStyle}">
+                    ${icon} ${opt}
+                    ${optIdx === studentAnswerIdx ? ' <span style="font-size: 9px; margin-right: 5px; opacity: 0.8;">(إجابة الطالب)</span>' : ''}
+                    ${optIdx === correctAnswerIdx && studentAnswerIdx !== correctAnswerIdx ? ' <span style="font-size: 9px; margin-right: 5px; opacity: 0.8;">(الإجابة الصحيحة)</span>' : ''}
+                  </div>
+                `;
+              });
+
+              statsHtml += `
+                  </div>
+                </div>
+              `;
+            });
+
+            statsHtml += `
+                </div>
+              </div>
+            `;
+          });
+          statsHtml += `</div>`;
+        }
+
+        statsArea.innerHTML = statsHtml;
+      } catch(e) {
+        console.error(e);
+        statsArea.innerHTML = `
+          <div style="text-align: center; color: var(--color-danger); padding: 10px;">
+            فشل تحميل تفاصيل وإجابات المتدرب.
+          </div>
+        `;
+      }
+    };
+
+    window.toggleRrmQuizDetails = function(idx) {
+      const el = document.getElementById(`rrm-quiz-details-${idx}`);
+      if (el) {
+        if (el.style.display === "none") {
+          el.style.display = "block";
+        } else {
+          el.style.display = "none";
+        }
+      }
+    };
   </script>
 
   <!-- Report Review Modal -->
@@ -2994,6 +3471,9 @@
       <!-- Attachment -->
       <div style="margin: 12px 0; font-size: 12px;">
         <span style="font-weight: 700; color: var(--text-muted);">المرفق:</span> <span id="rrm-attachment-link">لا يوجد</span>
+      </div>
+      <!-- Trainee Progress & Quiz Answers Section -->
+      <div id="rrm-stats-area" style="margin-top: 15px; margin-bottom: 15px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); font-size: 12px; direction: rtl;">
       </div>
       <!-- Review Form -->
       <form id="rrm-form">
