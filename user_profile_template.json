@@ -1,0 +1,47 @@
+{
+  "user_profile": {
+    "personal_info": {
+      "name": "Nora Amr Elfar",
+      "email": "nora.amr.cure0467@maghawry.com",
+      "phone": "01012345678",
+      "whatsapp": "01012345678",
+      "university": "جامعة المنصورة",
+      "college": "كلية الصيدلة",
+      "squad": "الفرقة الخامسة",
+      "avatar": "data:image/svg+xml;utf8,...",
+      "nickname": "د. نورا",
+      "status": "accepted",
+      "created_at": "2026-07-08T20:11:06Z"
+    },
+    "current_status": {
+      "level": "Passengers",
+      "level_description": "المستوى الصفري"
+    },
+    "career_and_certificates": [
+      {
+        "from_level": "Passengers",
+        "to_level": "Starters",
+        "status": "approved",
+        "score": 92,
+        "certificate_url": "https://bxrtbqmckemluxzjktmf.supabase.co/storage/v1/object/public/certificates/nora_passengers_cert.png",
+        "approved_at": "2026-07-08T22:00:00Z"
+      }
+    ],
+    "lecture_watch_history": [
+      {
+        "video_id": "d3_xQ4o6N38",
+        "video_title": "آداب وأخلاقيات مهنة الصيدلة والتعامل مع الفريق",
+        "level": "Passengers",
+        "watched_at": "2026-07-08T21:15:30Z",
+        "status": "completed"
+      },
+      {
+        "video_id": "w3wHwT8w-8s",
+        "video_title": "مقدمة التدريب العملي في صيدليات آل مغاوري",
+        "level": "Passengers",
+        "watched_at": "2026-07-08T21:40:00Z",
+        "status": "completed"
+      }
+    ]
+  }
+}
