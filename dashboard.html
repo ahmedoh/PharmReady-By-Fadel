@@ -1699,10 +1699,22 @@
           });
           
           for (const [topic, vids] of Object.entries(grouped)) {
-            const topicHeader = document.createElement("li");
-            topicHeader.style.cssText = "background: var(--bg-secondary); padding: 8px 10px; margin: 8px 0 4px; font-weight: bold; border-radius: 6px; color: var(--color-primary); font-size: 12.5px;";
-            topicHeader.innerHTML = `<i class="fa-solid fa-book-open"></i> ${topic}`;
-            sidebarContainer.appendChild(topicHeader);
+            const topicGroup = document.createElement("div");
+            topicGroup.style.marginBottom = "8px";
+
+            const topicHeader = document.createElement("div");
+            topicHeader.style.cssText = "background: var(--bg-secondary); padding: 9px 12px; margin-bottom: 4px; font-weight: bold; border-radius: 8px; color: var(--color-primary); font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-color); transition: all 0.2s;";
+            
+            const hasCurrentVideo = vids.some(v => currentVideoId === (v.VideoId || v.id));
+
+            topicHeader.innerHTML = `
+              <span><i class="fa-solid fa-book-open" style="margin-left: 6px; color: var(--color-gold);"></i> ${topic}</span>
+              <i class="fa-solid fa-chevron-down playlist-topic-arrow" style="transition: transform 0.2s; font-size: 10px; color: var(--text-muted); transform: ${hasCurrentVideo ? 'rotate(0deg)' : 'rotate(-90deg)'};"></i>
+            `;
+            topicGroup.appendChild(topicHeader);
+
+            const videosContainer = document.createElement("ul");
+            videosContainer.style.cssText = `list-style: none; padding: 0; margin: 0; overflow: hidden; transition: max-height 0.3s ease; max-height: ${hasCurrentVideo ? '600px' : '0px'};`;
             
             vids.forEach(v => {
               const li = document.createElement("li");
@@ -1718,8 +1730,18 @@
               `;
               li.onclick = () => selectVideo(v.VideoId || v.id, v.Title);
               if (currentVideoId === (v.VideoId || v.id)) li.className += " active";
-              sidebarContainer.appendChild(li);
+              videosContainer.appendChild(li);
             });
+            
+            topicGroup.appendChild(videosContainer);
+            sidebarContainer.appendChild(topicGroup);
+
+            topicHeader.onclick = () => {
+              const isOpen = videosContainer.style.maxHeight !== "0px" && videosContainer.style.maxHeight !== "";
+              videosContainer.style.maxHeight = isOpen ? "0px" : "600px";
+              const arrow = topicHeader.querySelector(".playlist-topic-arrow");
+              if (arrow) arrow.style.transform = isOpen ? "rotate(-90deg)" : "rotate(0deg)";
+            };
           }
         }
       }
