@@ -1922,12 +1922,13 @@
       
       let iconClass = node.icon || 'fa-folder';
       if (!node.icon) {
-        iconClass = isFolder ? 'fa-folder' : isVideo ? 'fa-circle-play' : 'fa-file-lines';
+        iconClass = isFolder ? 'fa-folder-open' : isVideo ? 'fa-circle-play' : 'fa-file-lines';
       }
       const iconColor = isFolder ? 'var(--color-gold)' : isVideo ? '#f59e0b' : 'var(--color-primary)';
 
       header.innerHTML = `
-        <div class="curr-node-title">
+        <div class="curr-node-title" style="${isFolder ? 'cursor: pointer;' : ''} display: flex; align-items: center; gap: 8px;">
+          ${isFolder ? `<i class="fa-solid fa-chevron-down curr-tree-arrow" style="transition: transform 0.2s; font-size: 10px; margin-left: 4px; color: var(--text-muted);"></i>` : ''}
           <i class="fa-solid ${iconClass}" style="color: ${iconColor}; font-size: 14px;"></i>
           <strong>${node.title}</strong>
           ${isVideo ? `<span style="font-size: 11px; color: var(--text-muted); font-weight: normal; margin-right: 8px;">(محاضرة مرئية)</span>` : ''}
@@ -1953,6 +1954,7 @@
 
       if (isFolder) {
         const childrenContainer = document.createElement('div');
+        childrenContainer.style.display = 'block'; // Start expanded
         const children = cachedCurriculumNodes.filter(n => String(n.parent_id) === String(node.id));
         children.sort((a,b) => (parseInt(a.sort_order) || 0) - (parseInt(b.sort_order) || 0));
         
@@ -1960,6 +1962,23 @@
           childrenContainer.appendChild(createTreeNodeUI(child));
         });
         nodeEl.appendChild(childrenContainer);
+
+        // Click handler on folder title block to toggle children list
+        const titleDiv = header.querySelector('.curr-node-title');
+        if (titleDiv) {
+          titleDiv.onclick = () => {
+            const isCollapsed = childrenContainer.style.display === 'none';
+            childrenContainer.style.display = isCollapsed ? 'block' : 'none';
+            
+            const arrow = titleDiv.querySelector('.curr-tree-arrow');
+            if (arrow) arrow.style.transform = isCollapsed ? 'rotate(0deg)' : 'rotate(-90deg)';
+            
+            const icon = titleDiv.querySelector('.fa-solid.fa-folder, .fa-solid.fa-folder-open');
+            if (icon && !node.icon) {
+              icon.className = isCollapsed ? 'fa-solid fa-folder-open' : 'fa-solid fa-folder';
+            }
+          };
+        }
       }
 
       return nodeEl;
