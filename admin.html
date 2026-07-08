@@ -374,7 +374,7 @@
         <button class="admin-tab-btn" id="tab-btn-students" onclick="switchAdminTab('students')">
           <i class="fa-solid fa-users"></i> <span>قاعدة المتدربين</span>
         </button>
-        <button class="admin-tab-btn" id="tab-btn-videos" onclick="switchAdminTab('videos')">
+        <button class="admin-tab-btn" id="tab-btn-videos" onclick="switchAdminTab('videos')" style="display: none !important;">
           <i class="fa-solid fa-video-camera"></i> <span>محاضرات التدريب</span>
         </button>
         <button class="admin-tab-btn" id="tab-btn-questions" onclick="switchAdminTab('questions')">
@@ -384,7 +384,7 @@
           <i class="fa-solid fa-file-invoice"></i> <span>تقارير المتدربين</span>
         </button>
         <button class="admin-tab-btn" id="tab-btn-curriculum" onclick="switchAdminTab('curriculum')">
-          <i class="fa-solid fa-book-open"></i> <span>محتوى المستويات</span>
+          <i class="fa-solid fa-folder-tree"></i> <span>إعدادات المحاضرات</span>
         </button>
         <button class="admin-tab-btn" id="tab-btn-prices" onclick="switchAdminTab('prices')">
           <i class="fa-solid fa-tags"></i> <span>الأسعار والعروض</span>
@@ -640,7 +640,7 @@
       <!-- Panel: Curriculum & Level Content -->
       <section class="card admin-section-content" id="sec-curriculum">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-          <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-book-open" style="color: var(--color-primary);"></i> إدارة محتوى المستويات</h3>
+          <h3 class="card-title" style="margin: 0;"><i class="fa-solid fa-folder-tree" style="color: var(--color-primary);"></i> إعدادات المحاضرات والمنهج الدراسي</h3>
         </div>
 
         <!-- Level Welcome Text Editor -->
@@ -659,8 +659,8 @@
             </div>
           </div>
           <div class="form-group" style="margin-bottom: 12px;">
-            <label for="lc-welcome-html">نص الترحيب (HTML مسموح به)</label>
-            <textarea id="lc-welcome-html" rows="8" placeholder="أدخل نص الترحيب لهذا المستوى هنا... يمكنك استخدام HTML للتنسيق." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main); font-family: monospace; font-size: 13px; resize: vertical;"></textarea>
+            <label for="lc-welcome-html">نص الترحيب للمتدرّب (اكتب نصاً عادياً وسيقوم النظام بتنسيقه تلقائياً)</label>
+            <textarea id="lc-welcome-html" rows="8" placeholder="اكتب رسالة الترحيب والتعليمات هنا... لا حاجة لكتابة كود HTML." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main); font-family: inherit; font-size: 13.5px; resize: vertical; line-height: 1.6;"></textarea>
           </div>
           <button class="btn btn-primary" onclick="saveLevelContent()" style="cursor: pointer;"><i class="fa-solid fa-floppy-disk"></i> حفظ نص الترحيب</button>
         </div>
@@ -1828,12 +1828,19 @@
     let cachedCurriculumNodes = [];
 
     window.toggleContentEditor = function(type) {
-      const group = document.getElementById('curr-content-editor-group');
-      if (!group) return;
+      const contentGroup = document.getElementById('curr-content-editor-group');
+      const videoGroup = document.getElementById('curr-video-url-group');
+      if (!contentGroup || !videoGroup) return;
+
       if (type === 'content') {
-        group.style.display = 'block';
+        contentGroup.style.display = 'block';
+        videoGroup.style.display = 'none';
+      } else if (type === 'video') {
+        contentGroup.style.display = 'none';
+        videoGroup.style.display = 'block';
       } else {
-        group.style.display = 'none';
+        contentGroup.style.display = 'none';
+        videoGroup.style.display = 'none';
       }
     };
 
@@ -1885,7 +1892,7 @@
       container.innerHTML = '';
 
       if (cachedCurriculumNodes.length === 0) {
-        container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding: 20px;">لا توجد عناصر منهج أو مجلدات مضافة بعد.</div>`;
+        container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding: 20px;">لا توجد عناصر منهج أو محاضرات مضافة بعد.</div>`;
         return;
       }
 
@@ -1910,16 +1917,23 @@
       header.className = 'curr-node-header';
 
       const isFolder = node.type === 'folder' || !node.type;
-      const iconClass = node.icon || (isFolder ? 'fa-folder' : 'fa-file-lines');
-      const iconColor = isFolder ? 'var(--color-gold)' : 'var(--color-primary)';
+      const isVideo = node.type === 'video';
+      
+      let iconClass = node.icon || 'fa-folder';
+      if (!node.icon) {
+        iconClass = isFolder ? 'fa-folder' : isVideo ? 'fa-circle-play' : 'fa-file-lines';
+      }
+      const iconColor = isFolder ? 'var(--color-gold)' : isVideo ? '#f59e0b' : 'var(--color-primary)';
 
       header.innerHTML = `
         <div class="curr-node-title">
           <i class="fa-solid ${iconClass}" style="color: ${iconColor};"></i>
           <span>${node.title}</span>
+          ${isVideo ? `<span style="font-size: 11px; color: var(--text-muted); font-weight: normal; margin-right: 8px;">(محاضرة مرئية)</span>` : ''}
           <span style="font-size: 10px; color: var(--text-muted); font-weight: normal; margin-right: 10px;">(ترتيب: ${node.sort_order || 1})</span>
         </div>
-        <div class="curr-node-actions">
+        <div class="curr-node-actions" style="display: flex; gap: 6px;">
+          ${isVideo ? `<button class="btn" style="padding:4px 8px; font-size:11px; cursor:pointer; background: rgba(251,191,36,0.15); color: var(--color-gold); border: 1px solid rgba(251,191,36,0.3);" onclick="openVideoQuestionsModal('${node.video_id || node.id}', '${node.title.replace(/'/g, "\\'")}')" title="أسئلة المحاضرة"><i class="fa-solid fa-circle-question"></i> الأسئلة</button>` : ''}
           ${isFolder ? `<button class="btn btn-primary" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="openCurriculumModal(null, '${node.level}', null, '${node.id}')" title="إضافة عنصر فرعي"><i class="fa-solid fa-plus"></i></button>` : ''}
           <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="openCurriculumModal('${node.id}', '${node.level}', ${node.sort_order}, '${node.parent_id || ''}')" title="تعديل"><i class="fa-solid fa-pen"></i></button>
           <button class="btn btn-danger" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="deleteCurriculumItem('${node.id}')" title="حذف"><i class="fa-solid fa-trash"></i></button>
@@ -1951,6 +1965,7 @@
       document.getElementById('curr-item-order').value = order || '1';
       document.getElementById('curr-item-title').value = '';
       document.getElementById('curr-item-icon').value = '';
+      document.getElementById('curr-item-video-url').value = '';
       document.getElementById('curr-item-content').value = '';
 
       updateParentFolderDropdown(parentId);
@@ -1961,7 +1976,13 @@
           document.getElementById('curr-item-title').value = found.title || '';
           document.getElementById('curr-item-type').value = found.type || 'folder';
           document.getElementById('curr-item-icon').value = found.icon || '';
-          document.getElementById('curr-item-content').value = found.content_html || '';
+          
+          if (found.type === 'video') {
+            document.getElementById('curr-item-video-url').value = found.video_url || found.content_html || '';
+          } else {
+            document.getElementById('curr-item-content').value = found.content_html || '';
+          }
+          
           toggleContentEditor(found.type || 'folder');
         }
       } else {
@@ -2709,7 +2730,23 @@
           const title = document.getElementById('curr-item-title').value.trim();
           const icon = document.getElementById('curr-item-icon').value.trim();
           const content = document.getElementById('curr-item-content').value.trim();
+          const videoUrl = document.getElementById('curr-item-video-url').value.trim();
           const order = parseInt(document.getElementById('curr-item-order').value) || 1;
+
+          const extractVideoIdLocal = (url) => {
+            if (!url) return "";
+            if (url.includes("drive.google.com")) {
+              const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+              return m ? m[1] : url;
+            }
+            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[2].length === 11) ? match[2] : url;
+          };
+
+          const payloadContent = type === 'content' ? content : type === 'video' ? videoUrl : '';
+          const vidId = type === 'video' ? extractVideoIdLocal(videoUrl) : '';
+
           try {
             const r = await apiRequest({ 
               action: id ? 'adminUpdateCurriculumNode' : 'adminAddCurriculumNode', 
@@ -2720,7 +2757,9 @@
               parent_id,
               title, 
               icon,
-              content_html: type === 'content' ? content : '', 
+              content_html: payloadContent, 
+              video_url: type === 'video' ? videoUrl : '',
+              video_id: vidId,
               sort_order: order 
             });
             if (r.success) {
@@ -4071,6 +4110,7 @@
               <select id="curr-item-type" required onchange="toggleContentEditor(this.value)">
                 <option value="folder">مجلد (يحمل مجلدات/محتويات بداخله) 📁</option>
                 <option value="content">ملف محتوى (صفحة شرح أو مرجع علمي) 📄</option>
+                <option value="video">محاضرة فيديو (رابط فيديو YouTube/Drive) 🎬</option>
               </select>
             </div>
           </div>
@@ -4095,14 +4135,21 @@
             </div>
             <div class="form-group">
               <label for="curr-item-icon">رمز أيقونة (FontAwesome class - اختياري)</label>
-              <input type="text" id="curr-item-icon" placeholder="مثال: fa-book-open">
+              <input type="text" id="curr-item-icon" placeholder="مثال: fa-video">
             </div>
           </div>
 
-          <div class="form-group" id="curr-content-editor-group">
-            <label for="curr-item-content">محتوى الصفحة العلمي (تنسيق نصوص غني)</label>
-            <!-- Rich toolbar will be attached here dynamically -->
-            <textarea id="curr-item-content" rows="8" placeholder="اكتب الشرح أو المحتوى العلمي هنا... يمكنك استخدام HTML للتنسيق أيضاً." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main); font-family: monospace; font-size: 12px; resize: vertical;"></textarea>
+          <!-- Video URL Group (shows when type is video) -->
+          <div class="form-group" id="curr-video-url-group" style="margin-bottom: 12px; display: none;">
+            <label for="curr-item-video-url">رابط فيديو المحاضرة (YouTube أو Google Drive) <span class="required">*</span></label>
+            <input type="text" id="curr-item-video-url" placeholder="مثال: https://www.youtube.com/watch?v=XXXXX">
+          </div>
+
+          <!-- Document content Group (shows when type is content) -->
+          <div class="form-group" id="curr-content-editor-group" style="display: none;">
+            <label for="curr-item-content">محتوى شرح الصفحة المكتوب (اكتب نصاً عادياً، وسيرتبه النظام تلقائياً)</label>
+            <p style="font-size: 11px; color: var(--text-muted); margin: 2px 0 6px;">يمكنك كتابة أسطر وفقرات عادية. لبدء نقطة، ابدأ السطر بـ (-) أو (*) وسيفهمها النظام تلقائياً.</p>
+            <textarea id="curr-item-content" rows="10" placeholder="اكتب الشرح العلمي هنا باللغة العربية بأسطر وفقرات واضحة..." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main); font-family: inherit; font-size: 13.5px; resize: vertical; line-height: 1.6;"></textarea>
           </div>
         </div>
         <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">

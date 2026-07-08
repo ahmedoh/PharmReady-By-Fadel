@@ -1250,8 +1250,12 @@
       });
 
       const welcomeDesc = document.getElementById("dashboard-welcome-desc");
-      if (welcomeDesc && langData[currentLang].main_subtitle) {
-        welcomeDesc.innerHTML = langData[currentLang].main_subtitle;
+      if (welcomeDesc) {
+        if (window.levelWelcomeText) {
+          welcomeDesc.innerHTML = formatPlainTextToHtml(window.levelWelcomeText);
+        } else if (langData[currentLang].main_subtitle) {
+          welcomeDesc.innerHTML = langData[currentLang].main_subtitle;
+        }
       }
 
       renderPlaylist();
@@ -1296,6 +1300,7 @@
           examQuestions = response.questions || []; // Save dynamically loaded questions from Google Sheets
           allVideoQuestions = response.videoQuestions || [];
           window.completedPromotions = response.completedPromotions || [];
+          window.levelWelcomeText = response.welcomeHtml || "";
           traineeProgress = {
             ExamAttempts: response.examAttempts || 0,
             LockoutUntil: response.lockoutUntil || null
@@ -1513,6 +1518,37 @@
       `;
     }
 
+    function formatPlainTextToHtml(text) {
+      if (!text) return "";
+      
+      // Escape HTML entities to prevent formatting breaks
+      let escaped = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      
+      // Convert URLs to clickable links
+      escaped = escaped.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: var(--color-primary); text-decoration: underline;">$1</a>');
+      
+      // Split into paragraphs (by double newline)
+      const segments = escaped.split(/\n\s*\n/);
+      return segments.map(seg => {
+        const lines = seg.split('\n');
+        const formattedLines = lines.map(line => {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+            return `<li style="margin-right: 20px; list-style-type: disc; margin-bottom: 4px;">${trimmed.substring(1).trim()}</li>`;
+          }
+          return line;
+        });
+
+        if (formattedLines.some(l => l.startsWith('<li'))) {
+          return `<ul style="margin-bottom: 12px; padding-right: 20px;">${formattedLines.join('')}</ul>`;
+        }
+        return `<p style="margin-bottom: 12px; line-height: 1.8; text-align: justify;">${formattedLines.join('<br>')}</p>`;
+      }).join('');
+    }
+
     function renderCurriculumTree() {
       const treeContainer = document.getElementById("nested-curriculum-tree");
       if (!treeContainer) return;
@@ -1523,13 +1559,14 @@
         return;
       }
 
-      // Build hierarchy
-      const roots = curriculumData.filter(n => !n.parent_id);
+      // Build hierarchy, excluding video nodes from tree list
+      const roots = curriculumData.filter(n => !n.parent_id && n.type !== 'video');
       roots.sort((a,b) => (parseInt(a.sort_order) || 0) - (parseInt(b.sort_order) || 0));
 
       if (roots.length === 0) {
         // Fallback for flat lists
-        curriculumData.forEach((item, idx) => {
+        const cleanFlat = curriculumData.filter(n => n.type !== 'video');
+        cleanFlat.forEach((item, idx) => {
           treeContainer.appendChild(createAccordionNodeUI(item, idx));
         });
         return;
@@ -1565,7 +1602,7 @@
         const bodyInner = document.createElement("div");
         bodyInner.style.cssText = "padding: 10px 15px 5px;";
 
-        const children = curriculumData.filter(n => String(n.parent_id) === String(node.id));
+        const children = curriculumData.filter(n => String(n.parent_id) === String(node.id) && n.type !== 'video');
         children.sort((a,b) => (parseInt(a.sort_order) || 0) - (parseInt(b.sort_order) || 0));
 
         if (children.length === 0) {
@@ -1607,7 +1644,7 @@
         const bodyInner = document.createElement("div");
         bodyInner.className = "accordion-body-inner";
         bodyInner.style.cssText = "padding: 15px; font-size: 13.5px; line-height: 1.8; color: var(--text-main);";
-        bodyInner.innerHTML = node.content_html || '';
+        bodyInner.innerHTML = formatPlainTextToHtml(node.content_html || '');
 
         body.appendChild(bodyInner);
         card.appendChild(header);

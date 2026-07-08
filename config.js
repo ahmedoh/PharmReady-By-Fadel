@@ -409,25 +409,79 @@ function handleDemoRequest(params) {
       LockoutUntil: null
     };
 
+    // Resolve topic name helper
+    const getTopicName = (parentId, nodes) => {
+      if (!parentId) return "عام";
+      const parent = nodes.find(n => String(n.id) === String(parentId));
+      return parent ? (parent.title || parent.Title) : "عام";
+    };
+
+    // Extract videos from tree nodes
+    const videosFromTree = sortedCurr
+      .filter(c => c.type === 'video')
+      .map(c => {
+        const url = c.video_url || c.content_html || c.ContentHtml || c.content || "";
+        const vidId = c.video_id || extractVideoIdFromUrl(url) || String(c.id);
+        return {
+          VideoId: vidId,
+          Title: c.title || c.Title || "",
+          Url: url || `https://www.youtube.com/watch?v=${vidId}`,
+          Level: c.level || c.Level || currentLevel,
+          Topic: getTopicName(c.parent_id, sortedCurr)
+        };
+      });
+
+    // Combine legacy videos table and tree videos
+    const seenVideoIds = new Set();
+    const combinedVideos = [];
+
+    videosFromTree.forEach(v => {
+      if (v.VideoId && !seenVideoIds.has(v.VideoId)) {
+        seenVideoIds.add(v.VideoId);
+        combinedVideos.push(v);
+      }
+    });
+
+    filteredVideos.forEach(v => {
+      const vidId = String(v.VideoId || v.url || v.Url || v.id || "");
+      if (vidId && !seenVideoIds.has(vidId)) {
+        seenVideoIds.add(vidId);
+        combinedVideos.push({
+          VideoId: vidId,
+          Title: v.Title || v.title || "",
+          Url: v.Url || v.url || `https://www.youtube.com/watch?v=${vidId}`,
+          Level: v.Level || v.level || currentLevel,
+          Topic: v.Topic || v.topic || "عام"
+        });
+      }
+    });
+
     return {
       success: true,
-      videos: filteredVideos,
+      videos: combinedVideos,
       watched: watched,
       currentLevel: currentLevel,
       completedLevels: completedLevels,
       pendingPromotion: pendingPromotion,
       questions: levelQuestions,
       videoQuestions: videoQuestions,
-      curriculum: sortedCurr.map(c => ({
-        id: String(c.Id || c.id || ''),
-        title: c.Title || c.title || '',
-        content_html: c.ContentHtml || c.content_html || c.content || '',
-        level: c.Level || c.level || '',
-        sort_order: c.SortOrder || c.sort_order || 1,
-        parent_id: c.parent_id || null,
-        type: c.type || 'folder',
-        icon: c.icon || ''
-      })),
+      curriculum: sortedCurr.map(c => {
+        const isVid = c.type === 'video';
+        const url = c.video_url || (isVid ? (c.content_html || c.ContentHtml || c.content || "") : "") || "";
+        const vidId = c.video_id || (isVid ? extractVideoIdFromUrl(url) : "") || "";
+        return {
+          id: String(c.Id || c.id || ''),
+          title: c.Title || c.title || '',
+          content_html: isVid ? "" : (c.ContentHtml || c.content_html || c.content || ''),
+          level: c.Level || c.level || '',
+          sort_order: c.SortOrder || c.sort_order || 1,
+          parent_id: c.parent_id || null,
+          type: c.type || 'folder',
+          icon: c.icon || '',
+          video_url: url,
+          video_id: vidId
+        };
+      }),
       welcomeHtml: welcomeHtml,
       examAttempts: lp.ExamAttempts || 0,
       lockoutUntil: lp.LockoutUntil || null,
@@ -1109,7 +1163,9 @@ function handleDemoRequest(params) {
       title: params.title || "",
       content_html: params.content_html || "",
       icon: params.icon || "",
-      sort_order: parseInt(params.sort_order) || 1
+      sort_order: parseInt(params.sort_order) || 1,
+      video_url: params.video_url || "",
+      video_id: params.video_id || ""
     };
     list.push(newNode);
     saveTable("Curriculum", list);
@@ -1127,6 +1183,9 @@ function handleDemoRequest(params) {
       if (params.icon !== undefined) list[idx].icon = params.icon;
       if (params.sort_order !== undefined) list[idx].sort_order = parseInt(params.sort_order) || 1;
       if (params.type !== undefined) list[idx].type = params.type;
+      if (params.parent_id !== undefined) list[idx].parent_id = params.parent_id;
+      if (params.video_url !== undefined) list[idx].video_url = params.video_url;
+      if (params.video_id !== undefined) list[idx].video_id = params.video_id;
       saveTable("Curriculum", list);
       return { success: true, message: "تم تحديث العنصر بنجاح." };
     }
@@ -1203,12 +1262,17 @@ function handleDemoRequest(params) {
 
 
 
-// Utility function to extract YouTube ID
-function extractYouTubeId(url) {
+function extractVideoIdFromUrl(url) {
+  if (!url) return "";
+  if (url.includes("drive.google.com")) {
+    const m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    return m ? m[1] : url;
+  }
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
   const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
+  return (match && match[2].length === 11) ? match[2] : url;
 }
+
 
 // Global Toast / Popup helper — large centered modal style
 function showToast(message, type = "success") {
@@ -1448,21 +1512,67 @@ async function handleSupabaseRequest(params) {
         .maybeSingle();
       const welcomeHtml = lvlCont ? lvlCont.welcome_html : '';
 
+      // Resolve topic name helper
+      const getTopicName = (parentId, nodes) => {
+        if (!parentId) return "عام";
+        const parent = nodes.find(n => String(n.id) === String(parentId));
+        return parent ? parent.title : "عام";
+      };
+
+      // Extract videos from tree nodes
+      const videosFromTree = sortedCurr
+        .filter(c => c.type === 'video')
+        .map(c => {
+          const url = c.video_url || c.content_html || "";
+          const vidId = c.video_id || extractVideoIdFromUrl(url) || String(c.id);
+          return {
+            VideoId: vidId,
+            Title: c.title || "",
+            Url: url || `https://www.youtube.com/watch?v=${vidId}`,
+            Level: c.level || currentLevel,
+            Topic: getTopicName(c.parent_id, sortedCurr)
+          };
+        });
+
+      // Combine legacy videos table and tree videos
+      const seenVideoIds = new Set();
+      const combinedVideos = [];
+
+      videosFromTree.forEach(v => {
+        if (v.VideoId && !seenVideoIds.has(v.VideoId)) {
+          seenVideoIds.add(v.VideoId);
+          combinedVideos.push(v);
+        }
+      });
+
+      // Sort legacy videos
+      const sortedLegacyVideos = [...(videos || [])].sort((a, b) => {
+        const orderA = parseInt(a.sort_order || a.index || a.order || 9999);
+        const orderB = parseInt(b.sort_order || b.index || b.order || 9999);
+        return orderA - orderB;
+      });
+
+      sortedLegacyVideos.forEach(v => {
+        const vidId = String(v.video_id || v.url || v.id || "");
+        if (vidId && !seenVideoIds.has(vidId)) {
+          seenVideoIds.add(vidId);
+          combinedVideos.push({
+            VideoId: vidId,
+            Title: v.title || "",
+            Url: v.url || `https://www.youtube.com/watch?v=${vidId}`,
+            Level: v.level || currentLevel,
+            Topic: v.topic || "عام"
+          });
+        }
+      });
+
       return {
         success: true,
-        videos: [...(videos || [])].sort((a, b) => {
-          const orderA = parseInt(a.sort_order || a.index || a.order || 9999);
-          const orderB = parseInt(b.sort_order || b.index || b.order || 9999);
-          return orderA - orderB;
-        }).map(v => ({
-          VideoId: String(v.video_id || v.url || v.id),
-          Title: v.title,
-          Url: v.url || `https://www.youtube.com/watch?v=${v.video_id}`,
-          Level: v.level
-        })),
+        videos: combinedVideos,
         watched: watched,
         currentLevel: currentLevel,
         completedLevels: completedLevels,
+        whiteboardStatus: null, // compatibility
         pendingPromotion: pendingPromotion,
         questions: (levelQuestions || []).map(q => ({
           q: q.question_ar,
@@ -1480,16 +1590,23 @@ async function handleSupabaseRequest(params) {
           correct_index: parseInt(vq.correct_index) || 0,
           id: String(vq.id)
         })),
-        curriculum: sortedCurr.map(c => ({
-          id: String(c.id),
-          title: c.title,
-          content_html: c.content_html || '',
-          level: c.level,
-          sort_order: c.sort_order,
-          parent_id: c.parent_id || null,
-          type: c.type || 'folder',
-          icon: c.icon || ''
-        })),
+        curriculum: sortedCurr.map(c => {
+          const isVid = c.type === 'video';
+          const url = c.video_url || (isVid ? c.content_html : "") || "";
+          const vidId = c.video_id || (isVid ? extractVideoIdFromUrl(url) : "") || "";
+          return {
+            id: String(c.id),
+            title: c.title,
+            content_html: isVid ? "" : (c.content_html || ''),
+            level: c.level,
+            sort_order: c.sort_order,
+            parent_id: c.parent_id || null,
+            type: c.type || 'folder',
+            icon: c.icon || '',
+            video_url: url,
+            video_id: vidId
+          };
+        }),
         welcomeHtml: welcomeHtml,
         examAttempts: examAttempts,
         lockoutUntil: lockoutUntil,
