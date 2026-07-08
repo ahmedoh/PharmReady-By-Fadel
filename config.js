@@ -2613,7 +2613,6 @@ async function handleSupabaseRequest(params) {
       // parent_id and type are optional new columns — use try/catch for backward compat
       if (params.parent_id !== undefined) insertPayload.parent_id = params.parent_id || null;
       if (params.type !== undefined) insertPayload.type = params.type || "folder";
-      if (params.icon !== undefined) insertPayload.icon = params.icon || "";
       const { data: ins, error } = await supabaseClient
         .from('curriculum')
         .insert([insertPayload])
@@ -2647,7 +2646,6 @@ async function handleSupabaseRequest(params) {
       if (params.title !== undefined) updatePayload.title = params.title;
       if (params.content_html !== undefined) updatePayload.content_html = params.content_html;
       if (params.sort_order !== undefined) updatePayload.sort_order = parseInt(params.sort_order) || 1;
-      if (params.icon !== undefined) updatePayload.icon = params.icon;
       if (params.type !== undefined) updatePayload.type = params.type;
       const { error } = await supabaseClient
         .from('curriculum')
