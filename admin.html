@@ -11,6 +11,7 @@
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
   <style>
     .visual-editor {
       min-height: 120px;
@@ -592,6 +593,22 @@
           </label>
           <p style="margin-top: 8px; font-size: 12px; color: var(--text-muted);">عند إيقاف التفعيل، يمكن للمشرفين رؤية قائمة التقارير فقط ولا يستطيعون فتح محتواها. هذا الإعداد للمالك فقط.</p>
           <p id="reports-perm-owner-only" style="margin-top: 8px; font-size: 12px; color: var(--color-danger); display: none;">⚠️ هذا الإعداد متاح للمالك فقط.</p>
+        </div>
+
+        <div class="admin-card" style="padding: 20px; margin-top: 15px;">
+          <h3 style="margin-bottom: 15px; color: var(--color-primary);"><i class="fa-brands fa-telegram" style="color: #24A1DE;"></i> إشعارات تيليجرام الفورية (Telegram Notifications)</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">تمكنك من استقبال إشعارات فورية على هاتفك مباشرة في التليجرام عند تسجيل أي متدرب جديد في المنصة.</p>
+          
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="settings-telegram-token" style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold;">مفتاح البوت (Bot Token)</label>
+            <input type="password" id="settings-telegram-token" placeholder="أدخل مفتاح توكن بوت التليجرام (مثال: 123456:ABC...)" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-main);">
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label for="settings-telegram-chat-id" style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold;">معرف الدردشة الخاص بك (Admin Chat ID)</label>
+            <input type="text" id="settings-telegram-chat-id" placeholder="أدخل معرّف الشات الخاص بك (مثال: 987654321)" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-main);">
+          </div>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">💡 يمكنك الحصول على معرّف Chat ID بمراسلة البوت <code>@userinfobot</code> على تليجرام، وتوليد مفتاح البوت بمراسلة البوت الرسمي <code>@BotFather</code>.</p>
         </div>
       </section>
 
@@ -2082,7 +2099,31 @@
 
     function renderNotifs() {
       const tbody = document.getElementById("notifs-table-body");
-      tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">لا يوجد إشعارات نشطة.</td></tr>`;
+      if (!tbody) return;
+      
+      const list = allProgress || [];
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">لا يوجد إشعارات نشطة.</td></tr>`;
+        return;
+      }
+      
+      tbody.innerHTML = "";
+      list.forEach(n => {
+        const tr = document.createElement("tr");
+        
+        // Find trainee name from allTrainees
+        const t = allTrainees.find(x => String(x.Email).trim().toLowerCase() === String(n.Email).trim().toLowerCase());
+        const displayName = t ? t.Name || t.name || n.Email : (n.Email === 'all' ? '📢 إرسال عام للجميع' : n.Email);
+        
+        const dateStr = n.Timestamp ? new Date(n.Timestamp).toLocaleString('ar-EG') : 'غير محدد';
+        
+        tr.innerHTML = `
+          <td><strong>${displayName}</strong></td>
+          <td style="white-space: pre-line; max-width: 400px; text-align: right; line-height: 1.5; font-size: 13px;">${n.Message}</td>
+          <td><span style="font-size: 11px; color: var(--text-muted); font-family: monospace;">${dateStr}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
     // ACTIONS TRIGGERS
@@ -2740,6 +2781,12 @@
     document.getElementById('btn-save-settings').addEventListener('click', () => {
       const reportsOpen = document.getElementById('setting-reports-open').checked;
       localStorage.setItem('setting_reports_open', reportsOpen ? 'true' : 'false');
+      
+      const tgToken = document.getElementById('settings-telegram-token').value.trim();
+      const tgChatId = document.getElementById('settings-telegram-chat-id').value.trim();
+      localStorage.setItem('maghawry_telegram_token', tgToken);
+      localStorage.setItem('maghawry_telegram_chat_id', tgChatId);
+      
       showToast('✅ تم حفظ الإعدادات بنجاح!', 'success');
     });
 
@@ -2748,6 +2795,8 @@
     if (savedReportsOpen === 'false') {
       document.getElementById('setting-reports-open').checked = false;
     }
+    document.getElementById('settings-telegram-token').value = localStorage.getItem('maghawry_telegram_token') || '';
+    document.getElementById('settings-telegram-chat-id').value = localStorage.getItem('maghawry_telegram_chat_id') || '';
 
     const geminiKeyInput = document.getElementById("settings-gemini-key");
     if (geminiKeyInput) {
@@ -2832,6 +2881,94 @@
               loadAdminReports();
             } else showToast(r.message || 'خطأ في التحديث', 'error');
           } catch(err) { console.error(err); }
+        });
+      }
+
+      // Notifications Form Logic
+      const targetSelect = document.getElementById("notif-target");
+      const targetSpecificDiv = document.getElementById("notif-target-specific");
+      if (targetSelect && targetSpecificDiv) {
+        targetSelect.addEventListener("change", (e) => {
+          targetSpecificDiv.style.display = e.target.value === "SPECIFIC" ? "block" : "none";
+        });
+      }
+
+      const btnSendNotif = document.getElementById("btn-send-notif");
+      if (btnSendNotif) {
+        btnSendNotif.addEventListener("click", async () => {
+          const target = document.getElementById("notif-target").value;
+          const targetInput = document.getElementById("notif-target-input").value.trim();
+          const title = document.getElementById("notif-title").value.trim();
+          const message = document.getElementById("notif-msg").value.trim();
+          
+          if (!title || !message) {
+            showToast("يرجى كتابة عنوان ونص الإشعار أولاً.", "error");
+            return;
+          }
+          
+          let trainee = null;
+          if (target === "SPECIFIC") {
+            if (!targetInput) {
+              showToast("يرجى إدخال بريد أو هاتف المتدرب المستهدف.", "error");
+              return;
+            }
+            // Find trainee to verify they exist and get details
+            trainee = allTrainees.find(t => String(t.Email).trim().toLowerCase() === targetInput.toLowerCase() || String(t.Phone).trim() === targetInput);
+            if (!trainee) {
+              showToast("فشل: لم يتم العثور على متدرب بهذا البريد أو الهاتف في قاعدة البيانات.", "error");
+              return;
+            }
+          }
+          
+          btnSendNotif.disabled = true;
+          btnSendNotif.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري الإرسال...';
+          
+          try {
+            const response = await apiRequest({
+              action: "adminSendNotification",
+              adminPassword,
+              target,
+              targetInput: target === "SPECIFIC" ? (trainee.Email || trainee.email || targetInput) : "all",
+              title,
+              message
+            });
+            
+            if (response.success) {
+              showToast("✅ تم إرسال وحفظ الإشعار بنجاح!", "success");
+              
+              // If target is a specific trainee, open WhatsApp
+              if (target === "SPECIFIC" && trainee) {
+                let phone = trainee.Phone || trainee.phone || "";
+                if (phone) {
+                  if (phone.startsWith("01")) {
+                    phone = "2" + phone;
+                  } else if (phone.startsWith("1")) {
+                    phone = "20" + phone;
+                  }
+                  const combinedMsg = `📢 *${title}*\n\n${message}`;
+                  const whatsappUrl = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(combinedMsg)}`;
+                  window.open(whatsappUrl, "_blank");
+                }
+              }
+              
+              // Clear fields
+              document.getElementById("notif-title").value = "";
+              document.getElementById("notif-msg").value = "";
+              document.getElementById("notif-target-input").value = "";
+              
+              // Reload
+              await loadNotifs();
+              renderNotifs();
+            } else {
+              showToast(response.message || "حدث خطأ أثناء الإرسال.", "error");
+            }
+          } catch (err) {
+            console.error(err);
+            showToast("حدث خطأ في الاتصال بالخادم.", "error");
+          } finally {
+            btnSendNotif.disabled = false;
+            btnSendNotif.innerHTML = '<i class="fa-solid fa-paper-plane"></i> إرسال الإشعار الآن';
+          }
         });
       }
     });
@@ -4008,6 +4145,15 @@
       ctx.fillText("أ.د. عبد العزيز المغاوري", 950, 720);
       
       return canvas.toDataURL("image/png");
+    }
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(reg => console.log('SW registered:', reg.scope))
+          .catch(err => console.log('SW registration failed:', err));
+      });
     }
   </script>
 

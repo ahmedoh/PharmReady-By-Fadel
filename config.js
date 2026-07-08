@@ -740,6 +740,45 @@ function handleDemoRequest(params) {
     }
     return { success: true, notifications: getTable("Notifications") };
     
+  } else if (action === "adminSendNotification") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    const target = params.target || "ALL";
+    const targetInput = String(params.targetInput || "").trim();
+    const title = String(params.title || "").trim();
+    const message = String(params.message || "").trim();
+    
+    if (!title || !message) {
+      return { success: false, message: "يجب كتابة العنوان ونص الإشعار." };
+    }
+    
+    const combinedMsg = `📢 ${title}\n\n${message}`;
+    const list = getTable("Notifications") || [];
+    
+    if (target === "ALL") {
+      list.push({
+        id: String(Date.now()),
+        email: "all",
+        message: combinedMsg,
+        created_at: new Date().toISOString()
+      });
+    } else {
+      const trainees = getTable("Trainees") || [];
+      const t = trainees.find(x => String(x.Email).trim().toLowerCase() === targetInput.toLowerCase() || String(x.Phone).trim() === targetInput);
+      if (!t) {
+        return { success: false, message: "لم يتم العثور على متدرب بهذا البريد أو الهاتف." };
+      }
+      list.push({
+        id: String(Date.now()),
+        email: String(t.Email).trim().toLowerCase(),
+        message: combinedMsg,
+        created_at: new Date().toISOString()
+      });
+    }
+    saveTable("Notifications", list);
+    return { success: true, message: "تم إرسال الإشعار بنجاح!" };
+
   } else if (action === "adminGetPromotions") {
     if (!verifyLocalAdmin(params.adminPassword)) {
       return { success: false, message: "غير مصرح بالدخول." };
@@ -1387,6 +1426,28 @@ async function handleSupabaseRequest(params) {
     return !error && data !== null;
   };
 
+  const sendTelegramNotification = async (text) => {
+    const token = localStorage.getItem("maghawry_telegram_token") || "";
+    const chatId = localStorage.getItem("maghawry_telegram_chat_id") || "";
+    if (!token || !chatId) {
+      console.warn("Telegram configurations are missing. Skipping notification.");
+      return;
+    }
+    try {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: text,
+          parse_mode: "Markdown"
+        })
+      });
+    } catch (err) {
+      console.error("Telegram notification failed:", err);
+    }
+  };
+
   try {
     if (action === "login") {
       const email = String(params.email).trim().toLowerCase();
@@ -1721,6 +1782,18 @@ async function handleSupabaseRequest(params) {
         }]);
         
       if (error) throw error;
+
+      // Send real-time Telegram notification to admin
+      const notifText = `🔔 *طلب انضمام جديد للمنصة!*\n\n` +
+                        `👤 *الاسم:* ${params.name}\n` +
+                        `📞 *الهاتف:* ${phone}\n` +
+                        `💬 *واتساب:* ${params.whatsApp || 'غير محدد'}\n` +
+                        `🎓 *الجامعة:* ${params.university || 'غير محدد'}\n` +
+                        `🏢 *الفرع:* ${params.trainingBranch || 'غير محدد'}\n` +
+                        `📚 *المستوى المطلوب:* ${params.targetLevel || 'Passengers'}\n\n` +
+                        `يرجى مراجعة طلب الاشتراك من لوحة الإدارة للقبول أو الرفض.`;
+      sendTelegramNotification(notifText).catch(e => console.error(e));
+
       return { success: true, message: "تم إرسال طلب الاشتراك بنجاح! يرجى الانتظار لتفعيل الحساب." };
 
     } else if (action === "saveVideoQuestions") {
@@ -2421,9 +2494,51 @@ async function handleSupabaseRequest(params) {
         }))
       };
       
+    } else if (action === "adminSendNotification") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const target = params.target || "ALL";
+      const targetInput = String(params.targetInput || "").trim();
+      const title = String(params.title || "").trim();
+      const message = String(params.message || "").trim();
+      
+      if (!title || !message) {
+        return { success: false, message: "يجب كتابة العنوان ونص الإشعار." };
+      }
+      
+      const combinedMsg = `📢 ${title}\n\n${message}`;
+      
+      if (target === "ALL") {
+        const { error } = await supabaseClient
+          .from('notifications')
+          .insert([{ email: 'all', message: combinedMsg }]);
+        if (error) throw error;
+      } else {
+        const { data: t, error: tErr } = await supabaseClient
+          .from('trainees')
+          .select('email')
+          .or(`email.ilike.${targetInput},phone.eq.${targetInput}`)
+          .maybeSingle();
+          
+        if (tErr || !t) {
+          return { success: false, message: "لم يتم العثور على متدرب بهذا البريد أو الهاتف." };
+        }
+        
+        const { error } = await supabaseClient
+          .from('notifications')
+          .insert([{ email: t.email, message: combinedMsg }]);
+        if (error) throw error;
+      }
+      return { success: true, message: "تم إرسال الإشعار بنجاح!" };
+      
     } else if (action === "getTraineeNotifications") {
       const email = String(params.email).trim().toLowerCase();
-      const { data, error } = await supabaseClient.from('notifications').select('*').ilike('email', email).order('created_at', { ascending: false });
+      const { data, error } = await supabaseClient
+        .from('notifications')
+        .select('*')
+        .or(`email.ilike.${email},email.eq.all,email.eq.ALL`)
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return {
         success: true,
