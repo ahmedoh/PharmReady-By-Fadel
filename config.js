@@ -29,10 +29,34 @@ console.log(SUPABASE_URL && SUPABASE_KEY ? "🚀 Running in SUPABASE MODE" : (is
 function updateGeminiConfig() {
   const key = localStorage.getItem("maghawry_gemini_key") || "";
   window.GEMINI_API_KEY = key;
-  window.GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+  window.GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
 }
 updateGeminiConfig();
 window.updateGeminiConfig = updateGeminiConfig;
+
+/**
+ * API Request Wrapper
+ */
+// Utility to normalize video casings to be both lowercase and uppercase keys
+function normalizeVideos(videos) {
+  if (!Array.isArray(videos)) return videos;
+  return videos.map(v => {
+    const vid = v.VideoId || v.url || v.Url || v.id || "";
+    const url = v.Url || v.url || "";
+    const title = v.Title || v.title || "";
+    const level = v.Level || v.level || "Passengers";
+    const order = v.Order || v.order || v.sort_order || v.Index || 1;
+    const dbId = v.id || v.VideoId || "";
+    return {
+      ...v,
+      VideoId: vid, id: dbId,
+      Title: title, title: title,
+      Url: url, url: url,
+      Level: level, level: level,
+      Order: order, order: order, sort_order: order
+    };
+  });
+}
 
 /**
  * API Request Wrapper
@@ -59,37 +83,44 @@ async function apiRequest(params) {
     }
   }
 
+  let result;
   // Intercept and route to Supabase handler if configured
   if (SUPABASE_URL && SUPABASE_KEY && window.supabase) {
-    return handleSupabaseRequest(params);
+    result = await handleSupabaseRequest(params);
+  } else if (isDemoMode) {
+    result = await handleDemoRequest(params);
+  } else {
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: JSON.stringify(params)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+      
+      result = await response.json();
+    } catch (error) {
+      console.error("API Call Failed:", error);
+      result = {
+        success: false,
+        message: "فشل الاتصال بقاعدة البيانات السحابية. يرجى التحقق من إعداد الرابط والإنترنت."
+      };
+    }
   }
 
-  if (isDemoMode) {
-    return handleDemoRequest(params);
-  }
-  
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      mode: "cors",
-      headers: {
-        "Content-Type": "text/plain"
-      },
-      body: JSON.stringify(params)
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP Error: ${response.status}`);
+  // Intercept and normalize videos
+  if (result && result.success) {
+    if (result.videos) {
+      result.videos = normalizeVideos(result.videos);
     }
-    
-    return await response.json();
-  } catch (error) {
-    console.error("API Call Failed:", error);
-    return {
-      success: false,
-      message: "فشل الاتصال بقاعدة البيانات السحابية. يرجى التحقق من إعداد الرابط والإنترنت."
-    };
   }
+  return result;
 }
 
 const getTable = (name, defaultData = []) => {
@@ -608,6 +639,13 @@ function handleDemoRequest(params) {
     }
     return { success: false, message: "لم يتم العثور على الفيديو (ID: " + videoId + ")" };
     
+  } else if (action === "adminGetVideoQuestions") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح بالعملية." };
+    }
+    const allVidQ = getTable("VideoQuestions") || [];
+    return { success: true, videoQuestions: allVidQ };
+
   } else if (action === "adminSaveVideoQuestions") {
     if (!verifyLocalAdmin(params.adminPassword)) {
       return { success: false, message: "غير مصرح بالعملية." };
@@ -1717,6 +1755,16 @@ async function handleSupabaseRequest(params) {
       if (result.error && result.error.code !== '22P02') throw result.error;
       return { success: true, message: "تم حذف الفيديو بنجاح." };
       
+    } else if (action === "adminGetVideoQuestions") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { data, error } = await supabaseClient
+        .from('video_questions')
+        .select('*');
+      if (error) throw error;
+      return { success: true, videoQuestions: data };
+
     } else if (action === "adminSaveVideoQuestions") {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
         return { success: false, message: "غير مصرح." };
@@ -1733,14 +1781,23 @@ async function handleSupabaseRequest(params) {
       if (delErr) throw delErr;
       
       if (questions.length > 0) {
-        const rows = questions.map(q => ({
-          video_id: videoId,
-          question_ar: q.q || q.question_ar,
-          option1_ar: q.options ? q.options[0] : q.option1_ar,
-          option2_ar: q.options ? q.options[1] : q.option2_ar,
-          option3_ar: q.options ? q.options[2] : q.option3_ar,
-          correct_index: q.correct !== undefined ? parseInt(q.correct) : (parseInt(q.correct_index) || 0)
-        }));
+        const rows = questions.map(q => {
+          const qText = q.q || q.question_ar || "";
+          const opts = q.options || [q.option1_ar || "", q.option2_ar || "", q.option3_ar || ""];
+          let corr = 0;
+          if (q.correct !== undefined) corr = parseInt(q.correct);
+          else if (q.correct_index !== undefined) corr = parseInt(q.correct_index);
+          if (isNaN(corr)) corr = 0;
+
+          return {
+            video_id: videoId,
+            question_ar: qText,
+            option1_ar: String(opts[0] || "").trim(),
+            option2_ar: String(opts[1] || "").trim(),
+            option3_ar: String(opts[2] || "").trim(),
+            correct_index: corr
+          };
+        });
         
         const { error: insErr } = await supabaseClient
           .from('video_questions')

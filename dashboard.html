@@ -1785,10 +1785,28 @@
       const questions = JSON.parse(jsonMatch[0]);
       if (!Array.isArray(questions) || questions.length === 0) throw new Error('Empty questions array');
 
-      // Validate structure
-      return questions.filter(q =>
-        q.q && Array.isArray(q.options) && q.options.length >= 2 && typeof q.correct === 'number'
-      ).slice(0, 5);
+      // Normalize and validate structure
+      const normalized = questions.map(q => {
+        const qText = q.q || q.question || q.question_ar || "";
+        const opts = q.options || q.choices || q.answers || [];
+        let corr = 0;
+        if (q.correct !== undefined) corr = parseInt(q.correct);
+        else if (q.correct_index !== undefined) corr = parseInt(q.correct_index);
+        else if (q.correctIndex !== undefined) corr = parseInt(q.correctIndex);
+        if (isNaN(corr)) corr = 0;
+
+        return {
+          q: qText,
+          options: [
+            String(opts[0] || "").trim() || "الخيار الأول",
+            String(opts[1] || "").trim() || "الخيار الثاني",
+            String(opts[2] || "").trim() || "الخيار الثالث"
+          ],
+          correct: corr
+        };
+      });
+
+      return normalized.filter(q => q.q).slice(0, 4);
     }
 
     // Fallback: pharmacy-domain keyword questions if Gemini fails

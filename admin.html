@@ -2944,9 +2944,8 @@
       // Fetch questions for this video
       try {
         const resp = await apiRequest({
-          action: "getTraineeVideos", // trainee video list also includes videoQuestions array
-          email: "madmody@dummy.com", // dummy credentials
-          password: "dummy"
+          action: "adminGetVideoQuestions",
+          adminUsername, adminPassword
         });
         
         let savedQuestions = [];
@@ -2955,9 +2954,9 @@
         }
 
         currentVqmQuestions = savedQuestions.map(s => ({
-          q: s.question_ar,
-          options: [s.option1_ar, s.option2_ar, s.option3_ar].filter(Boolean),
-          correct: s.correct_index
+          q: s.question_ar || "",
+          options: [s.option1_ar || "", s.option2_ar || "", s.option3_ar || ""],
+          correct: s.correct_index !== undefined ? parseInt(s.correct_index) : 0
         }));
 
         renderVqmQuestionsForm();
@@ -3095,7 +3094,7 @@
   }
 ]`;
         
-        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + window.GEMINI_API_KEY, {
+        const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + window.GEMINI_API_KEY, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -3111,17 +3110,31 @@
         if (!jsonMatch) throw new Error("No JSON found");
         
         const questions = JSON.parse(jsonMatch[0]);
-        currentVqmQuestions = questions.map(q => ({
-          q: q.q,
-          options: q.options,
-          correct: parseInt(q.correct) || 0
-        }));
+        currentVqmQuestions = questions.map(q => {
+          const qText = q.q || q.question || q.question_ar || "";
+          const opts = q.options || q.choices || q.answers || [];
+          let corr = 0;
+          if (q.correct !== undefined) corr = parseInt(q.correct);
+          else if (q.correct_index !== undefined) corr = parseInt(q.correct_index);
+          else if (q.correctIndex !== undefined) corr = parseInt(q.correctIndex);
+          if (isNaN(corr)) corr = 0;
+
+          return {
+            q: qText,
+            options: [
+              String(opts[0] || "").trim() || "الخيار الأول",
+              String(opts[1] || "").trim() || "الخيار الثاني",
+              String(opts[2] || "").trim() || "الخيار الثالث"
+            ],
+            correct: corr
+          };
+        });
 
         renderVqmQuestionsForm();
         showToast("✨ تم توليد الأسئلة الأربعة بنجاح! يمكنك الآن مراجعتها وتعديلها أو حفظها.", "success");
       } catch (err) {
         console.error("Gemini failed:", err);
-        showToast("❌ فشل توليد الأسئلة التلقائي. يرجى كتابتها يدوياً أو المحاولة لاحقاً.", "error");
+        showToast("❌ فشل توليد الأسئلة التلقائي: " + err.message, "error");
         listContainer.innerHTML = originalHtml;
       }
     };
@@ -3155,11 +3168,11 @@
           document.getElementById("video-questions-modal").classList.remove("active");
           loadAdminDashboardData(); // Refresh UI
         } else {
-          showToast(response.message, "error");
+          showToast("❌ فشل الحفظ: " + response.message, "error");
         }
       } catch (err) {
         console.error("Save failed:", err);
-        showToast("خطأ أثناء حفظ أسئلة المحاضرة.", "error");
+        showToast("❌ خطأ أثناء حفظ أسئلة المحاضرة: " + err.message, "error");
       }
     };
 
