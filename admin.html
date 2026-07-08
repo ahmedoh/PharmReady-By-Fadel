@@ -668,8 +668,8 @@
         <!-- Accordion / Curriculum Topics Manager -->
         <div style="border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; background: var(--bg-primary);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <h4 style="color: var(--color-gold); margin: 0;"><i class="fa-solid fa-layer-group"></i> موضوعات المنهج (Accordion Slider)</h4>
-            <button class="btn btn-primary" onclick="openCurriculumModal()" style="cursor: pointer;"><i class="fa-solid fa-plus"></i> إضافة موضوع</button>
+            <h4 style="color: var(--color-gold); margin: 0;"><i class="fa-solid fa-layer-group"></i> شجرة المنهج والمجلدات</h4>
+            <button class="btn btn-primary" onclick="openCurriculumModal(null, null, null, null)" style="cursor: pointer;"><i class="fa-solid fa-folder-plus"></i> إضافة مجلد/محتوى رئيسي</button>
           </div>
           <div class="form-group" style="margin-bottom: 12px;">
             <label for="curr-level-filter">فلتر حسب المستوى</label>
@@ -681,13 +681,61 @@
               <option value="Beast">Beast</option>
             </select>
           </div>
-          <div class="admin-table-container">
-            <table>
-              <thead><tr><th>الترتيب</th><th>عنوان الموضوع</th><th>المستوى</th><th>الإجراءات</th></tr></thead>
-              <tbody id="curriculum-table-body">
-                <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">جاري تحميل الموضوعات...</td></tr>
-              </tbody>
-            </table>
+          
+          <style>
+            .curr-tree-container {
+              direction: rtl;
+              text-align: right;
+              padding: 15px;
+              background: var(--bg-secondary);
+              border-radius: 8px;
+              border: 1px solid var(--border-color);
+              max-height: 500px;
+              overflow-y: auto;
+            }
+            .curr-tree-node {
+              margin-left: 0;
+              margin-right: 20px;
+              border-right: 1px dashed var(--border-color);
+              padding-right: 10px;
+              padding-top: 4px;
+              padding-bottom: 4px;
+            }
+            .curr-tree-node.root-node {
+              margin-right: 0;
+              border-right: none;
+              padding-right: 0;
+            }
+            .curr-node-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 8px 12px;
+              border-radius: 6px;
+              background: var(--bg-primary);
+              border: 1px solid var(--border-color);
+              margin-bottom: 4px;
+              transition: all 0.2s;
+            }
+            .curr-node-header:hover {
+              background: var(--border-color);
+            }
+            .curr-node-title {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              color: var(--text-main);
+              font-weight: 600;
+              font-size: 14px;
+            }
+            .curr-node-actions {
+              display: flex;
+              gap: 6px;
+            }
+          </style>
+
+          <div class="curr-tree-container" id="curriculum-tree-body">
+            <div style="text-align: center; color: var(--text-muted); padding: 20px;">جاري تحميل الموضوعات والمجلدات...</div>
           </div>
         </div>
       </section>
@@ -1776,60 +1824,167 @@
       } catch(e) { console.error(e); }
     };
 
-    // Curriculum Functions
-    window.loadCurriculumItems = async function() {
-      const level = document.getElementById('curr-level-filter').value;
-      const tbody = document.getElementById('curriculum-table-body');
-      if (tbody) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted);">جاري تحميل...</td></tr>`;
-      try {
-        const response = await apiRequest({ action: 'adminGetCurriculum', adminPassword, level });
-        if (response.success) {
-          const items = response.curriculum || [];
-          if (items.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted);">\u0644\u0627 \u062a\u0648\u062c\u062f \u0645\u0648\u0636\u0648\u0639\u0627\u062a \u0644\u0647\u0630\u0627 \u0627\u0644\u0645\u0633\u062a\u0648\u0649.</td></tr>`;
-            return;
-          }
-          tbody.innerHTML = '';
-          items.forEach(item => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `<td>${item.sort_order || '-'}</td><td><strong>${item.title}</strong></td><td>${item.level}</td><td style="display:flex; gap:6px;">
-              <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="openCurriculumModal('${item.id}', '${item.level}', ${item.sort_order})"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn btn-danger" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="deleteCurriculumItem('${item.id}')"><i class="fa-solid fa-trash"></i></button>
-            </td>`;
-            tbody.appendChild(tr);
-          });
-        }
-      } catch(e) { console.error(e); }
+    // Global cache of curriculum nodes loaded for tree building
+    let cachedCurriculumNodes = [];
+
+    window.toggleContentEditor = function(type) {
+      const group = document.getElementById('curr-content-editor-group');
+      if (!group) return;
+      if (type === 'content') {
+        group.style.display = 'block';
+      } else {
+        group.style.display = 'none';
+      }
     };
 
-    window.openCurriculumModal = function(id, level, order) {
+    window.updateParentFolderDropdown = function(selectedParentId = '') {
+      const level = document.getElementById('curr-item-level').value;
+      const parentSelect = document.getElementById('curr-item-parent');
+      if (!parentSelect) return;
+      parentSelect.innerHTML = '<option value="">-- رئيسي (بدون أب) --</option>';
+      
+      // Filter folders from cached nodes
+      const folders = cachedCurriculumNodes.filter(n => n.level === level && (n.type === 'folder' || !n.type));
+      const currentEditingId = document.getElementById('curr-item-id').value;
+
+      folders.forEach(f => {
+        // Prevent setting a node as its own parent
+        if (f.id !== currentEditingId) {
+          const opt = document.createElement('option');
+          opt.value = f.id;
+          opt.textContent = `📁 ${f.title}`;
+          if (String(f.id) === String(selectedParentId)) {
+            opt.selected = true;
+          }
+          parentSelect.appendChild(opt);
+        }
+      });
+    };
+
+    window.loadCurriculumItems = async function() {
+      const level = document.getElementById('curr-level-filter').value;
+      const container = document.getElementById('curriculum-tree-body');
+      if (container) container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding:20px;">جاري تحميل شجرة المنهج...</div>`;
+      try {
+        const response = await apiRequest({ action: 'adminGetCurriculumTree', adminPassword, level });
+        if (response.success) {
+          cachedCurriculumNodes = response.nodes || [];
+          renderCurriculumTree();
+        } else {
+          container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding:20px;">فشل في تحميل شجرة المنهج.</div>`;
+        }
+      } catch(e) { 
+        console.error(e); 
+        container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding:20px;">حدث خطأ أثناء تحميل البيانات.</div>`;
+      }
+    };
+
+    function renderCurriculumTree() {
+      const container = document.getElementById('curriculum-tree-body');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (cachedCurriculumNodes.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color: var(--text-muted); padding: 20px;">لا توجد عناصر منهج أو مجلدات مضافة بعد.</div>`;
+        return;
+      }
+
+      // Build hierarchy
+      const roots = cachedCurriculumNodes.filter(n => !n.parent_id);
+      roots.sort((a,b) => (parseInt(a.sort_order) || 0) - (parseInt(b.sort_order) || 0));
+
+      const treeRootElement = document.createElement('div');
+      treeRootElement.className = 'curr-tree-node root-node';
+      
+      roots.forEach(node => {
+        treeRootElement.appendChild(createTreeNodeUI(node));
+      });
+      container.appendChild(treeRootElement);
+    }
+
+    function createTreeNodeUI(node) {
+      const nodeEl = document.createElement('div');
+      nodeEl.className = 'curr-tree-node';
+
+      const header = document.createElement('div');
+      header.className = 'curr-node-header';
+
+      const isFolder = node.type === 'folder' || !node.type;
+      const iconClass = node.icon || (isFolder ? 'fa-folder' : 'fa-file-lines');
+      const iconColor = isFolder ? 'var(--color-gold)' : 'var(--color-primary)';
+
+      header.innerHTML = `
+        <div class="curr-node-title">
+          <i class="fa-solid ${iconClass}" style="color: ${iconColor};"></i>
+          <span>${node.title}</span>
+          <span style="font-size: 10px; color: var(--text-muted); font-weight: normal; margin-right: 10px;">(ترتيب: ${node.sort_order || 1})</span>
+        </div>
+        <div class="curr-node-actions">
+          ${isFolder ? `<button class="btn btn-primary" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="openCurriculumModal(null, '${node.level}', null, '${node.id}')" title="إضافة عنصر فرعي"><i class="fa-solid fa-plus"></i></button>` : ''}
+          <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="openCurriculumModal('${node.id}', '${node.level}', ${node.sort_order}, '${node.parent_id || ''}')" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+          <button class="btn btn-danger" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="deleteCurriculumItem('${node.id}')" title="حذف"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      `;
+
+      nodeEl.appendChild(header);
+
+      if (isFolder) {
+        const childrenContainer = document.createElement('div');
+        const children = cachedCurriculumNodes.filter(n => String(n.parent_id) === String(node.id));
+        children.sort((a,b) => (parseInt(a.sort_order) || 0) - (parseInt(b.sort_order) || 0));
+        
+        children.forEach(child => {
+          childrenContainer.appendChild(createTreeNodeUI(child));
+        });
+        nodeEl.appendChild(childrenContainer);
+      }
+
+      return nodeEl;
+    }
+
+    window.openCurriculumModal = function(id, level, order, parentId = '') {
       const modal = document.getElementById('curriculum-modal');
       if (!modal) return;
+
       document.getElementById('curr-item-id').value = id || '';
       document.getElementById('curr-item-level').value = level || document.getElementById('curr-level-filter').value;
       document.getElementById('curr-item-order').value = order || '1';
       document.getElementById('curr-item-title').value = '';
+      document.getElementById('curr-item-icon').value = '';
       document.getElementById('curr-item-content').value = '';
+
+      updateParentFolderDropdown(parentId);
+
       if (id) {
-        // Load existing content
-        apiRequest({ action: 'adminGetCurriculumItem', adminPassword, id }).then(r => {
-          if (r.success && r.item) {
-            document.getElementById('curr-item-title').value = r.item.title || '';
-            document.getElementById('curr-item-content').value = r.item.content_html || '';
-          }
-        }).catch(e => console.error(e));
+        const found = cachedCurriculumNodes.find(n => String(n.id) === String(id));
+        if (found) {
+          document.getElementById('curr-item-title').value = found.title || '';
+          document.getElementById('curr-item-type').value = found.type || 'folder';
+          document.getElementById('curr-item-icon').value = found.icon || '';
+          document.getElementById('curr-item-content').value = found.content_html || '';
+          toggleContentEditor(found.type || 'folder');
+        }
+      } else {
+        document.getElementById('curr-item-type').value = 'folder';
+        toggleContentEditor('folder');
       }
-      attachTextareaToolbar("curr-item-content");
+
       modal.classList.add('active');
     };
 
     window.deleteCurriculumItem = async function(id) {
-      if (!confirm('هل تريد حذف هذا الموضوع؟')) return;
+      if (!confirm('تحذير: هل تريد بالتأكيد حذف هذا العنصر؟ إذا كان مجلداً سيتم حذف كافة الملفات والمجلدات التي بداخله بشكل متكرر!')) return;
       try {
-        const r = await apiRequest({ action: 'adminDeleteCurriculumItem', adminPassword, id });
-        if (r.success) { showToast('تم الحذف.', 'success'); loadCurriculumItems(); }
+        const r = await apiRequest({ action: 'adminDeleteCurriculumNode', adminPassword, id });
+        if (r.success) { 
+          showToast('تم حذف العنصر ومحتوياته بنجاح.', 'success'); 
+          loadCurriculumItems(); 
+        } else {
+          showToast(r.message || 'فشل الحذف', 'error');
+        }
       } catch(e) { console.error(e); }
     };
+
 
 
     function renderAdmins() {
@@ -1935,7 +2090,7 @@
       const password = document.getElementById("generated-password")?.value || "";
       const level    = document.getElementById("generated-level")?.value    || "";
       const name     = _acceptTraineeName || "";
-      const siteUrl  = window.location.origin || "https://ahmedoh.github.io/PharmReady-By-Fadel/index.html";
+      const siteUrl  = window.location.origin || "https://ahmedoh.github.io";
       
       const whatsappSupport = "01107118948"; // رقم الواتساب الخاص بالدعم
       const telegramSupport = "https://t.me/PharmReady"; // رابط التليجرام الخاص بالخدمة
@@ -1948,7 +2103,7 @@
         `--------------------------------------------------------`,
         `البريد الالكتروني الخاص بكم هو : ${email}`,
         ``,
-        `كلمة المرور هي : \`${password}\``,
+        `كلمة المرور هي : ${password}`,
         ``,
         `رابط تسجيل الدخول للمنصة : ${siteUrl}`,
         `----------------------------------------------------------`,
@@ -2549,16 +2704,30 @@
           e.preventDefault();
           const id = document.getElementById('curr-item-id').value.trim();
           const level = document.getElementById('curr-item-level').value;
+          const type = document.getElementById('curr-item-type').value;
+          const parent_id = document.getElementById('curr-item-parent').value || null;
           const title = document.getElementById('curr-item-title').value.trim();
+          const icon = document.getElementById('curr-item-icon').value.trim();
           const content = document.getElementById('curr-item-content').value.trim();
           const order = parseInt(document.getElementById('curr-item-order').value) || 1;
           try {
-            const r = await apiRequest({ action: id ? 'adminUpdateCurriculumItem' : 'adminAddCurriculumItem', adminPassword, id, level, title, content_html: content, sort_order: order });
+            const r = await apiRequest({ 
+              action: id ? 'adminUpdateCurriculumNode' : 'adminAddCurriculumNode', 
+              adminPassword, 
+              id, 
+              level, 
+              type,
+              parent_id,
+              title, 
+              icon,
+              content_html: type === 'content' ? content : '', 
+              sort_order: order 
+            });
             if (r.success) {
-              showToast('✅ تم حفظ الموضوع بنجاح!', 'success');
+              showToast('تم حفظ العنصر بنجاح!', 'success');
               document.getElementById('curriculum-modal').classList.remove('active');
               loadCurriculumItems();
-            } else showToast(r.message || 'خطأ في الحفظ', 'error');
+            } else showToast(r.message || 'حدث خطأ', 'error');
           } catch(err) { console.error(err); }
         });
       }
@@ -3878,18 +4047,18 @@
 
   <!-- Curriculum Item Modal -->
   <div class="modal-overlay" id="curriculum-modal" style="z-index: 10000;">
-    <div class="modal-content" style="max-width: 520px;">
+    <div class="modal-content" style="max-width: 550px;">
       <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 15px;">
-        <h3 style="font-size: 17px;"><i class="fa-solid fa-book-open" style="color: var(--color-primary);"></i> إضافة / تعديل موضوع</h3>
-        <button class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('curriculum-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+        <h3 style="font-size: 17px;"><i class="fa-solid fa-book-open" style="color: var(--color-primary);"></i> إضافة / تعديل عنصر في المنهج</h3>
+        <button type="button" class="btn btn-secondary" style="padding: 5px 10px; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;" onclick="document.getElementById('curriculum-modal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <form id="curriculum-item-form">
         <input type="hidden" id="curr-item-id">
         <div class="modal-body">
-          <div class="form-grid">
+          <div class="form-grid" style="margin-bottom: 12px;">
             <div class="form-group">
-              <label for="curr-item-level">المستوى <span class="required">*</span></label>
-              <select id="curr-item-level" required>
+              <label for="curr-item-level">المستوى التدريبي <span class="required">*</span></label>
+              <select id="curr-item-level" required onchange="updateParentFolderDropdown()">
                 <option value="Passengers">Passengers</option>
                 <option value="Starters">Starters</option>
                 <option value="Movers">Movers</option>
@@ -3898,22 +4067,47 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="curr-item-order">الترتيب <span class="required">*</span></label>
+              <label for="curr-item-type">نوع العنصر <span class="required">*</span></label>
+              <select id="curr-item-type" required onchange="toggleContentEditor(this.value)">
+                <option value="folder">مجلد (يحمل مجلدات/محتويات بداخله) 📁</option>
+                <option value="content">ملف محتوى (صفحة شرح أو مرجع علمي) 📄</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-grid" style="margin-bottom: 12px;">
+            <div class="form-group">
+              <label for="curr-item-parent">المجلد الأب (اختياري)</label>
+              <select id="curr-item-parent">
+                <option value="">-- رئيسي (بدون أب) --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="curr-item-order">الترتيب الرقمي <span class="required">*</span></label>
               <input type="number" id="curr-item-order" required min="1" value="1">
             </div>
           </div>
-          <div class="form-group">
-            <label for="curr-item-title">عنوان الموضوع <span class="required">*</span></label>
-            <input type="text" id="curr-item-title" required placeholder="مثال: المضادات الحيوية OTC">
+
+          <div class="form-grid" style="margin-bottom: 12px;">
+            <div class="form-group">
+              <label for="curr-item-title">الاسم / العنوان <span class="required">*</span></label>
+              <input type="text" id="curr-item-title" required placeholder="مثال: المضادات الحيوية OTC">
+            </div>
+            <div class="form-group">
+              <label for="curr-item-icon">رمز أيقونة (FontAwesome class - اختياري)</label>
+              <input type="text" id="curr-item-icon" placeholder="مثال: fa-book-open">
+            </div>
           </div>
-          <div class="form-group">
-            <label for="curr-item-content">محتوى الموضوع (HTML مسموح به)</label>
-            <textarea id="curr-item-content" rows="8" placeholder="أدخل محتوى الموضوع هنا... يمكنك استخدام HTML للتنسيق &lt;strong&gt;, &lt;ul&gt;, &lt;p&gt;" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main); font-family: monospace; font-size: 12px; resize: vertical;"></textarea>
+
+          <div class="form-group" id="curr-content-editor-group">
+            <label for="curr-item-content">محتوى الصفحة العلمي (تنسيق نصوص غني)</label>
+            <!-- Rich toolbar will be attached here dynamically -->
+            <textarea id="curr-item-content" rows="8" placeholder="اكتب الشرح أو المحتوى العلمي هنا... يمكنك استخدام HTML للتنسيق أيضاً." style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-secondary); color: var(--text-main); font-family: monospace; font-size: 12px; resize: vertical;"></textarea>
           </div>
         </div>
         <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 15px;">
           <button type="button" class="btn btn-secondary" onclick="document.getElementById('curriculum-modal').classList.remove('active')">إلغاء</button>
-          <button type="submit" class="btn btn-primary" style="cursor: pointer;"><i class="fa-solid fa-floppy-disk"></i> حفظ الموضوع</button>
+          <button type="submit" class="btn btn-primary" style="cursor: pointer;"><i class="fa-solid fa-floppy-disk"></i> حفظ التعديلات</button>
         </div>
       </form>
     </div>

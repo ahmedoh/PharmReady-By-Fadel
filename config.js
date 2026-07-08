@@ -423,7 +423,10 @@ function handleDemoRequest(params) {
         title: c.Title || c.title || '',
         content_html: c.ContentHtml || c.content_html || c.content || '',
         level: c.Level || c.level || '',
-        sort_order: c.SortOrder || c.sort_order || 1
+        sort_order: c.SortOrder || c.sort_order || 1,
+        parent_id: c.parent_id || null,
+        type: c.type || 'folder',
+        icon: c.icon || ''
       })),
       welcomeHtml: welcomeHtml,
       examAttempts: lp.ExamAttempts || 0,
@@ -1068,13 +1071,22 @@ function handleDemoRequest(params) {
     saveTable("LevelsContent", list);
     return { success: true, message: "تم حفظ المحتوى بنجاح." };
 
-  } else if (action === "adminGetCurriculum") {
+  } else if (action === "adminGetCurriculumTree") {
     if (!verifyLocalAdmin(params.adminPassword)) {
       return { success: false, message: "غير مصرح." };
     }
     const list = getTable("Curriculum") || [];
-    const filtered = list.filter(x => String(x.Level || x.level).trim() === String(params.level).trim());
-    return { success: true, curriculum: filtered };
+    const filtered = list.filter(x => String(x.level || x.Level || "Passengers").trim() === String(params.level).trim());
+    return { success: true, nodes: filtered };
+
+  } else if (action === "adminGetCurriculum") {
+    // Keep backward compat alias
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    const list = getTable("Curriculum") || [];
+    const filtered = list.filter(x => String(x.level || x.Level || "Passengers").trim() === String(params.level).trim());
+    return { success: true, curriculum: filtered, nodes: filtered };
 
   } else if (action === "adminGetCurriculumItem") {
     if (!verifyLocalAdmin(params.adminPassword)) {
@@ -1084,45 +1096,103 @@ function handleDemoRequest(params) {
     const found = list.find(x => String(x.id) === String(params.id) || String(x.Id) === String(params.id));
     return { success: true, item: found };
 
-  } else if (action === "adminDeleteCurriculumItem") {
+  } else if (action === "adminAddCurriculumNode") {
     if (!verifyLocalAdmin(params.adminPassword)) {
       return { success: false, message: "غير مصرح." };
     }
     const list = getTable("Curriculum") || [];
-    const filtered = list.filter(x => String(x.id) !== String(params.id) && String(x.Id) !== String(params.id));
-    saveTable("Curriculum", filtered);
-    return { success: true, message: "تم حذف الموضوع بنجاح." };
+    const newNode = {
+      id: String(Date.now()),
+      level: params.level || "Passengers",
+      parent_id: params.parent_id || null,
+      type: params.type || "folder",
+      title: params.title || "",
+      content_html: params.content_html || "",
+      icon: params.icon || "",
+      sort_order: parseInt(params.sort_order) || 1
+    };
+    list.push(newNode);
+    saveTable("Curriculum", list);
+    return { success: true, message: "تم إضافة العنصر بنجاح.", id: newNode.id };
+
+  } else if (action === "adminUpdateCurriculumNode") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    const list = getTable("Curriculum") || [];
+    const idx = list.findIndex(x => String(x.id) === String(params.id));
+    if (idx !== -1) {
+      if (params.title !== undefined) list[idx].title = params.title;
+      if (params.content_html !== undefined) list[idx].content_html = params.content_html;
+      if (params.icon !== undefined) list[idx].icon = params.icon;
+      if (params.sort_order !== undefined) list[idx].sort_order = parseInt(params.sort_order) || 1;
+      if (params.type !== undefined) list[idx].type = params.type;
+      saveTable("Curriculum", list);
+      return { success: true, message: "تم تحديث العنصر بنجاح." };
+    }
+    return { success: false, message: "العنصر غير موجود." };
+
+  } else if (action === "adminDeleteCurriculumNode") {
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    let list = getTable("Curriculum") || [];
+    // Recursive delete: collect all descendant IDs
+    function collectDescendants(id, allNodes) {
+      const children = allNodes.filter(x => String(x.parent_id) === String(id));
+      let ids = [String(id)];
+      children.forEach(c => { ids = ids.concat(collectDescendants(c.id, allNodes)); });
+      return ids;
+    }
+    const toDelete = new Set(collectDescendants(params.id, list));
+    list = list.filter(x => !toDelete.has(String(x.id)));
+    saveTable("Curriculum", list);
+    return { success: true, message: "تم حذف العنصر وجميع محتوياته بنجاح." };
+
+  } else if (action === "adminDeleteCurriculumItem") {
+    // Backward compat alias
+    if (!verifyLocalAdmin(params.adminPassword)) {
+      return { success: false, message: "غير مصرح." };
+    }
+    let list = getTable("Curriculum") || [];
+    list = list.filter(x => String(x.id) !== String(params.id) && String(x.Id) !== String(params.id));
+    saveTable("Curriculum", list);
+    return { success: true, message: "تم الحذف بنجاح." };
 
   } else if (action === "adminAddCurriculumItem") {
+    // Backward compat alias → delegate to adminAddCurriculumNode
     if (!verifyLocalAdmin(params.adminPassword)) {
       return { success: false, message: "غير مصرح." };
     }
     const list = getTable("Curriculum") || [];
-    const newItem = {
+    const newNode = {
       id: String(Date.now()),
-      Id: String(Date.now()),
-      Level: params.level,
-      Title: params.title,
-      ContentHtml: params.content_html,
-      SortOrder: parseInt(params.sort_order) || 1
+      level: params.level,
+      parent_id: params.parent_id || null,
+      type: params.type || "folder",
+      title: params.title || "",
+      content_html: params.content_html || "",
+      icon: params.icon || "",
+      sort_order: parseInt(params.sort_order) || 1
     };
-    list.push(newItem);
+    list.push(newNode);
     saveTable("Curriculum", list);
     return { success: true, message: "تم إضافة الموضوع بنجاح." };
 
   } else if (action === "adminUpdateCurriculumItem") {
+    // Backward compat alias
     if (!verifyLocalAdmin(params.adminPassword)) {
       return { success: false, message: "غير مصرح." };
     }
     const list = getTable("Curriculum") || [];
     const idx = list.findIndex(x => String(x.id) === String(params.id) || String(x.Id) === String(params.id));
     if (idx !== -1) {
-      list[idx].Level = params.level;
-      list[idx].Title = params.title;
-      list[idx].ContentHtml = params.content_html;
-      list[idx].SortOrder = parseInt(params.sort_order) || 1;
+      list[idx].level = params.level;
+      list[idx].title = params.title;
+      list[idx].content_html = params.content_html;
+      list[idx].sort_order = parseInt(params.sort_order) || 1;
       saveTable("Curriculum", list);
-      return { success: true, message: "تم تحديث الموضوع بنجاح." };
+      return { success: true, message: "تم التحديث بنجاح." };
     }
     return { success: false, message: "الموضوع غير موجود." };
 
@@ -1130,6 +1200,8 @@ function handleDemoRequest(params) {
 
   return { success: false, message: "Unknown action" };
 }
+
+
 
 // Utility function to extract YouTube ID
 function extractYouTubeId(url) {
@@ -1413,7 +1485,10 @@ async function handleSupabaseRequest(params) {
           title: c.title,
           content_html: c.content_html || '',
           level: c.level,
-          sort_order: c.sort_order
+          sort_order: c.sort_order,
+          parent_id: c.parent_id || null,
+          type: c.type || 'folder',
+          icon: c.icon || ''
         })),
         welcomeHtml: welcomeHtml,
         examAttempts: examAttempts,
@@ -2371,16 +2446,30 @@ async function handleSupabaseRequest(params) {
       }
       return { success: true, message: "تم حفظ المحتوى بنجاح." };
 
-    } else if (action === "adminGetCurriculum") {
+    } else if (action === "adminGetCurriculumTree") {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
         return { success: false, message: "غير مصرح." };
       }
       const { data, error } = await supabaseClient
         .from('curriculum')
         .select('*')
-        .eq('level', params.level);
+        .eq('level', params.level)
+        .order('sort_order', { ascending: true });
       if (error) throw error;
-      return { success: true, curriculum: data };
+      return { success: true, nodes: data };
+
+    } else if (action === "adminGetCurriculum") {
+      // Backward compat alias
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { data, error } = await supabaseClient
+        .from('curriculum')
+        .select('*')
+        .eq('level', params.level)
+        .order('sort_order', { ascending: true });
+      if (error) throw error;
+      return { success: true, curriculum: data, nodes: data };
 
     } else if (action === "adminGetCurriculumItem") {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
@@ -2394,31 +2483,64 @@ async function handleSupabaseRequest(params) {
       if (error) throw error;
       return { success: true, item: data };
 
-    } else if (action === "adminDeleteCurriculumItem") {
+    } else if (action === "adminAddCurriculumNode") {
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
         return { success: false, message: "غير مصرح." };
       }
-      const { error } = await supabaseClient
+      const insertPayload = {
+        level: params.level,
+        title: params.title || "",
+        content_html: params.content_html || "",
+        sort_order: parseInt(params.sort_order) || 1
+      };
+      // parent_id and type are optional new columns — use try/catch for backward compat
+      if (params.parent_id !== undefined) insertPayload.parent_id = params.parent_id || null;
+      if (params.type !== undefined) insertPayload.type = params.type || "folder";
+      if (params.icon !== undefined) insertPayload.icon = params.icon || "";
+      const { data: ins, error } = await supabaseClient
         .from('curriculum')
-        .delete()
-        .eq('id', params.id);
+        .insert([insertPayload])
+        .select()
+        .single();
       if (error) throw error;
-      return { success: true, message: "تم حذف الموضوع بنجاح." };
+      return { success: true, message: "تم إضافة العنصر بنجاح.", id: ins ? String(ins.id) : null };
 
     } else if (action === "adminAddCurriculumItem") {
+      // Backward compat alias
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
         return { success: false, message: "غير مصرح." };
       }
-      const { error } = await supabaseClient.from('curriculum').insert([{
+      const insertPayload = {
         level: params.level,
         title: params.title,
         content_html: params.content_html,
         sort_order: parseInt(params.sort_order) || 1
-      }]);
+      };
+      if (params.parent_id !== undefined) insertPayload.parent_id = params.parent_id || null;
+      if (params.type !== undefined) insertPayload.type = params.type || "folder";
+      const { error } = await supabaseClient.from('curriculum').insert([insertPayload]);
       if (error) throw error;
       return { success: true, message: "تم إضافة الموضوع بنجاح." };
 
+    } else if (action === "adminUpdateCurriculumNode") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const updatePayload = {};
+      if (params.title !== undefined) updatePayload.title = params.title;
+      if (params.content_html !== undefined) updatePayload.content_html = params.content_html;
+      if (params.sort_order !== undefined) updatePayload.sort_order = parseInt(params.sort_order) || 1;
+      if (params.icon !== undefined) updatePayload.icon = params.icon;
+      if (params.type !== undefined) updatePayload.type = params.type;
+      const { error } = await supabaseClient
+        .from('curriculum')
+        .update(updatePayload)
+        .eq('id', params.id);
+      if (error) throw error;
+      return { success: true, message: "تم تحديث العنصر بنجاح." };
+
     } else if (action === "adminUpdateCurriculumItem") {
+      // Backward compat alias
       if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
         return { success: false, message: "غير مصرح." };
       }
@@ -2433,6 +2555,38 @@ async function handleSupabaseRequest(params) {
         .eq('id', params.id);
       if (error) throw error;
       return { success: true, message: "تم تحديث الموضوع بنجاح." };
+
+    } else if (action === "adminDeleteCurriculumNode") {
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      // Fetch all curriculum nodes for this level, then delete recursively
+      const { data: allNodes } = await supabaseClient
+        .from('curriculum')
+        .select('id, parent_id');
+      function collectIds(rootId, nodes) {
+        const children = (nodes || []).filter(n => String(n.parent_id) === String(rootId));
+        let ids = [String(rootId)];
+        children.forEach(c => { ids = ids.concat(collectIds(c.id, nodes)); });
+        return ids;
+      }
+      const idsToDelete = collectIds(params.id, allNodes || []);
+      for (const id of idsToDelete) {
+        await supabaseClient.from('curriculum').delete().eq('id', id);
+      }
+      return { success: true, message: "تم حذف العنصر وجميع محتوياته بنجاح." };
+
+    } else if (action === "adminDeleteCurriculumItem") {
+      // Backward compat alias
+      if (!await verifySupabaseAdmin(params.adminUsername, params.adminPassword)) {
+        return { success: false, message: "غير مصرح." };
+      }
+      const { error } = await supabaseClient
+        .from('curriculum')
+        .delete()
+        .eq('id', params.id);
+      if (error) throw error;
+      return { success: true, message: "تم حذف الموضوع بنجاح." };
     }
     
     return { success: false, message: "الإجراء غير متوفر حالياً على خادم Supabase." };

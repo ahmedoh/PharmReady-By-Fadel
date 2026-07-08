@@ -826,19 +826,80 @@
         </div>
 
         <!-- 6. Default/Placeholder Viewport -->
-        <div class="welcome-overlay" id="player-placeholder">
-          <i class="fa-solid fa-graduation-cap"></i>
-          <h2 data-i18n="main_title" style="color: var(--color-primary); font-weight: 900;">أكاديمية آل مغاوري لتأهيل الصيادلة الجدد</h2>
+        <div class="welcome-overlay" id="player-placeholder" style="display: flex; flex-direction: column; align-items: stretch; text-align: right; width: 100%;">
           
-          <!-- Game-like Level Progress Map -->
-          <div id="game-level-map" style="margin: 25px 0; background: rgba(0,0,0,0.1); border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; direction: rtl; text-align: center; backdrop-filter: blur(5px);">
+          <!-- Advanced Level Progress Card -->
+          <div id="level-progress-container" style="
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-bottom: 25px;
+            direction: rtl;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+          ">
+            <!-- Dynamically populated progress info -->
           </div>
 
-          <div style="max-width: 800px; margin: 20px auto; text-align: justify; line-height: 1.8; font-size: 14px; color: var(--text-muted)" id="dashboard-welcome-desc">
-            <!-- Will be dynamically translated by data-i18n under applySettings using innerHTML to render rich text greeting -->
+          <div style="max-width: 800px; margin: 10px auto 20px; text-align: justify; line-height: 1.8; font-size: 14px; color: var(--text-muted)" id="dashboard-welcome-desc">
+            <!-- Will be dynamically populated -->
           </div>
 
-          <!-- Action button to unlock exam (Always visible at the bottom, locked by default) -->
+          <!-- Academic Content Tabs Selector -->
+          <div class="dashboard-tabs-container" style="
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 20px;
+            direction: rtl;
+          ">
+            <button type="button" class="tab-btn active" id="tab-btn-videos" onclick="switchAcademicTab('videos')" style="
+              background: transparent;
+              border: none;
+              color: var(--text-muted);
+              font-size: 15px;
+              font-weight: bold;
+              padding: 10px 20px;
+              cursor: pointer;
+              border-bottom: 3px solid transparent;
+              transition: all 0.2s ease;
+            ">
+              <i class="fa-solid fa-video" style="margin-left: 6px;"></i> المحاضرات المصورة
+            </button>
+            <button type="button" class="tab-btn" id="tab-btn-notes" onclick="switchAcademicTab('notes')" style="
+              background: transparent;
+              border: none;
+              color: var(--text-muted);
+              font-size: 15px;
+              font-weight: bold;
+              padding: 10px 20px;
+              cursor: pointer;
+              border-bottom: 3px solid transparent;
+              transition: all 0.2s ease;
+            ">
+              <i class="fa-solid fa-folder-open" style="margin-left: 6px;"></i> المنهج الأكاديمي والملفات
+            </button>
+          </div>
+
+          <!-- Tab Pane: Videos List (Moved inside main panel to prevent sidebar scroll locks) -->
+          <div class="tab-pane active" id="pane-videos" style="direction: rtl;">
+            <h3 style="font-size: 16px; font-weight: 800; color: var(--color-primary); margin-bottom: 15px;"><i class="fa-solid fa-circle-play"></i> قائمة المحاضرات التدريبية للمستوى</h3>
+            <div id="main-lectures-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+              <!-- Dynamically populated with fast responsive video cards -->
+            </div>
+          </div>
+
+          <!-- Tab Pane: Curriculum Folders Tree -->
+          <div class="tab-pane" id="pane-notes" style="display: none; direction: rtl;">
+            <h3 style="font-size: 16px; font-weight: 800; color: var(--color-primary); margin-bottom: 15px;"><i class="fa-solid fa-folder-tree"></i> المجلدات والملفات المرجعية</h3>
+            <div id="nested-curriculum-tree" style="background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); padding: 20px;">
+              <!-- Dynamically populated tree -->
+            </div>
+          </div>
+
+          <!-- Action button to unlock exam (Locked/Unlocked automatically) -->
           <div id="exam-unlock-box" style="margin-top: 35px; text-align: center; border: 2px dashed var(--border-color); padding: 25px 30px; border-radius: 18px; background: var(--bg-secondary); direction: rtl; transition: all 0.3s ease;">
             <div id="exam-lock-status-details">
               <!-- Dynamically populated checklist -->
@@ -848,11 +909,6 @@
               <i class="fa-solid fa-lock" id="btn-start-exam-icon"></i>
               <span id="btn-start-exam-text">الانتقال إلى اختبار المرحلة (مغلق)</span>
             </button>
-          </div>
-
-          <!-- Curriculum Accordion Slider -->
-          <div id="curriculum-accordion-section" style="margin-top: 35px; width: 100%; text-align: right;">
-            <!-- Populated by JS from curriculum data -->
           </div>
         </div>
 
@@ -1371,122 +1427,331 @@
       detailsContainer.innerHTML = html;
     }
 
-    function renderGameLevelMap() {
-      const mapContainer = document.getElementById("game-level-map");
-      if (!mapContainer) return;
+    window.switchAcademicTab = function(tab) {
+      const btnVideos = document.getElementById('tab-btn-videos');
+      const btnNotes = document.getElementById('tab-btn-notes');
+      const paneVideos = document.getElementById('pane-videos');
+      const paneNotes = document.getElementById('pane-notes');
       
+      if (!btnVideos || !btnNotes || !paneVideos || !paneNotes) return;
+      
+      if (tab === 'videos') {
+        btnVideos.classList.add('active');
+        btnVideos.style.borderBottom = '3px solid var(--color-gold)';
+        btnNotes.classList.remove('active');
+        btnNotes.style.borderBottom = '3px solid transparent';
+        paneVideos.style.display = 'block';
+        paneNotes.style.display = 'none';
+      } else {
+        btnNotes.classList.add('active');
+        btnNotes.style.borderBottom = '3px solid var(--color-gold)';
+        btnVideos.classList.remove('active');
+        btnVideos.style.borderBottom = '3px solid transparent';
+        paneVideos.style.display = 'none';
+        paneNotes.style.display = 'block';
+        // Render curriculum tree
+        renderCurriculumTree();
+      }
+    };
+
+    function renderGameLevelMap() {
+      const container = document.getElementById("level-progress-container");
+      if (!container) return;
+
       const levelsOrder = ["Passengers", "Starters", "Movers", "Flyers", "Beast"];
       const levelNamesAr = {
-        "Passengers": " passengers (المستوى 0)",
-        "Starters": " Starters (المستوى 1)",
-        "Movers": " Movers (المستوى 2)",
-        "Flyers": " Flyers (المستوى 3)",
-        "Beast": " Beast (المستوى 4)"
-      };
-      
-      const levelIcons = {
-        "Passengers": "fa-seedling",
-        "Starters": "fa-star-of-life",
-        "Movers": "fa-rocket",
-        "Flyers": "fa-dragon",
-        "Beast": "fa-fire"
+        "Passengers": "Passengers (المستوى التمهيدي 0)",
+        "Starters": "Starters (المستوى الأول 1)",
+        "Movers": "Movers (المستوى الثاني 2)",
+        "Flyers": "Flyers (المستوى الثالث 3)",
+        "Beast": "Beast (المستوى الرابع 4)"
       };
 
+      const totalVids = videosData.length;
+      const watchedCount = videosData.filter(v => watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id)).length;
+      const watchedPercent = totalVids > 0 ? Math.round((watchedCount / totalVids) * 100) : 0;
+
+      const allVideosWatched = totalVids > 0 && watchedCount === totalVids;
+      
+      // Check training report
+      const submittedReportsCount = (traineeReports || []).filter(r => String(r.Level || r.level).trim() === String(traineeLevel).trim()).length;
+      const reportSubmitted = submittedReportsCount > 0;
+
       const currentIdx = levelsOrder.indexOf(traineeLevel || "Passengers");
-      
-      let html = `
-        <h3 style="color: var(--color-gold); margin-bottom: 20px; font-size: 15px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          <i class="fa-solid fa-map-marked-alt fa-pulse" style="color: var(--color-primary);"></i> مسار المستويات والارتقاء الأكاديمي
-        </h3>
-        <div style="display: flex; justify-content: space-between; align-items: center; position: relative; margin: 20px auto; max-width: 900px; flex-wrap: wrap; gap: 20px; direction: rtl;">
-          <!-- Progress Line Background -->
-          <div style="position: absolute; top: 30px; left: 5%; right: 5%; height: 6px; background: rgba(255,255,255,0.05); z-index: 1; border-radius: 3px;"></div>
-          <!-- Active Progress Line -->
-          <div style="position: absolute; top: 30px; right: 5%; width: ${Math.max(0, (currentIdx / 4) * 90)}%; height: 6px; background: linear-gradient(90deg, var(--color-gold), var(--color-primary)); z-index: 1; transition: width 0.5s ease; border-radius: 3px;"></div>
-      `;
-      
-      levelsOrder.forEach((lvl, idx) => {
-        let stateIcon = "";
-        let badgeStyle = "";
-        let labelColor = "var(--text-muted)";
-        
-        if (idx < currentIdx) {
-          // Completed level
-          stateIcon = '<i class="fa-solid fa-circle-check" style="color: #10b981; font-size: 15px; position: absolute; top: -5px; right: -5px; background: var(--bg-primary); border-radius: 50%;"></i>';
-          badgeStyle = "background: rgba(16,185,129,0.1); border: 2px solid #10b981; color: #10b981; box-shadow: 0 0 15px rgba(16,185,129,0.2);";
-          labelColor = "#10b981";
-        } else if (idx === currentIdx) {
-          // Active level
-          stateIcon = '<i class="fa-solid fa-star fa-bounce" style="color: var(--color-gold); font-size: 15px; position: absolute; top: -5px; right: -5px; background: var(--bg-primary); border-radius: 50%;"></i>';
-          badgeStyle = "background: rgba(251,191,36,0.15); border: 2px solid var(--color-gold); color: var(--color-gold); box-shadow: 0 0 25px rgba(251,191,36,0.3); transform: scale(1.15); font-weight: bold;";
-          labelColor = "var(--color-gold)";
-        } else {
-          // Locked level
-          stateIcon = '<i class="fa-solid fa-lock" style="color: var(--text-muted); font-size: 11px; position: absolute; top: -5px; right: -5px; background: var(--bg-secondary); border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color);"></i>';
-          badgeStyle = "background: var(--bg-secondary); border: 2px solid var(--border-color); color: var(--text-muted); opacity: 0.55;";
-        }
-        
-        html += `
-          <div style="display: flex; flex-direction: column; align-items: center; width: 120px; position: relative; z-index: 2; cursor: default;">
-            <div style="position: relative; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; transition: all 0.3s ease; ${badgeStyle}">
-              <i class="fa-solid ${levelIcons[lvl]}"></i>
-              ${stateIcon}
-            </div>
-            <span style="font-size: 11.5px; margin-top: 10px; font-weight: 700; text-align: center; color: ${labelColor}; display: block;">
-              ${levelNamesAr[lvl]}
-            </span>
+      const levelName = levelNamesAr[traineeLevel || "Passengers"] || traineeLevel;
+
+      container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+          <div>
+            <h3 style="color: var(--color-gold); font-size: 18px; font-weight: bold; margin: 0; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-graduation-cap" style="color: var(--color-primary);"></i>
+              مستواك الحالي: ${levelName}
+            </h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0;">تابع تقدمك اليومي لإتمام متطلبات المستوى واجتياز التقييم النهائي.</p>
           </div>
-        `;
-      });
-      
-      html += `
+          <div style="background: rgba(var(--color-primary-rgb), 0.1); border: 1px solid rgba(var(--color-primary-rgb), 0.2); padding: 6px 15px; border-radius: 20px; font-size: 13px; font-weight: bold; color: var(--color-primary);">
+             مستوى التقدم العام: ${watchedPercent}%
+          </div>
+        </div>
+
+        <!-- Horizontal Progress Bar -->
+        <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; overflow: hidden; margin-bottom: 20px; border: 1px solid var(--border-color);">
+          <div style="width: ${watchedPercent}%; height: 100%; background: linear-gradient(90deg, var(--color-primary), var(--color-gold)); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 5px;"></div>
+        </div>
+
+        <!-- Task checklist row -->
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; justify-content: flex-start; font-size: 13px;">
+          <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.15); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <span>مشاهدة الفيديوهات (${watchedCount} / ${totalVids}):</span>
+            <span>${allVideosWatched ? '<i class="fa-solid fa-circle-check" style="color: #10b981; font-size:15px;"></i> مكتمل' : '<i class="fa-solid fa-clock" style="color: var(--color-gold); font-size:15px;"></i> متبقي'}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.15); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <span>التقارير التدريبية الميدانية:</span>
+            <span>${reportSubmitted ? '<i class="fa-solid fa-circle-check" style="color: #10b981; font-size:15px;"></i> مكتمل' : '<i class="fa-solid fa-clock" style="color: var(--color-gold); font-size:15px;"></i> متبقي تقرير'}</span>
+          </div>
         </div>
       `;
-      
-      mapContainer.innerHTML = html;
+    }
+
+    function renderCurriculumTree() {
+      const treeContainer = document.getElementById("nested-curriculum-tree");
+      if (!treeContainer) return;
+      treeContainer.innerHTML = '';
+
+      if (!curriculumData || curriculumData.length === 0) {
+        treeContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px;">لا توجد ملفات أو كتب دراسية مضافة لهذا المستوى بعد.</div>`;
+        return;
+      }
+
+      // Build hierarchy
+      const roots = curriculumData.filter(n => !n.parent_id);
+      roots.sort((a,b) => (parseInt(a.sort_order) || 0) - (parseInt(b.sort_order) || 0));
+
+      if (roots.length === 0) {
+        // Fallback for flat lists
+        curriculumData.forEach((item, idx) => {
+          treeContainer.appendChild(createAccordionNodeUI(item, idx));
+        });
+        return;
+      }
+
+      roots.forEach((node, idx) => {
+        treeContainer.appendChild(createNestedFolderUI(node, idx, 0));
+      });
+    }
+
+    function createNestedFolderUI(node, idx, depth) {
+      const isFolder = node.type === 'folder' || !node.type;
+      const nodeEl = document.createElement("div");
+      nodeEl.style.cssText = `margin-bottom: 8px; margin-right: ${depth * 15}px;`;
+
+      if (isFolder) {
+        const header = document.createElement("div");
+        header.className = "accordion-header";
+        header.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; cursor: pointer; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); transition: all 0.2s;";
+        
+        const iconClass = node.icon || "fa-folder-closed";
+        header.innerHTML = `
+          <span>
+            <i class="fa-solid ${iconClass}" style="color: var(--color-gold); margin-left: 8px;"></i>
+            <strong>${node.title}</strong>
+          </span>
+          <i class="fa-solid fa-chevron-left acc-arrow" style="transition: transform 0.2s;"></i>
+        `;
+
+        const body = document.createElement("div");
+        body.style.cssText = "max-height: 0; overflow: hidden; transition: max-height 0.35s ease; border-right: 2px solid var(--border-color); margin-right: 8px;";
+        
+        const bodyInner = document.createElement("div");
+        bodyInner.style.cssText = "padding: 10px 15px 5px;";
+
+        const children = curriculumData.filter(n => String(n.parent_id) === String(node.id));
+        children.sort((a,b) => (parseInt(a.sort_order) || 0) - (parseInt(b.sort_order) || 0));
+
+        if (children.length === 0) {
+          bodyInner.innerHTML = `<div style="color: var(--text-muted); font-size: 11px;">مجلد فارغ</div>`;
+        } else {
+          children.forEach((child, cIdx) => {
+            bodyInner.appendChild(createNestedFolderUI(child, cIdx, depth + 1));
+          });
+        }
+
+        body.appendChild(bodyInner);
+        nodeEl.appendChild(header);
+        nodeEl.appendChild(body);
+
+        header.onclick = () => {
+          const isOpen = body.style.maxHeight !== '0px' && body.style.maxHeight !== '';
+          body.style.maxHeight = isOpen ? '0px' : '1500px';
+          header.querySelector('.acc-arrow').style.transform = isOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+        };
+      } else {
+        // Content Node
+        const card = document.createElement("div");
+        card.style.cssText = "border: 1px solid var(--border-color); border-radius: 8px; background: rgba(255,255,255,0.02); margin-bottom: 4px; overflow: hidden;";
+        
+        const header = document.createElement("div");
+        header.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; cursor: pointer;";
+        const iconClass = node.icon || "fa-file-lines";
+        header.innerHTML = `
+          <span>
+            <i class="fa-solid ${iconClass}" style="color: var(--color-primary); margin-left: 8px;"></i>
+            ${node.title}
+          </span>
+          <i class="fa-solid fa-chevron-left acc-arrow" style="transition: transform 0.2s; font-size:11px;"></i>
+        `;
+
+        const body = document.createElement("div");
+        body.style.cssText = "max-height: 0; overflow: hidden; transition: max-height 0.35s ease; border-top: 1px solid var(--border-color); background: var(--bg-primary);";
+        
+        const bodyInner = document.createElement("div");
+        bodyInner.className = "accordion-body-inner";
+        bodyInner.style.cssText = "padding: 15px; font-size: 13.5px; line-height: 1.8; color: var(--text-main);";
+        bodyInner.innerHTML = node.content_html || '';
+
+        body.appendChild(bodyInner);
+        card.appendChild(header);
+        card.appendChild(body);
+        nodeEl.appendChild(card);
+
+        header.onclick = () => {
+          const isOpen = body.style.maxHeight !== '0px' && body.style.maxHeight !== '';
+          body.style.maxHeight = isOpen ? '0px' : '1000px';
+          header.querySelector('.acc-arrow').style.transform = isOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+        };
+      }
+
+      return nodeEl;
+    }
+
+    function createAccordionNodeUI(item, idx) {
+      const nodeEl = document.createElement("div");
+      nodeEl.className = "accordion-item";
+      nodeEl.id = `acc-item-${idx}`;
+      nodeEl.innerHTML = `
+        <div class="accordion-header" onclick="toggleAccordion(${idx})">
+          <span><i class="fa-solid fa-layer-group" style="color: var(--color-primary); margin-left: 8px;"></i>${item.title}</span>
+          <i class="fa-solid fa-chevron-left acc-arrow"></i>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">${item.content_html || ''}</div>
+        </div>
+      `;
+      return nodeEl;
+    }
+
+    function renderCurriculumAccordion(items) {
+      // Compatibility wrapper
+      renderCurriculumTree();
     }
 
     function renderPlaylist() {
-      const container = document.getElementById("playlist-container");
-      container.innerHTML = "";
-      
+      // 1. Render Sidebar Playlist
+      const sidebarContainer = document.getElementById("playlist-container");
+      if (sidebarContainer) {
+        sidebarContainer.innerHTML = "";
+        if (videosData.length === 0) {
+          sidebarContainer.innerHTML = `<li style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px;">لا توجد محاضرات حالياً.</li>`;
+        } else {
+          // Group by Topic
+          const grouped = {};
+          videosData.forEach(v => {
+            const topic = v.Topic || v.topic || "عام";
+            if (!grouped[topic]) grouped[topic] = [];
+            grouped[topic].push(v);
+          });
+          
+          for (const [topic, vids] of Object.entries(grouped)) {
+            const topicHeader = document.createElement("li");
+            topicHeader.style.cssText = "background: var(--bg-secondary); padding: 8px 10px; margin: 8px 0 4px; font-weight: bold; border-radius: 6px; color: var(--color-primary); font-size: 12.5px;";
+            topicHeader.innerHTML = `<i class="fa-solid fa-book-open"></i> ${topic}`;
+            sidebarContainer.appendChild(topicHeader);
+            
+            vids.forEach(v => {
+              const li = document.createElement("li");
+              li.className = "video-item";
+              const isWatched = watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id);
+              const icon = isWatched ? `<i class="fa-solid fa-circle-check" style="color: var(--color-success);"></i>` : `<i class="fa-solid fa-hourglass-half" style="color: var(--color-gold);"></i>`;
+              li.innerHTML = `
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i>
+                  <span class="video-item-title" style="font-size:12px;">${v.Title}</span>
+                </div>
+                ${icon}
+              `;
+              li.onclick = () => selectVideo(v.VideoId || v.id, v.Title);
+              if (currentVideoId === (v.VideoId || v.id)) li.className += " active";
+              sidebarContainer.appendChild(li);
+            });
+          }
+        }
+      }
+
+      // 2. Render Main panel grid playlist cards
+      const mainGrid = document.getElementById("main-lectures-list");
+      if (!mainGrid) return;
+      mainGrid.innerHTML = "";
+
       if (videosData.length === 0) {
-        container.innerHTML = `<li style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px;">لا توجد محاضرات في هذا المستوى حالياً.</li>`;
+        mainGrid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px 20px;">لا توجد محاضرات في هذا المستوى حالياً.</div>`;
         return;
       }
-      
-      // Group by Topic
-      const grouped = {};
+
       videosData.forEach(v => {
-        const topic = v.Topic || v.topic || "عام";
-        if (!grouped[topic]) grouped[topic] = [];
-        grouped[topic].push(v);
-      });
-      
-      for (const [topic, vids] of Object.entries(grouped)) {
-        // Create topic header
-        const topicHeader = document.createElement("li");
-        topicHeader.style.cssText = "background: var(--bg-secondary); padding: 10px; margin: 10px 0 5px; font-weight: bold; border-radius: 5px; color: var(--color-primary);";
-        topicHeader.innerHTML = `<i class="fa-solid fa-book-open"></i> ${topic}`;
-        container.appendChild(topicHeader);
-        
-        vids.forEach(v => {
-          const li = document.createElement("li");
-          li.className = "video-item";
-          const isWatched = watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id);
-          const icon = isWatched ? `<i class="fa-solid fa-circle-check" style="color: var(--color-success);"></i>` : `<i class="fa-solid fa-hourglass-half" style="color: var(--color-gold);"></i>`;
-          li.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-              <i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i>
-              <span class="video-item-title">${v.Title}</span>
+        const isWatched = watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id);
+        const card = document.createElement("div");
+        card.style.cssText = `
+          background: var(--bg-secondary);
+          border: 1px solid ${currentVideoId === (v.VideoId || v.id) ? 'var(--color-primary)' : 'var(--border-color)'};
+          border-radius: 12px;
+          padding: 16px;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 12px;
+          transition: all 0.2s ease-in-out;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        `;
+
+        if (currentVideoId === (v.VideoId || v.id)) {
+          card.style.transform = "translateY(-3px)";
+          card.style.boxShadow = "0 8px 25px rgba(var(--color-primary-rgb), 0.15)";
+        }
+
+        card.onmouseover = () => {
+          card.style.borderColor = "var(--color-primary)";
+          card.style.transform = "translateY(-3px)";
+        };
+        card.onmouseout = () => {
+          card.style.borderColor = currentVideoId === (v.VideoId || v.id) ? 'var(--color-primary)' : 'var(--border-color)';
+          card.style.transform = currentVideoId === (v.VideoId || v.id) ? 'translateY(-3px)' : 'none';
+        };
+
+        const statusText = isWatched ? "✓ تم إتمام المشاهدة" : "⏳ قيد الانتظار";
+        const statusColor = isWatched ? "#10b981" : "var(--color-gold)";
+        const statusBg = isWatched ? "rgba(16,185,129,0.1)" : "rgba(251,191,36,0.1)";
+
+        card.innerHTML = `
+          <div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px; font-weight: bold; text-transform: uppercase;">
+              <i class="fa-solid fa-bookmark" style="margin-left:4px;"></i> ${v.Topic || v.topic || "محاضرة عامة"}
             </div>
-            ${icon}
-          `;
-          li.onclick = () => selectVideo(v.VideoId || v.id, v.Title);
-          if (currentVideoId === (v.VideoId || v.id)) li.className += " active";
-          container.appendChild(li);
-        });
-      }
+            <h4 style="font-size: 14px; color: var(--text-main); font-weight: bold; margin: 0; line-height: 1.5;">${v.Title}</h4>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 4px;">
+            <span style="font-size: 11px; font-weight: bold; color: ${statusColor}; background: ${statusBg}; padding: 4px 10px; border-radius: 20px;">
+              ${statusText}
+            </span>
+            <span style="font-size: 12px; color: var(--color-primary); font-weight: bold; display: flex; align-items: center; gap: 4px;">
+              شاهد وحل الاختبار <i class="fa-solid fa-chevron-left" style="font-size: 9px;"></i>
+            </span>
+          </div>
+        `;
+
+        card.onclick = () => selectVideo(v.VideoId || v.id, v.Title);
+        mainGrid.appendChild(card);
+      });
     }
 
     function renderCertificates() {
@@ -1603,6 +1868,11 @@
       const iframe = document.getElementById("lecture-preview-iframe");
       if (iframe) {
         iframe.src = "";
+      }
+      
+      // Reset active tab to videos
+      if (typeof switchAcademicTab === "function") {
+        switchAcademicTab('videos');
       }
       
       checkExamEligibility();
