@@ -1996,7 +1996,20 @@
       }
 
       // Check if we have pre-saved questions in our loaded list set by the admin
-      const saved = allVideoQuestions.filter(x => String(x.video_id).trim() === String(videoId).trim());
+      // Support matching by both the curriculum node ID (v.id) and the video URL / YouTube ID (v.VideoId)
+      const v = videosData.find(x => x.id === videoId || x.VideoId === videoId);
+      const possibleIds = [];
+      if (v) {
+        if (v.id) possibleIds.push(String(v.id).trim().toLowerCase());
+        if (v.VideoId) possibleIds.push(String(v.VideoId).trim().toLowerCase());
+      }
+      possibleIds.push(String(videoId).trim().toLowerCase());
+
+      const saved = allVideoQuestions.filter(x => {
+        const targetId = String(x.video_id).trim().toLowerCase();
+        return possibleIds.includes(targetId);
+      });
+
       if (saved && saved.length > 0) {
         // Map and randomize options for each question, adjusting correct index dynamically
         const mapped = saved.map(s => {
