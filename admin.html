@@ -1462,9 +1462,11 @@
       // Close mobile sidebar if open
       document.getElementById('admin-sidebar-menu').classList.remove('active');
 
-      // Lazy-load quiz submissions when tab is first opened
+      // Lazy-load data when tab is opened
       if (tabName === 'videoquizzes') {
         loadVideoQuizzes();
+      } else if (tabName === 'curriculum') {
+        loadCurriculumItems();
       }
     };
 
@@ -3426,11 +3428,6 @@
       `;
 
       listContainer.innerHTML = html;
-
-      // Attach text formatting toolbar to each question textarea
-      for (let i = 0; i < currentVqmQuestions.length; i++) {
-        attachTextareaToolbar(`vqm-q-text-${i}`);
-      }
     }
 
     window.addNewVqmQuestion = function() {
@@ -3492,17 +3489,46 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+            generationConfig: { 
+              temperature: 0.7, 
+              maxOutputTokens: 1024,
+              responseMimeType: "application/json"
+            }
           })
         });
 
         if (!response.ok) throw new Error("Gemini HTTP " + response.status);
         const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-        if (!jsonMatch) throw new Error("No JSON found");
+        let text = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
         
-        const questions = JSON.parse(jsonMatch[0]);
+        // Remove markdown wrappers if present
+        if (text.startsWith("```json")) {
+          text = text.substring(7);
+        } else if (text.startsWith("```")) {
+          text = text.substring(3);
+        }
+        if (text.endsWith("```")) {
+          text = text.substring(0, text.length - 3);
+        }
+        text = text.trim();
+
+        let questions = null;
+        try {
+          questions = JSON.parse(text);
+        } catch (e) {
+          // Fallback to regex match
+          const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+          if (jsonMatch) {
+            questions = JSON.parse(jsonMatch[0]);
+          } else {
+            throw new Error("No JSON found in response");
+          }
+        }
+        
+        if (!questions || !Array.isArray(questions)) {
+          throw new Error("Invalid output format from AI (must be an array)");
+        }
+
         currentVqmQuestions = questions.map(q => {
           const qText = q.q || q.question || q.question_ar || "";
           const opts = q.options || q.choices || q.answers || [];
