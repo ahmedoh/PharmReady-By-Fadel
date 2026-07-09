@@ -738,7 +738,30 @@ function handleDemoRequest(params) {
     if (!verifyLocalAdmin(params.adminPassword)) {
       return { success: false, message: "غير مصرح بالدخول." };
     }
-    return { success: true, notifications: getTable("Notifications") };
+    const raw = getTable("Notifications") || [];
+    return { 
+      success: true, 
+      notifications: raw.map(n => ({
+        Id: String(n.id || n.Timestamp || ""),
+        Email: n.email,
+        Message: n.message,
+        Timestamp: n.created_at || n.Timestamp
+      }))
+    };
+    
+  } else if (action === "getTraineeNotifications") {
+    const email = String(params.email).trim().toLowerCase();
+    const list = getTable("Notifications") || [];
+    const filtered = list.filter(n => String(n.email).trim().toLowerCase() === email || String(n.email).trim().toLowerCase() === 'all');
+    return {
+      success: true,
+      notifications: filtered.map(n => ({
+        Id: String(n.id || n.Timestamp || ""),
+        Email: n.email,
+        Message: n.message,
+        Timestamp: n.created_at || n.Timestamp
+      }))
+    };
     
   } else if (action === "adminSendNotification") {
     if (!verifyLocalAdmin(params.adminPassword)) {
@@ -2488,6 +2511,7 @@ async function handleSupabaseRequest(params) {
       return {
         success: true,
         notifications: data.map(n => ({
+          Id: String(n.id),
           Email: n.email,
           Message: n.message,
           Timestamp: n.created_at
@@ -2543,6 +2567,7 @@ async function handleSupabaseRequest(params) {
       return {
         success: true,
         notifications: data.map(n => ({
+          Id: String(n.id),
           Email: n.email,
           Message: n.message,
           Timestamp: n.created_at

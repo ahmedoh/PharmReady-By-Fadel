@@ -3493,13 +3493,36 @@
               temperature: 0.7, 
               maxOutputTokens: 1024,
               responseMimeType: "application/json"
-            }
+            },
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
           })
         });
 
-        if (!response.ok) throw new Error("Gemini HTTP " + response.status);
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          const errMsg = errData.error?.message || `HTTP ${response.status}`;
+          throw new Error("Gemini API Error: " + errMsg);
+        }
         const data = await response.json();
-        let text = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+        console.log("Gemini API Response:", data);
+        
+        if (data.error) {
+          throw new Error("Gemini API Error: " + data.error.message);
+        }
+
+        const candidate = data.candidates?.[0];
+        if (!candidate || !candidate.content?.parts?.[0]?.text) {
+          const finishReason = candidate?.finishReason || "UNKNOWN";
+          const blockReason = data.promptFeedback?.blockReason || "";
+          throw new Error(`لم يقم الذكاء الاصطناعي بتوليد محتوى. السبب: ${finishReason} ${blockReason ? `(حظر: ${blockReason})` : ''}`);
+        }
+
+        let text = candidate.content.parts[0].text.trim();
         
         // Remove markdown wrappers if present
         if (text.startsWith("```json")) {

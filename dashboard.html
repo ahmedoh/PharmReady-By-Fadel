@@ -2104,7 +2104,17 @@
 
       const body = {
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+        generationConfig: { 
+          temperature: 0.7, 
+          maxOutputTokens: 1024,
+          responseMimeType: "application/json"
+        },
+        safetySettings: [
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+        ]
       };
 
       if (!window.GEMINI_API_KEY) {
@@ -2117,9 +2127,23 @@
         body: JSON.stringify(body)
       });
 
-      if (!resp.ok) throw new Error(`Gemini HTTP ${resp.status}`);
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.error?.message || `Gemini HTTP ${resp.status}`);
+      }
       const data = await resp.json();
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      console.log("Gemini Dashboard API Response:", data);
+
+      if (data.error) {
+        throw new Error(data.error.message);
+      }
+
+      const candidate = data.candidates?.[0];
+      if (!candidate || !candidate.content?.parts?.[0]?.text) {
+        throw new Error(`Blocked or empty response: ${candidate?.finishReason || 'NO_TEXT'}`);
+      }
+
+      const text = candidate.content.parts[0].text.trim();
 
       // Extract JSON from response (Gemini sometimes wraps in markdown)
       const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
@@ -2577,9 +2601,265 @@
 
 
 
+    // ═══════════════════════════════════════════════════════════════
+    //  BROADCAST NOTIFICATIONS POPUP SYSTEM
+    // ═══════════════════════════════════════════════════════════════
+    let notifQueue = [];
+    let isDisplayingNotif = false;
+
+    async function checkNewNotifications() {
+      if (!traineeEmail) return;
+      try {
+        const response = await apiRequest({
+          action: "getTraineeNotifications",
+          email: traineeEmail
+        });
+        
+        if (response.success && Array.isArray(response.notifications)) {
+          let seen = [];
+          try {
+            seen = JSON.parse(localStorage.getItem("pharmready_seen_notifs") || "[]");
+          } catch(e) {}
+          
+          // Reverse list to show oldest first so they read in chronological order
+          const list = response.notifications.slice().reverse();
+          
+          list.forEach(n => {
+            const id = n.Id || String(n.Timestamp);
+            if (id && !seen.includes(id)) {
+              if (!notifQueue.some(x => x.Id === id)) {
+                notifQueue.push(n);
+              }
+            }
+          });
+          
+          processNotifQueue();
+        }
+      } catch (err) {
+        console.error("Failed to check notifications:", err);
+      }
+    }
+
+    function processNotifQueue() {
+      if (isDisplayingNotif || notifQueue.length === 0) return;
+      
+      isDisplayingNotif = true;
+      const nextNotif = notifQueue.shift();
+      
+      let title = "تحديث هام من إدارة الأكاديمية";
+      let message = nextNotif.Message;
+      
+      if (message.startsWith("📢 ")) {
+        const split = message.split("\n\n");
+        title = split[0].replace("📢 ", "").trim();
+        message = split.slice(1).join("\n\n").trim();
+      }
+      
+      showBroadcastNotificationPopup(nextNotif.Id || String(nextNotif.Timestamp), title, message);
+    }
+
+    function showBroadcastNotificationPopup(notifId, title, message) {
+      const charCount = message.length;
+      const durationMs = Math.max(5000, charCount * 80);
+      
+      const overlay = document.createElement("div");
+      overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(10px);
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        animation: fadeInNotif 0.3s ease forwards;
+        direction: rtl;
+      `;
+      
+      if (!document.getElementById("notif-popup-styles")) {
+        const style = document.createElement("style");
+        style.id = "notif-popup-styles";
+        style.innerHTML = `
+          @keyframes fadeInNotif {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes scaleUpNotif {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      const card = document.createElement("div");
+      card.style.cssText = `
+        background: var(--bg-secondary);
+        border: 2px solid var(--color-gold);
+        border-radius: 20px;
+        padding: 30px;
+        width: 100%;
+        max-width: 480px;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        text-align: center;
+        animation: scaleUpNotif 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        position: relative;
+        overflow: hidden;
+      `;
+      
+      const iconContainer = document.createElement("div");
+      iconContainer.style.cssText = `
+        width: 65px;
+        height: 65px;
+        background: rgba(251,191,36,0.12);
+        border: 2px solid var(--color-gold);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        color: var(--color-gold);
+        font-size: 28px;
+        animation: pulseBell 1.5s infinite alternate;
+      `;
+      iconContainer.innerHTML = `<i class="fa-solid fa-bell"></i>`;
+      
+      if (!document.getElementById("pulse-bell-styles")) {
+        const style = document.createElement("style");
+        style.id = "pulse-bell-styles";
+        style.innerHTML = `
+          @keyframes pulseBell {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(251,191,36,0.4); }
+            100% { transform: scale(1.08); box-shadow: 0 0 12px 6px rgba(251,191,36,0.15); }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      card.appendChild(iconContainer);
+      
+      const titleEl = document.createElement("h2");
+      titleEl.style.cssText = `
+        font-size: 19px;
+        color: var(--color-primary);
+        margin-bottom: 12px;
+        font-weight: 800;
+      `;
+      titleEl.textContent = title;
+      card.appendChild(titleEl);
+      
+      const msgEl = document.createElement("p");
+      msgEl.style.cssText = `
+        font-size: 13.5px;
+        color: var(--text-main);
+        line-height: 1.6;
+        margin-bottom: 25px;
+        white-space: pre-wrap;
+        text-align: right;
+        background: var(--bg-primary);
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        max-height: 200px;
+        overflow-y: auto;
+      `;
+      msgEl.textContent = message;
+      card.appendChild(msgEl);
+      
+      const closeBtn = document.createElement("button");
+      closeBtn.className = "btn btn-primary";
+      closeBtn.style.cssText = `
+        width: 100%;
+        padding: 12px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 13.5px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      `;
+      closeBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i> حسناً، فهمت ذلك`;
+      card.appendChild(closeBtn);
+      
+      const progBarContainer = document.createElement("div");
+      progBarContainer.style.cssText = `
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: rgba(255,255,255,0.08);
+      `;
+      
+      const progBar = document.createElement("div");
+      progBar.style.cssText = `
+        height: 100%;
+        background: var(--color-gold);
+        width: 100%;
+        transition: width linear 0.05s;
+      `;
+      progBarContainer.appendChild(progBar);
+      card.appendChild(progBarContainer);
+      
+      overlay.appendChild(card);
+      document.body.appendChild(overlay);
+      
+      let isClosed = false;
+      let startTime = Date.now();
+      
+      function dismissPopup() {
+        if (isClosed) return;
+        isClosed = true;
+        
+        let seen = [];
+        try {
+          seen = JSON.parse(localStorage.getItem("pharmready_seen_notifs") || "[]");
+        } catch(e) {}
+        if (!seen.includes(notifId)) {
+          seen.push(notifId);
+          localStorage.setItem("pharmready_seen_notifs", JSON.stringify(seen));
+        }
+        
+        overlay.style.transition = "opacity 0.25s ease";
+        overlay.style.opacity = "0";
+        setTimeout(() => {
+          overlay.remove();
+          isDisplayingNotif = false;
+          processNotifQueue();
+        }, 250);
+      }
+      
+      closeBtn.onclick = dismissPopup;
+      
+      const timer = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const remainingRatio = Math.max(0, 1 - (elapsed / durationMs));
+        progBar.style.width = (remainingRatio * 100) + "%";
+        
+        if (elapsed >= durationMs) {
+          clearInterval(timer);
+          dismissPopup();
+        }
+      }, 50);
+      
+      const escapeHandler = (e) => {
+        if (e.key === "Escape") {
+          clearInterval(timer);
+          document.removeEventListener("keydown", escapeHandler);
+          dismissPopup();
+        }
+      };
+      document.addEventListener("keydown", escapeHandler);
+    }
+
     // Initialize and load lectures
     document.addEventListener("DOMContentLoaded", () => {
       loadVideos();
+      setTimeout(checkNewNotifications, 2000); // 2s delay for initial load
+      setInterval(checkNewNotifications, 30000); // Poll every 30s
     });
 
 
