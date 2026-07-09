@@ -2384,13 +2384,13 @@ th {
   .form-grid {
     grid-template-columns: 1fr;
   }
-  /* Admin sidebar collapse */
+  /* Admin sidebar drawer on mobile */
   .admin-sidebar {
-    width: 80px;
-    padding: 15px 5px;
+    width: 260px;
+    padding: 20px;
   }
   .admin-sidebar span {
-    display: none;
+    display: inline;
   }
   .admin-main-container {
     padding: 20px;
@@ -2465,17 +2465,14 @@ th {
     font-size: 20px;
   }
   .admin-sidebar {
-    position: fixed;
-    width: 0;
-    overflow: hidden;
-    padding: 0;
-    transition: var(--transition);
+    width: 260px;
+    padding: 20px;
   }
-  .admin-sidebar.open {
-    width: 250px;
-    padding: 25px;
+  .admin-sidebar.active {
+    width: 260px;
+    padding: 20px;
   }
-  .admin-sidebar.open span {
+  .admin-sidebar span {
     display: inline;
   }
   .social {
