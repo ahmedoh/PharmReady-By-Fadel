@@ -1985,54 +1985,53 @@
       const quizContent = document.getElementById('inline-quiz-content');
       if (!quizContent) return;
 
-      // Check if we have pre-saved questions in our loaded list
+      // Helper to shuffle array elements
+      function shuffleArray(array) {
+        const arr = array.slice();
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
+      // Check if we have pre-saved questions in our loaded list set by the admin
       const saved = allVideoQuestions.filter(x => String(x.video_id).trim() === String(videoId).trim());
       if (saved && saved.length > 0) {
-        generatedQuizQuestions = saved.map(s => ({
-          q: s.question_ar,
-          options: [s.option1_ar, s.option2_ar, s.option3_ar].filter(Boolean),
-          correct: s.correct_index,
-          id: s.id
-        }));
+        // Map and randomize options for each question, adjusting correct index dynamically
+        const mapped = saved.map(s => {
+          const originalOptions = [
+            { text: s.option1_ar, originalIndex: 0 },
+            { text: s.option2_ar, originalIndex: 1 },
+            { text: s.option3_ar, originalIndex: 2 }
+          ].filter(o => o.text && o.text.trim() !== "");
+          
+          const shuffledOptions = shuffleArray(originalOptions);
+          const newCorrectIndex = shuffledOptions.findIndex(o => o.originalIndex === s.correct_index);
+          
+          return {
+            q: s.question_ar,
+            options: shuffledOptions.map(o => o.text),
+            correct: newCorrectIndex !== -1 ? newCorrectIndex : 0,
+            id: s.id
+          };
+        });
+        
+        // Randomize the order of the questions array
+        generatedQuizQuestions = shuffleArray(mapped);
         renderInlineQuizQuestions(generatedQuizQuestions);
         return;
       }
 
+      // If no questions are set by the admin yet, show placeholder message (no AI calls)
       quizContent.innerHTML = `
         <div style="text-align:center; padding:30px; direction: rtl;">
-          <i class="fa-solid fa-spinner fa-spin" style="font-size:28px; color:var(--color-primary); margin-bottom:12px;"></i>
-          <div style="font-size:14px; font-weight:700; color:var(--color-gold);">جاري توليد أسئلة الذكاء الاصطناعي (Gemini)...</div>
-          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">نحلل موضوع المحاضرة لإنشاء أسئلة اختبار مخصصة وحفظها للمنصة</div>
+          <div style="font-size:45px; margin-bottom:15px; display:inline-block; animation: pulseBell 1.5s infinite alternate;">⏳</div>
+          <div style="font-size:15px; font-weight:700; color:var(--text-main); margin-bottom:6px;">الأسئلة يتم وضعها لك الآن...</div>
+          <div style="font-size:12px; color:var(--text-muted); line-height:1.6; margin-bottom:20px; max-width: 340px; margin-left: auto; margin-right: auto;">يقوم المشرف الأكاديمي بإعداد بنك الأسئلة المعتمد لهذه المحاضرة حالياً. يمكنك الاستمرار بالضغط على الزر أدناه لتأكيد حضورك.</div>
+          <button class="quiz-submit-btn" onclick="skipQuizAndMarkWatched()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">متابعة وتسجيل الحضور <i class="fa-solid fa-chevron-left"></i></button>
         </div>
       `;
-
-      try {
-        generatedQuizQuestions = await generateQuizWithGemini(videoTitle);
-        
-        // Auto-save generated questions to DB for future students
-        await apiRequest({
-          action: "saveVideoQuestions",
-          videoId: videoId,
-          questions: generatedQuizQuestions
-        });
-        
-        // Push to local list to cache for this session
-        generatedQuizQuestions.forEach(q => {
-          allVideoQuestions.push({
-            video_id: videoId,
-            question_ar: q.q,
-            option1_ar: q.options[0],
-            option2_ar: q.options[1],
-            option3_ar: q.options[2],
-            correct_index: q.correct
-          });
-        });
-      } catch (err) {
-        console.warn('Gemini quiz generation or auto-save failed, using fallback:', err);
-        generatedQuizQuestions = generateFallbackQuiz(videoTitle);
-      }
-
-      renderInlineQuizQuestions(generatedQuizQuestions);
     }
 
     function renderInlineQuizQuestions(questions) {
