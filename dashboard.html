@@ -1719,7 +1719,7 @@
             const topicHeader = document.createElement("div");
             topicHeader.style.cssText = "background: var(--bg-secondary); padding: 9px 12px; margin-bottom: 4px; font-weight: bold; border-radius: 8px; color: var(--color-primary); font-size: 12.5px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border-color); transition: all 0.2s;";
             
-            const hasCurrentVideo = vids.some(v => currentVideoId === (v.VideoId || v.id));
+            const hasCurrentVideo = vids.some(v => currentVideoId === (v.id || v.VideoId));
 
             topicHeader.innerHTML = `
               <span><i class="fa-solid fa-book-open" style="margin-left: 6px; color: var(--color-gold);"></i> ${topic}</span>
@@ -1742,8 +1742,8 @@
                 </div>
                 ${icon}
               `;
-              li.onclick = () => selectVideo(v.VideoId || v.id, v.Title);
-              if (currentVideoId === (v.VideoId || v.id)) li.className += " active";
+              li.onclick = () => selectVideo(v.id || v.VideoId, v.Title);
+              if (currentVideoId === (v.id || v.VideoId)) li.className += " active";
               videosContainer.appendChild(li);
             });
             
@@ -1775,7 +1775,7 @@
         const card = document.createElement("div");
         card.style.cssText = `
           background: var(--bg-secondary);
-          border: 1px solid ${currentVideoId === (v.VideoId || v.id) ? 'var(--color-primary)' : 'var(--border-color)'};
+          border: 1px solid ${currentVideoId === (v.id || v.VideoId) ? 'var(--color-primary)' : 'var(--border-color)'};
           border-radius: 12px;
           padding: 16px;
           cursor: pointer;
@@ -1787,7 +1787,7 @@
           box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         `;
 
-        if (currentVideoId === (v.VideoId || v.id)) {
+        if (currentVideoId === (v.id || v.VideoId)) {
           card.style.transform = "translateY(-3px)";
           card.style.boxShadow = "0 8px 25px rgba(var(--color-primary-rgb), 0.15)";
         }
@@ -1797,8 +1797,8 @@
           card.style.transform = "translateY(-3px)";
         };
         card.onmouseout = () => {
-          card.style.borderColor = currentVideoId === (v.VideoId || v.id) ? 'var(--color-primary)' : 'var(--border-color)';
-          card.style.transform = currentVideoId === (v.VideoId || v.id) ? 'translateY(-3px)' : 'none';
+          card.style.borderColor = currentVideoId === (v.id || v.VideoId) ? 'var(--color-primary)' : 'var(--border-color)';
+          card.style.transform = currentVideoId === (v.id || v.VideoId) ? 'translateY(-3px)' : 'none';
         };
 
         const statusText = isWatched ? "✓ تم إتمام المشاهدة" : "⏳ قيد الانتظار";
@@ -1822,7 +1822,7 @@
           </div>
         `;
 
-        card.onclick = () => selectVideo(v.VideoId || v.id, v.Title);
+        card.onclick = () => selectVideo(v.id || v.VideoId, v.Title);
         mainGrid.appendChild(card);
       });
     }
