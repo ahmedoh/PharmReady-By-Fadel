@@ -2036,13 +2036,16 @@
         return;
       }
 
-      // If no questions are set by the admin yet, show placeholder message (no AI calls)
+      // If no questions are set by the admin yet, show placeholder message (no AI calls, no skip button)
       quizContent.innerHTML = `
         <div style="text-align:center; padding:30px; direction: rtl;">
           <div style="font-size:45px; margin-bottom:15px; display:inline-block; animation: pulseBell 1.5s infinite alternate;">⏳</div>
           <div style="font-size:15px; font-weight:700; color:var(--text-main); margin-bottom:6px;">الأسئلة يتم وضعها لك الآن...</div>
-          <div style="font-size:12px; color:var(--text-muted); line-height:1.6; margin-bottom:20px; max-width: 340px; margin-left: auto; margin-right: auto;">يقوم المشرف الأكاديمي بإعداد بنك الأسئلة المعتمد لهذه المحاضرة حالياً. يمكنك الاستمرار بالضغط على الزر أدناه لتأكيد حضورك.</div>
-          <button class="quiz-submit-btn" onclick="skipQuizAndMarkWatched()" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">متابعة وتسجيل الحضور <i class="fa-solid fa-chevron-left"></i></button>
+          <div style="font-size:12.5px; color:var(--text-muted); line-height:1.6; max-width: 360px; margin-left: auto; margin-right: auto;">
+            يقوم المشرف الأكاديمي حالياً بإعداد بنك الأسئلة المعتمد لهذه المحاضرة.
+            <br>
+            <strong style="color: var(--color-gold);">يرجى الانتظار حتى ترفع الإدارة الأسئلة لتتمكن من حلها وتأكيد حضورك للمحاضرة.</strong>
+          </div>
         </div>
       `;
     }
@@ -2053,8 +2056,7 @@
 
       if (!questions || questions.length === 0) {
         contentArea.innerHTML = `
-          <div style="text-align:center; padding:20px; color:var(--text-muted); direction: rtl;">⚠️ تعذّر توليد الأسئلة حالياً. سيتم تسجيل مشاهدة الفيديو مباشرة.</div>
-          <button class="quiz-submit-btn" onclick="skipQuizAndMarkWatched()" style="margin-top: 10px;">متابعة وتسجيل الحضور ←</button>`;
+          <div style="text-align:center; padding:20px; color:var(--text-muted); direction: rtl;">⚠️ لم يتم تعيين أسئلة لهذه المحاضرة بعد. يرجى مراجعة إدارة المنصة لرفع الأسئلة أولاً لتتمكن من تسجيل الحضور.</div>`;
         return;
       }
 
@@ -2219,8 +2221,7 @@
 
       if (!questions || questions.length === 0) {
         contentArea.innerHTML = `
-          <div style="text-align:center; padding:30px; color:var(--text-muted);">⚠️ تعذّر توليد الأسئلة حالياً. سيتم تسجيل مشاهدة الفيديو تلقائياً.</div>
-          <button class="quiz-submit-btn" onclick="skipQuizAndMarkWatched()">متابعة ←</button>`;
+          <div style="text-align:center; padding:30px; color:var(--text-muted); direction: rtl;">⚠️ لم يتم تعيين أسئلة لهذه المحاضرة بعد. يرجى مراجعة الإدارة لرفع الأسئلة أولاً لتتمكن من المتابعة.</div>`;
         return;
       }
 
