@@ -561,6 +561,23 @@ function handleDemoRequest(params) {
     
     saveTable("VideoQuestions", allVidQ);
     return { success: true, message: "تم حفظ الأسئلة تلقائياً بنجاح (وضع التجربة)!" };
+
+  } else if (action === "reopenVideo") {
+    const itemId = String(params.itemId).trim();
+    let curr = getTable("Curriculum") || [];
+    let updated = false;
+    curr = curr.map(item => {
+      if (String(item.id) === itemId) {
+        item.created_at = new Date().toISOString();
+        updated = true;
+      }
+      return item;
+    });
+    if (updated) {
+      saveTable("Curriculum", curr);
+      return { success: true, message: "تم إعادة فتح المحاضرة وتجديد صلاحيتها لـ 5 أيام إضافية بنجاح!" };
+    }
+    return { success: false, message: "لم يتم العثور على المحاضرة المحددة." };
     
   } else if (action === "submitPromotionRequest") {
     const trainees = getTable("Trainees");
@@ -1614,7 +1631,9 @@ async function handleSupabaseRequest(params) {
             Title: c.title || "",
             Url: url || `https://www.youtube.com/watch?v=${vidId}`,
             Level: c.level || currentLevel,
-            Topic: getTopicName(c.parent_id, sortedCurr)
+            Topic: getTopicName(c.parent_id, sortedCurr),
+            id: String(c.id),
+            created_at: c.created_at
           };
         });
 
@@ -1645,7 +1664,9 @@ async function handleSupabaseRequest(params) {
             Title: v.title || "",
             Url: v.url || `https://www.youtube.com/watch?v=${vidId}`,
             Level: v.level || currentLevel,
-            Topic: v.topic || "عام"
+            Topic: v.topic || "عام",
+            id: vidId,
+            created_at: v.created_at || new Date().toISOString()
           });
         }
       });
@@ -1851,6 +1872,19 @@ async function handleSupabaseRequest(params) {
         if (error) throw error;
       }
       return { success: true, message: "تم حفظ الأسئلة تلقائياً بنجاح!" };
+
+    } else if (action === "reopenVideo") {
+      const itemId = String(params.itemId).trim();
+      const { error } = await supabaseClient
+        .from('curriculum')
+        .update({ created_at: new Date().toISOString() })
+        .eq('id', itemId);
+        
+      if (error) {
+        console.error("reopenVideo error:", error);
+        return { success: false, message: "فشل إعادة فتح المحاضرة: " + error.message };
+      }
+      return { success: true, message: "تم إعادة فتح المحاضرة وتجديد صلاحيتها لـ 5 أيام إضافية بنجاح!" };
       
     } else if (action === "adminLogin") {
       const user = String(params.username || "").trim().toLowerCase();

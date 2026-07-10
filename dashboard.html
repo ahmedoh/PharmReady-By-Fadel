@@ -504,6 +504,17 @@
             <i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i> Name of Video
           </h3>
 
+          <!-- Locked/Expired Lecture Overlay -->
+          <div id="lecture-locked-overlay" style="display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 20px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; margin-bottom: 20px;">
+            <div style="font-size: 60px; color: var(--color-danger, #ef4444); margin-bottom: 20px; animation: pulseBell 1.5s infinite alternate;"><i class="fa-solid fa-lock"></i></div>
+            <h3 style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 10px;">هذه المحاضرة مغلقة حالياً! 🔒</h3>
+            <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; max-width: 480px; margin: 0 auto 20px;">
+              لقد انتهت صلاحية مشاهدة هذه المحاضرة المحددة بـ **(5 أيام فقط)** من تاريخ رفعها على المنصة.
+              <br><br>
+              يرجى التواصل مع المشرف أو إدارة الأكاديمية لطلب **إعادة فتح صلاحية مشاهدة المحاضرة** لتتمكن من إتمامها بنجاح.
+            </p>
+          </div>
+
           <div id="lecture-preview-container" style="
             position: relative;
             width: 100%;
@@ -1736,11 +1747,25 @@
               const li = document.createElement("li");
               li.className = "video-item";
               const isWatched = watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id);
-              const icon = isWatched ? `<i class="fa-solid fa-circle-check" style="color: var(--color-success);"></i>` : `<i class="fa-solid fa-hourglass-half" style="color: var(--color-gold);"></i>`;
+              
+              // Expiration check
+              let isExpired = false;
+              if (v.created_at) {
+                const createdDate = new Date(v.created_at);
+                const now = new Date();
+                const diffTime = now - createdDate;
+                const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                isExpired = diffDays > 5;
+              }
+
+              const icon = isExpired ? '' : isWatched ? `<i class="fa-solid fa-circle-check" style="color: var(--color-success);"></i>` : `<i class="fa-solid fa-hourglass-half" style="color: var(--color-gold);"></i>`;
+              const displayIcon = isExpired ? `<i class="fa-solid fa-lock" style="color: var(--color-danger, #ef4444); margin-left: 4px;"></i>` : `<i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i>`;
+              const statusLabel = isExpired ? `<span style="font-size:10px; color: var(--color-danger, #ef4444); font-weight:bold; margin-right:5px;">(مغلقة 🔒)</span>` : '';
+
               li.innerHTML = `
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i>
-                  <span class="video-item-title" style="font-size:12px;">${v.Title}</span>
+                  ${displayIcon}
+                  <span class="video-item-title" style="font-size:12px;">${v.Title} ${statusLabel}</span>
                 </div>
                 ${icon}
               `;
@@ -1774,6 +1799,17 @@
 
       videosData.forEach(v => {
         const isWatched = watchedVideos.includes(v.VideoId) || watchedVideos.includes(v.id);
+        
+        // Expiration check
+        let isExpired = false;
+        if (v.created_at) {
+          const createdDate = new Date(v.created_at);
+          const now = new Date();
+          const diffTime = now - createdDate;
+          const diffDays = diffTime / (1000 * 60 * 60 * 24);
+          isExpired = diffDays > 5;
+        }
+
         const card = document.createElement("div");
         card.style.cssText = `
           background: var(--bg-secondary);
@@ -1803,9 +1839,9 @@
           card.style.transform = currentVideoId === (v.id || v.VideoId) ? 'translateY(-3px)' : 'none';
         };
 
-        const statusText = isWatched ? "✓ تم إتمام المشاهدة" : "⏳ قيد الانتظار";
-        const statusColor = isWatched ? "#10b981" : "var(--color-gold)";
-        const statusBg = isWatched ? "rgba(16,185,129,0.1)" : "rgba(251,191,36,0.1)";
+        const statusText = isExpired ? "🔒 مغلقة تلقائياً" : isWatched ? "✓ تم إتمام المشاهدة" : "⏳ قيد الانتظار";
+        const statusColor = isExpired ? "var(--color-danger, #ef4444)" : isWatched ? "#10b981" : "var(--color-gold)";
+        const statusBg = isExpired ? "rgba(239,68,68,0.1)" : isWatched ? "rgba(16,185,129,0.1)" : "rgba(251,191,36,0.1)";
 
         card.innerHTML = `
           <div>
@@ -1819,7 +1855,7 @@
               ${statusText}
             </span>
             <span style="font-size: 12px; color: var(--color-primary); font-weight: bold; display: flex; align-items: center; gap: 4px;">
-              شاهد وحل الاختبار <i class="fa-solid fa-chevron-left" style="font-size: 9px;"></i>
+              ${isExpired ? 'مغلقة للانتهاء 🔒' : 'شاهد وحل الاختبار <i class="fa-solid fa-chevron-left" style="font-size: 9px;"></i>'}
             </span>
           </div>
         `;
@@ -1911,21 +1947,41 @@
       document.getElementById("player-viewport").style.display = "block";
       document.getElementById("playing-video-title").innerHTML = `<i class="fa-solid fa-circle-play" style="color: var(--color-primary);"></i> ${title}`;
 
-      // Set preview iframe source
+      // Set preview iframe source and check for expiration
       const v = videosData.find(x => x.VideoId === videoId || x.id === videoId);
-      if (v) {
-        const iframe = document.getElementById("lecture-preview-iframe");
-        if (iframe) {
-          iframe.src = getEmbedUrl(v.Url || v.VideoId || "");
-        }
+      let isExpired = false;
+      if (v && v.created_at) {
+        const createdDate = new Date(v.created_at);
+        const now = new Date();
+        const diffTime = now - createdDate;
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+        isExpired = diffDays > 5;
       }
 
-      // Automatically show and load inline quiz container immediately
+      const lockedOverlay = document.getElementById("lecture-locked-overlay");
+      const previewContainer = document.getElementById("lecture-preview-container");
+      const openDriveBtn = document.getElementById("btn-open-drive-lecture");
       const quizContainer = document.getElementById("inline-quiz-container");
-      if (quizContainer) {
-        quizContainer.style.display = "block";
+
+      if (isExpired) {
+        if (lockedOverlay) lockedOverlay.style.display = "flex";
+        if (previewContainer) previewContainer.style.display = "none";
+        if (openDriveBtn) openDriveBtn.parentElement.style.display = "none";
+        if (quizContainer) quizContainer.style.display = "none";
+      } else {
+        if (lockedOverlay) lockedOverlay.style.display = "none";
+        if (previewContainer) previewContainer.style.display = "block";
+        if (openDriveBtn) openDriveBtn.parentElement.style.display = "block";
+        if (quizContainer) quizContainer.style.display = "block";
+        
+        if (v) {
+          const iframe = document.getElementById("lecture-preview-iframe");
+          if (iframe) {
+            iframe.src = getEmbedUrl(v.Url || v.VideoId || "");
+          }
+        }
+        loadInlineVideoQuiz(videoId, title);
       }
-      loadInlineVideoQuiz(videoId, title);
 
       renderPlaylist();
     }

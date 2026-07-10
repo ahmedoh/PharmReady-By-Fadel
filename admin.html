@@ -1960,7 +1960,10 @@
           <span style="font-size: 10px; color: var(--text-muted); font-weight: normal; margin-right: 10px;">(ترتيب: ${node.sort_order || 1})</span>
         </div>
         <div class="curr-node-actions" style="display: flex; gap: 6px; align-items: center;">
-          ${isVideo ? `<button class="btn" style="padding:4px 8px; font-size:11px; cursor:pointer; background: rgba(251,191,36,0.15); color: var(--color-gold); border: 1px solid rgba(251,191,36,0.3);" onclick="openVideoQuestionsModal('${node.id}', '${node.title.replace(/'/g, "\\'")}')" title="أسئلة المحاضرة"><i class="fa-solid fa-circle-question"></i> الأسئلة</button>` : ''}
+          ${isVideo ? `
+            <button class="btn" style="padding:4px 8px; font-size:11px; cursor:pointer; background: rgba(251,191,36,0.15); color: var(--color-gold); border: 1px solid rgba(251,191,36,0.3);" onclick="openVideoQuestionsModal('${node.id}', '${node.title.replace(/'/g, "\\'")}')" title="أسئلة المحاضرة"><i class="fa-solid fa-circle-question"></i> الأسئلة</button>
+            <button class="btn" style="padding:4px 8px; font-size:11px; cursor:pointer; background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3);" onclick="reopenVideoNode('${node.id}', '${node.title.replace(/'/g, "\\'")}')" title="إعادة فتح المحاضرة / تجديد الصلاحية"><i class="fa-solid fa-lock-open"></i> إعادة فتح 🔓</button>
+          ` : ''}
           
           ${isFolder ? `
             <div style="display: inline-flex; gap: 4px; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.06); margin-left: 6px; border: 1px solid var(--border-color);">
@@ -3358,6 +3361,28 @@
       } catch (err) {
         console.error(err);
         listContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--color-danger);">فشل تحميل الأسئلة.</div>';
+      }
+    };
+
+    window.reopenVideoNode = async function(nodeId, videoTitle) {
+      if (!confirm(`هل أنت متأكد من رغبتك في إعادة فتح محاضرة "${videoTitle}" وتجديد صلاحيتها لمدة 5 أيام إضافية؟`)) {
+        return;
+      }
+      try {
+        const resp = await apiRequest({
+          action: "reopenVideo",
+          itemId: nodeId,
+          adminUsername, adminPassword
+        });
+        if (resp.success) {
+          showToast(resp.message || "تم إعادة فتح المحاضرة بنجاح!", "success");
+          loadCurriculum(); // reload the tree to refresh states!
+        } else {
+          showToast(resp.message || "فشل إعادة فتح المحاضرة.", "danger");
+        }
+      } catch(err) {
+        console.error(err);
+        showToast("حدث خطأ أثناء الاتصال بالخادم لإعادة فتح المحاضرة.", "danger");
       }
     };
 
