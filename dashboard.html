@@ -1214,6 +1214,7 @@
     let completedLevelsList = [];
     let examQuestions = []; // Global questions loaded from spreadsheet
     let allVideoQuestions = []; // AI-generated video questions loaded from DB
+    let allCurriculumData = []; // Store curriculum nodes
     let currentVideoId = null;
     let currentLang = localStorage.getItem("app_lang") || "ar";
     let currentTheme = localStorage.getItem("app_theme") || "sand"; // sand, green, dark
@@ -1313,6 +1314,7 @@
           completedLevelsList = response.completedLevels || [];
           examQuestions = response.questions || []; // Save dynamically loaded questions from Google Sheets
           allVideoQuestions = response.videoQuestions || [];
+          allCurriculumData = response.curriculum || [];
           window.completedPromotions = response.completedPromotions || [];
           window.levelWelcomeText = response.welcomeHtml || "";
           traineeProgress = {
@@ -2004,6 +2006,18 @@
         if (v.VideoId) possibleIds.push(String(v.VideoId).trim().toLowerCase());
       }
       possibleIds.push(String(videoId).trim().toLowerCase());
+
+      // Resolving matching node ID via allCurriculumData fallback to prevent any caching issue
+      if (typeof allCurriculumData !== "undefined" && allCurriculumData.length > 0) {
+        const item = allCurriculumData.find(c =>
+          c.type === 'video' &&
+          (String(c.id).trim().toLowerCase() === String(videoId).trim().toLowerCase() ||
+           String(c.title).trim().toLowerCase() === String(videoTitle).trim().toLowerCase())
+        );
+        if (item && item.id) {
+          possibleIds.push(String(item.id).trim().toLowerCase());
+        }
+      }
 
       const saved = allVideoQuestions.filter(x => {
         const targetId = String(x.video_id).trim().toLowerCase();
