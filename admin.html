@@ -3381,8 +3381,8 @@
           showToast(resp.message || "فشل إعادة فتح المحاضرة.", "danger");
         }
       } catch(err) {
-        console.error(err);
-        showToast("حدث خطأ أثناء الاتصال بالخادم لإعادة فتح المحاضرة.", "danger");
+        console.error("reopenVideoNode error:", err);
+        showToast("حدث خطأ أثناء الاتصال بالخادم لإعادة فتح المحاضرة: " + (err.message || err), "danger");
       }
     };
 
